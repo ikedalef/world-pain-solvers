@@ -56,7 +56,8 @@ def repair_app_if_broken(app_dir: str):
 
 エラーを完全に修正し、ブラウザで完全に動作する修正済みのHTMLコード（<!DOCTYPE html>から</html>まで）のみを出力してください。Markdownバッククォートなどの余計なテキストは含めないでください。
 """
-    model = genai.GenerativeModel(model_name="gemini-2.5-flash")
+    # gemini-3.6-flash を指定
+    model = genai.GenerativeModel(model_name="gemini-3.6-flash")
     res = model.generate_content(repair_prompt)
     cleaned_html = res.text.strip().replace("```html", "").replace("```", "").strip()
     with open(html_path, "w", encoding="utf-8") as f:
