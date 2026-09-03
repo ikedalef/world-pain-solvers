@@ -15,7 +15,6 @@ class SolvedAppSchema(BaseModel):
     html_content: str = Field(description="Tailwind CDN & インラインVanilla JSによる完全自己完結HTML")
 
 def extract_safe_json(text: str) -> dict:
-    """Markdownタグや前後の余計な文字列を除去して確実にJSONをパース"""
     try:
         return json.loads(text)
     except json.JSONDecodeError:
@@ -30,33 +29,23 @@ def generate_solution_app():
         raise ValueError("CRITICAL: GEMINI_API_KEY environment variable is not defined.")
 
     genai.configure(api_key=api_key)
-    pains = get_curated_pain_points()
+    # トークン消費削減のため厳選された上位3件のみ抽出
+    pains = get_curated_pain_points()[:3]
 
     system_instruction = """
-あなたは「世界中の人々のリアルな困りごと・苦痛をWebテクノロジーで一掃する」最高峰の課題解決エンジニアです。
-
-【絶対原則】
-1. 人間のリアルなペインの根絶:
-   - 単なる電卓や時計などのありきたりなモックは厳禁。
-   - ユーザーが手作業で苦労していた作業や、既存ツールの不満をブラウザ上で1秒・完全ローカル・無料で解決する実用ツールを作成してください。
-2. 完全クライアントサイド（Privacy-First）:
-   - 機密データやファイルが外部サーバーに送信されないことを明記し、全処理をブラウザ上のJavaScript (FileReader API, WebCrypto等) で完結させること。
-3. エクストリーム・アクセシビリティ & UI:
-   - 1クリックコピー機能、入力ミスを許容するバリデーション、Tailwind CSS（CDN: https://cdn.tailwindcss.com）による洗練されたUI。
-4. 単一ファイル完結:
-   - 外部ライブラリのビルド不要。HTML + Tailwind CDN + Vanilla JSのみで動作させること。
+あなたは世界中の人々のリアルな困りごとをWebツールで解決するエキスパートです。
+1. 退屈なモックや電卓は禁止。実利性の高い課題をブラウザ上で完全ローカル（サーバー送信なし）で解決するツールを作成してください。
+2. 外部ライブラリのビルドは不要。単一のindex.html内にTailwind CSS CDNとVanilla JSを完結させてください。
+3. 直感的で美しいUI、コピー機能、入力バリデーションを必須とします。
 """
 
     prompt = f"""
 {system_instruction}
 
-以下の世界中から集められた「リアルな困りごと」リストを精読し、最も実利性の高い課題を1つ選定してアプリを構築してください。
-
-【収集されたペインリスト】
+以下の困りごとリストから1つを選定し、ブラウザ完結型Webツールを作成してください。
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 """
 
-    # API側推奨の最新モデル gemini-3.6-flash を使用
     model_name = "gemini-3.6-flash"
     print(f"[Info] Executing generation with model: {model_name}")
 
@@ -69,6 +58,7 @@ def generate_solution_app():
         }
     )
 
+    # レートリミット（429）を考慮した十分な待機時間を持つリトライループ
     for attempt in range(3):
         try:
             res = model.generate_content(prompt)
@@ -87,11 +77,13 @@ def generate_solution_app():
             print(f"[Success] Built solution for: {app_data.target_pain}")
             return app_data.app_slug
         except Exception as e:
-            wait_sec = (2 ** attempt) * 5
-            print(f"[Error] Generation attempt {attempt+1} failed: {e}. Retrying in {wait_sec}s...")
+            # 429 quota超過の指示（約30秒〜40秒）に確実に対応するため長めに待機
+            wait_sec = 40 + (attempt * 20)
+            print(f"[Warn] API Rate limit/Error encountered: {e}")
+            print(f"[Info] Waiting {wait_sec}s for quota cooldown before attempt {attempt+2}...")
             time.sleep(wait_sec)
 
-    raise RuntimeError("Failed to generate solution app after retry budget.")
+    raise RuntimeError("Failed to generate solution app after quota backoff.")
 
 if __name__ == "__main__":
     generate_solution_app()
