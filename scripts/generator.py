@@ -13,6 +13,13 @@ class SolvedAppSchema(BaseModel):
     category: str = Field(description="Productivity, Finance, Developer, Writing, Accessibility など")
     html_content: str = Field(description="Tailwind CDN & インラインVanilla JSによる完全自己完結HTML")
 
+# 過去のエラー知見に基づき、稼働実績のあるモデルを優先度順に定義
+CANDIDATE_MODELS = [
+    os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"),
+    "gemini-3.6-flash",
+    "gemini-1.5-flash",
+]
+
 def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -26,7 +33,7 @@ def generate_solution_app():
 
 【絶対原則】
 1. 人間のリアルなペインの根絶:
-   - 「ありきたりな電卓」や「時計」のような退屈なモックは厳禁。
+   - 退屈なモックや既存のありきたりなツールは厳禁。
    - ユーザーが「手作業で数十分かかっていた面倒な作業」「既存ツールの有料化・ログイン必須・データ漏洩リスクへの不満」を、ブラウザ上で1秒・完全ローカル・無料で解決するツールに仕立ててください。
 2. 完全クライアントサイド（Privacy-First）:
    - 機密データ、CSV、テキスト、ファイルが外部サーバーに一切送信されないことを明記し、全処理をブラウザ上のJavaScript (FileReader API, WebCrypto, Canvas API等) で完結させること。
@@ -46,36 +53,39 @@ def generate_solution_app():
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 """
 
-    # gemini-3.6-flash を指定
-    model = genai.GenerativeModel(
-        model_name="gemini-3.6-flash",
-        generation_config={
-            "response_mime_type": "application/json",
-            "response_schema": SolvedAppSchema,
-            "temperature": 0.4
-        }
-    )
+    last_error = None
+    for model_name in dict.fromkeys(CANDIDATE_MODELS):  # 重複を除去して順に試行
+        for attempt in range(2):
+            try:
+                print(f"[Info] Attempting generation with model: {model_name} (Attempt {attempt+1})")
+                model = genai.GenerativeModel(
+                    model_name=model_name,
+                    generation_config={
+                        "response_mime_type": "application/json",
+                        "response_schema": SolvedAppSchema,
+                        "temperature": 0.4
+                    }
+                )
+                res = model.generate_content(prompt)
+                app_data = SolvedAppSchema(**json.loads(res.text))
+                
+                target_dir = os.path.join("apps", app_data.app_slug)
+                os.makedirs(target_dir, exist_ok=True)
+                
+                with open(os.path.join(target_dir, "index.html"), "w", encoding="utf-8") as f:
+                    f.write(app_data.html_content)
+                    
+                with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
+                    json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
+                    
+                print(f"[Success] Built solution with {model_name} for: {app_data.target_pain}")
+                return app_data.app_slug
+            except Exception as e:
+                print(f"[Warn] Model {model_name} failed: {e}")
+                last_error = e
+                time.sleep(5)
 
-    for attempt in range(3):
-        try:
-            res = model.generate_content(prompt)
-            app_data = SolvedAppSchema(**json.loads(res.text))
-            
-            target_dir = os.path.join("apps", app_data.app_slug)
-            os.makedirs(target_dir, exist_ok=True)
-            
-            with open(os.path.join(target_dir, "index.html"), "w", encoding="utf-8") as f:
-                f.write(app_data.html_content)
-                
-            with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
-                json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
-                
-            print(f"[Success] Built solution for: {app_data.target_pain}")
-            return app_data.app_slug
-        except Exception as e:
-            print(f"[Error] Generation attempt {attempt+1} failed: {e}")
-            time.sleep(10)
-    raise RuntimeError("Failed to generate solution app.")
+    raise RuntimeError(f"All model generation attempts failed. Last error: {last_error}")
 
 if __name__ == "__main__":
     generate_solution_app()
