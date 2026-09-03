@@ -2,8 +2,7 @@ import os
 import json
 import time
 from pydantic import BaseModel, Field
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from pain_miner import get_curated_pain_points
 
 class SolvedAppSchema(BaseModel):
@@ -18,7 +17,8 @@ def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not set.")
-    client = genai.Client(api_key=api_key)
+    
+    genai.configure(api_key=api_key)
     pains = get_curated_pain_points()
 
     system_instruction = """
@@ -38,24 +38,27 @@ def generate_solution_app():
 """
 
     prompt = f"""
+{system_instruction}
+
 以下の世界中から集められた「リアルな困りごと」リストを精読し、最も実利性が高く、ブラウザツールとして劇的な効率化をもたらす課題を1つ選定してアプリを構築してください。
 
 【収集されたペインリスト】
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 """
 
+    # Gemini 2.5 Flash を使用
+    model = genai.GenerativeModel(
+        model_name="gemini-2.5-flash",
+        generation_config={
+            "response_mime_type": "application/json",
+            "response_schema": SolvedAppSchema,
+            "temperature": 0.4
+        }
+    )
+
     for attempt in range(3):
         try:
-            res = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    response_mime_type="application/json",
-                    response_schema=SolvedAppSchema,
-                    temperature=0.4,
-                )
-            )
+            res = model.generate_content(prompt)
             app_data = SolvedAppSchema(**json.loads(res.text))
             
             target_dir = os.path.join("apps", app_data.app_slug)
