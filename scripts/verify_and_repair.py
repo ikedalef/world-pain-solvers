@@ -1,7 +1,7 @@
 import os
 import subprocess
 import json
-from google import genai
+import google.generativeai as genai
 
 def test_app_with_playwright(app_dir: str):
     html_path = os.path.abspath(os.path.join(app_dir, "index.html"))
@@ -40,7 +40,8 @@ def repair_app_if_broken(app_dir: str):
         return True
 
     print(f"[Auto-Repair] Issues detected in {app_dir}:\n{error_log}\nRequesting Gemini to repair...")
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    api_key = os.environ.get("GEMINI_API_KEY")
+    genai.configure(api_key=api_key)
     
     html_path = os.path.join(app_dir, "index.html")
     with open(html_path, "r", encoding="utf-8") as f:
@@ -55,10 +56,8 @@ def repair_app_if_broken(app_dir: str):
 
 エラーを完全に修正し、ブラウザで完全に動作する修正済みのHTMLコード（<!DOCTYPE html>から</html>まで）のみを出力してください。Markdownバッククォートなどの余計なテキストは含めないでください。
 """
-    res = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=repair_prompt
-    )
+    model = genai.GenerativeModel(model_name="gemini-2.5-flash")
+    res = model.generate_content(repair_prompt)
     cleaned_html = res.text.strip().replace("```html", "").replace("```", "").strip()
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(cleaned_html)
