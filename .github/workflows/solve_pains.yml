@@ -1,0 +1,60 @@
+name: Solve World Pains Automatically
+
+on:
+  schedule:
+    - cron: '0 0,12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  solve-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python & Node
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install System & Headless Browsers
+        run: |
+          pip install -r requirements.txt
+          npm install playwright
+          npx playwright install-deps chromium
+          npx playwright install chromium
+
+      - name: Mine Pains & Generate Solution
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python scripts/generator.py
+
+      - name: Verify Interactive UX & Self-Heal
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          LATEST_APP=$(ls -td apps/*/ | head -n 1)
+          python scripts/verify_and_repair.py "$LATEST_APP"
+
+      - name: Rebuild Global Portal
+        run: |
+          python scripts/update_portal.py
+
+      - name: Deploy to GitHub Pages Repository
+        run: |
+          git config --global user.name "World Pain Solver Bot"
+          git config --global user.email "bot@solveworldpains.org"
+          git add apps/ index.html
+          if git diff --staged --quiet; then
+            echo "No new tools generated."
+          else
+            git commit -m "feat(auto): Deploy practical solution for verified world pain"
+            git push origin main
+          fi
