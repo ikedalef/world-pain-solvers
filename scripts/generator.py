@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import re
 from pydantic import BaseModel, Field
 import google.generativeai as genai
 from pain_miner import get_curated_pain_points
@@ -13,92 +14,84 @@ class SolvedAppSchema(BaseModel):
     category: str = Field(description="Productivity, Finance, Developer, Writing, Accessibility など")
     html_content: str = Field(description="Tailwind CDN & インラインVanilla JSによる完全自己完結HTML")
 
-def get_best_available_model():
-    """APIキーで現在利用可能なモデルを動的検出"""
+def extract_safe_json(text: str) -> dict:
+    """Markdownタグや前後の余計な文字列を除去して確実にJSONをパース"""
     try:
-        available_models = [
-            m.name for m in genai.list_models()
-            if 'generateContent' in m.supported_generation_methods
-        ]
-        print(f"[Info] Available models on this API key: {available_models}")
-
-        # flash系モデルを優先探索
-        for m in available_models:
-            if "flash" in m.lower():
-                return m
-        # なければ最初の生成可能モデルを返す
-        if available_models:
-            return available_models[0]
-    except Exception as e:
-        print(f"[Warn] Failed to list models: {e}")
-    
-    # 最終フォールバック
-    return "models/gemini-1.5-flash"
+        return json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"(\{[\s\S]*\})", text)
+        if match:
+            return json.loads(match.group(1))
+        raise ValueError(f"Could not parse valid JSON from AI output: {text[:200]}...")
 
 def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set.")
-    
+        raise ValueError("CRITICAL: GEMINI_API_KEY environment variable is not defined.")
+
     genai.configure(api_key=api_key)
     pains = get_curated_pain_points()
-    selected_model = get_best_available_model()
-    print(f"[Info] Selected model for generation: {selected_model}")
 
     system_instruction = """
 あなたは「世界中の人々のリアルな困りごと・苦痛をWebテクノロジーで一掃する」最高峰の課題解決エンジニアです。
 
 【絶対原則】
 1. 人間のリアルなペインの根絶:
-   - 退屈なモックや既存のありきたりなツールは厳禁。
-   - ユーザーが「手作業で数十分かかっていた面倒な作業」「既存ツールの有料化・ログイン必須・データ漏洩リスクへの不満」を、ブラウザ上で1秒・完全ローカル・無料で解決するツールに仕立ててください。
+   - 単なる電卓や時計などのありきたりなモックは厳禁。
+   - ユーザーが手作業で苦労していた作業や、既存ツールの不満をブラウザ上で1秒・完全ローカル・無料で解決する実用ツールを作成してください。
 2. 完全クライアントサイド（Privacy-First）:
-   - 機密データ、CSV、テキスト、ファイルが外部サーバーに一切送信されないことを明記し、全処理をブラウザ上のJavaScript (FileReader API, WebCrypto, Canvas API等) で完結させること。
+   - 機密データやファイルが外部サーバーに送信されないことを明記し、全処理をブラウザ上のJavaScript (FileReader API, WebCrypto等) で完結させること。
 3. エクストリーム・アクセシビリティ & UI:
-   - 直感的なドラッグ＆ドロップ、1クリックコピー機能、入力ミスを許容するバリデーション、明快なエラーメッセージ。
-   - Tailwind CSS（CDN: https://cdn.tailwindcss.com）による、清潔でプロフェッショナルなデザイン。
+   - 1クリックコピー機能、入力ミスを許容するバリデーション、Tailwind CSS（CDN: https://cdn.tailwindcss.com）による洗練されたUI。
 4. 単一ファイル完結:
-   - 外部ライブラリのビルドや追加ファイルは不可。HTML + Tailwind CDN + Vanilla JSのみで動作させること。
+   - 外部ライブラリのビルド不要。HTML + Tailwind CDN + Vanilla JSのみで動作させること。
 """
 
     prompt = f"""
 {system_instruction}
 
-以下の世界中から集められた「リアルな困りごと」リストを精読し、最も実利性が高く、ブラウザツールとして劇的な効率化をもたらす課題を1つ選定してアプリを構築してください。
+以下の世界中から集められた「リアルな困りごと」リストを精読し、最も実利性の高い課題を1つ選定してアプリを構築してください。
 
 【収集されたペインリスト】
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 """
 
+    # API側推奨の最新モデル gemini-3.6-flash を使用
+    model_name = "gemini-3.6-flash"
+    print(f"[Info] Executing generation with model: {model_name}")
+
+    model = genai.GenerativeModel(
+        model_name=model_name,
+        generation_config={
+            "response_mime_type": "application/json",
+            "response_schema": SolvedAppSchema,
+            "temperature": 0.4
+        }
+    )
+
     for attempt in range(3):
         try:
-            model = genai.GenerativeModel(
-                model_name=selected_model,
-                generation_config={
-                    "response_mime_type": "application/json",
-                    "response_schema": SolvedAppSchema,
-                    "temperature": 0.4
-                }
-            )
             res = model.generate_content(prompt)
-            app_data = SolvedAppSchema(**json.loads(res.text))
-            
+            raw_data = extract_safe_json(res.text)
+            app_data = SolvedAppSchema(**raw_data)
+
             target_dir = os.path.join("apps", app_data.app_slug)
             os.makedirs(target_dir, exist_ok=True)
-            
+
             with open(os.path.join(target_dir, "index.html"), "w", encoding="utf-8") as f:
                 f.write(app_data.html_content)
-                
+
             with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
                 json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
-                
+
             print(f"[Success] Built solution for: {app_data.target_pain}")
             return app_data.app_slug
         except Exception as e:
-            print(f"[Error] Attempt {attempt+1} failed with {selected_model}: {e}")
-            time.sleep(8)
+            wait_sec = (2 ** attempt) * 5
+            print(f"[Error] Generation attempt {attempt+1} failed: {e}. Retrying in {wait_sec}s...")
+            time.sleep(wait_sec)
 
-    raise RuntimeError("Failed to generate solution app after retries.")
+    raise RuntimeError("Failed to generate solution app after retry budget.")
 
 if __name__ == "__main__":
     generate_solution_app()
