@@ -46,9 +46,9 @@ def generate_solution_app():
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 """
 
-    # Gemini 2.5 Flash を使用
+    # gemini-3.6-flash を指定
     model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
+        model_name="gemini-3.6-flash",
         generation_config={
             "response_mime_type": "application/json",
             "response_schema": SolvedAppSchema,
