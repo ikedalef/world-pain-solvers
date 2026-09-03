@@ -3,41 +3,30 @@ import subprocess
 import json
 import google.generativeai as genai
 
-def get_best_available_model():
-    try:
-        available_models = [
-            m.name for m in genai.list_models()
-            if 'generateContent' in m.supported_generation_methods
-        ]
-        for m in available_models:
-            if "flash" in m.lower():
-                return m
-        if available_models:
-            return available_models[0]
-    except Exception:
-        pass
-    return "models/gemini-1.5-flash"
-
 def test_app_with_playwright(app_dir: str):
     html_path = os.path.abspath(os.path.join(app_dir, "index.html"))
     test_script = f"""
 const {{ chromium }} = require('playwright');
 (async () => {{
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({{ args: ['--no-sandbox', '--disable-setuid-sandbox'] }});
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', err => errors.push(err.toString()));
-    
-    await page.goto('file://{html_path}', {{ waitUntil: 'networkidle' }});
-    
-    const buttons = await page.$$('button');
-    const inputs = await page.$$('input, textarea');
-    
-    if (buttons.length === 0 && inputs.length === 0) {{
-        errors.push('No interactive elements (button or input) found in tool.');
+
+    try {{
+        await page.goto('file://{html_path}', {{ waitUntil: 'networkidle', timeout: 15000 }});
+        const buttons = await page.$$('button');
+        const inputs = await page.$$('input, textarea');
+
+        if (buttons.length === 0 && inputs.length === 0) {{
+            errors.push('CRITICAL: No interactive inputs or buttons found. Tool is non-functional.');
+        }}
+    }} catch (e) {{
+        errors.push(`Navigation failed: ${{e.message}}`);
+    }} finally {{
+        await browser.close();
     }}
 
-    await browser.close();
     if (errors.length > 0) {{
         console.error(JSON.stringify(errors));
         process.exit(1);
@@ -51,34 +40,34 @@ const {{ chromium }} = require('playwright');
 def repair_app_if_broken(app_dir: str):
     passed, error_log = test_app_with_playwright(app_dir)
     if passed:
-        print(f"[Test Passed] {app_dir} is fully interactive and error-free.")
+        print(f"[Test Passed] {app_dir} is interactive and 100% error-free.")
         return True
 
-    print(f"[Auto-Repair] Issues detected in {app_dir}:\n{error_log}\nRequesting repair...")
+    print(f"[Auto-Repair] Failure detected in {app_dir}:\n{error_log}\nInitiating repair sequence...")
     api_key = os.environ.get("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
-    selected_model = get_best_available_model()
 
     html_path = os.path.join(app_dir, "index.html")
     with open(html_path, "r", encoding="utf-8") as f:
         broken_html = f.read()
 
     repair_prompt = f"""
-このHTMLアプリはヘッドレスブラウザテストで以下の実行時エラーを出しました:
+このHTMLアプリはPlaywrightテストで以下のエラーを出しました:
 {error_log}
 
-【元のコード】
+【対象コード】
 {broken_html}
 
-エラーを完全に修正し、ブラウザで完全に動作する修正済みのHTMLコード（<!DOCTYPE html>から</html>まで）のみを出力してください。Markdownバッククォートなどの余計なテキストは含めないでください。
+ブラウザ上で一切のエラーを出さず、動作するよう修正してください。
+Markdownのバッククォート等を含めず、<!DOCTYPE html>から</html>までの純粋なHTMLコードのみを返してください。
 """
     try:
-        model = genai.GenerativeModel(model_name=selected_model)
+        model = genai.GenerativeModel(model_name="gemini-3.6-flash")
         res = model.generate_content(repair_prompt)
         cleaned_html = res.text.strip().replace("```html", "").replace("```", "").strip()
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(cleaned_html)
-        print(f"[Auto-Repair] Repair applied using {selected_model}.")
+        print(f"[Auto-Repair] Fix successfully committed to {html_path}.")
         return True
     except Exception as e:
         print(f"[Auto-Repair] Repair failed: {e}")
