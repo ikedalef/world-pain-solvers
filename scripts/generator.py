@@ -13,12 +13,27 @@ class SolvedAppSchema(BaseModel):
     category: str = Field(description="Productivity, Finance, Developer, Writing, Accessibility など")
     html_content: str = Field(description="Tailwind CDN & インラインVanilla JSによる完全自己完結HTML")
 
-# 過去のエラー知見に基づき、稼働実績のあるモデルを優先度順に定義
-CANDIDATE_MODELS = [
-    os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"),
-    "gemini-3.6-flash",
-    "gemini-1.5-flash",
-]
+def get_best_available_model():
+    """APIキーで現在利用可能なモデルを動的検出"""
+    try:
+        available_models = [
+            m.name for m in genai.list_models()
+            if 'generateContent' in m.supported_generation_methods
+        ]
+        print(f"[Info] Available models on this API key: {available_models}")
+
+        # flash系モデルを優先探索
+        for m in available_models:
+            if "flash" in m.lower():
+                return m
+        # なければ最初の生成可能モデルを返す
+        if available_models:
+            return available_models[0]
+    except Exception as e:
+        print(f"[Warn] Failed to list models: {e}")
+    
+    # 最終フォールバック
+    return "models/gemini-1.5-flash"
 
 def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -27,6 +42,8 @@ def generate_solution_app():
     
     genai.configure(api_key=api_key)
     pains = get_curated_pain_points()
+    selected_model = get_best_available_model()
+    print(f"[Info] Selected model for generation: {selected_model}")
 
     system_instruction = """
 あなたは「世界中の人々のリアルな困りごと・苦痛をWebテクノロジーで一掃する」最高峰の課題解決エンジニアです。
@@ -53,39 +70,35 @@ def generate_solution_app():
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 """
 
-    last_error = None
-    for model_name in dict.fromkeys(CANDIDATE_MODELS):  # 重複を除去して順に試行
-        for attempt in range(2):
-            try:
-                print(f"[Info] Attempting generation with model: {model_name} (Attempt {attempt+1})")
-                model = genai.GenerativeModel(
-                    model_name=model_name,
-                    generation_config={
-                        "response_mime_type": "application/json",
-                        "response_schema": SolvedAppSchema,
-                        "temperature": 0.4
-                    }
-                )
-                res = model.generate_content(prompt)
-                app_data = SolvedAppSchema(**json.loads(res.text))
+    for attempt in range(3):
+        try:
+            model = genai.GenerativeModel(
+                model_name=selected_model,
+                generation_config={
+                    "response_mime_type": "application/json",
+                    "response_schema": SolvedAppSchema,
+                    "temperature": 0.4
+                }
+            )
+            res = model.generate_content(prompt)
+            app_data = SolvedAppSchema(**json.loads(res.text))
+            
+            target_dir = os.path.join("apps", app_data.app_slug)
+            os.makedirs(target_dir, exist_ok=True)
+            
+            with open(os.path.join(target_dir, "index.html"), "w", encoding="utf-8") as f:
+                f.write(app_data.html_content)
                 
-                target_dir = os.path.join("apps", app_data.app_slug)
-                os.makedirs(target_dir, exist_ok=True)
+            with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
+                json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
                 
-                with open(os.path.join(target_dir, "index.html"), "w", encoding="utf-8") as f:
-                    f.write(app_data.html_content)
-                    
-                with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
-                    json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
-                    
-                print(f"[Success] Built solution with {model_name} for: {app_data.target_pain}")
-                return app_data.app_slug
-            except Exception as e:
-                print(f"[Warn] Model {model_name} failed: {e}")
-                last_error = e
-                time.sleep(5)
+            print(f"[Success] Built solution for: {app_data.target_pain}")
+            return app_data.app_slug
+        except Exception as e:
+            print(f"[Error] Attempt {attempt+1} failed with {selected_model}: {e}")
+            time.sleep(8)
 
-    raise RuntimeError(f"All model generation attempts failed. Last error: {last_error}")
+    raise RuntimeError("Failed to generate solution app after retries.")
 
 if __name__ == "__main__":
     generate_solution_app()
