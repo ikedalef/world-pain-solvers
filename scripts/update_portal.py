@@ -6,6 +6,8 @@ def rebuild_portal():
     if not os.path.exists(apps_dir):
         os.makedirs(apps_dir, exist_ok=True)
 
+    stripe_link = os.environ.get("STRIPE_PAYMENT_LINK", "https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j")
+
     apps = []
     for item in os.listdir(apps_dir):
         meta_path = os.path.join(apps_dir, item, "meta.json")
@@ -33,7 +35,9 @@ def rebuild_portal():
             <div>
                 <div class="flex items-center justify-between mb-4">
                     <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">{category}</span>
-                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
+                    <a href="{stripe_link}" target="_blank" class="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>⚡ $5 Lifetime</span>
+                    </a>
                 </div>
                 <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">{title}</h3>
                 <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">{pain}</p>
@@ -41,9 +45,14 @@ def rebuild_portal():
                     {feature_items}
                 </ul>
             </div>
-            <a href="apps/{slug}/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
-                Launch Tool →
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="apps/{slug}/index.html" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                    Launch Tool →
+                </a>
+                <a href="{stripe_link}" target="_blank" class="inline-flex items-center justify-center px-3 py-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl transition-colors whitespace-nowrap">
+                    Get Pro ($5)
+                </a>
+            </div>
         </div>
         """
         apps_cards_html += card
@@ -60,29 +69,30 @@ def rebuild_portal():
         body {{ font-family: 'Plus Jakarta Sans', sans-serif; }}
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500 selection:text-white flex flex-col justify-between">
     <!-- Header -->
     <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
+            <a href="index.html" class="flex items-center space-x-3">
                 <div class="h-4 w-4 rounded-full bg-emerald-500 animate-pulse"></div>
                 <span class="text-lg font-bold text-white tracking-tight">PainKillers<span class="text-indigo-400">.pro</span></span>
-            </div>
+            </a>
             <div class="flex items-center space-x-3">
-                <span class="text-xs font-semibold px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
-                <span class="text-xs font-semibold px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">100% Client-Side Privacy</span>
+                <a href="{stripe_link}" target="_blank" class="text-xs font-bold px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-full transition-all shadow-md shadow-emerald-500/20">
+                    Get Lifetime Pass ($5)
+                </a>
             </div>
         </div>
     </header>
 
     <!-- Hero Section -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex-1">
         <div class="text-center max-w-3xl mx-auto mb-16">
             <h1 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight mb-6">
                 Stop wasting hours on <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">repetitive manual workflows</span>.
             </h1>
             <p class="text-lg sm:text-xl text-slate-400 leading-relaxed">
-                Autonomous, privacy-first web tools designed to solve real operational bottlenecks. No servers. No data leaks. Instant execution.
+                Autonomous, privacy-first web tools designed to solve real operational bottlenecks. 100% in-browser. No servers. No data leaks. Instant execution.
             </p>
         </div>
 
@@ -91,12 +101,16 @@ def rebuild_portal():
             {apps_cards_html}
         </div>
     </main>
+
+    <footer class="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
+        <p>© PainKillers.pro — Autonomous High-Utility Tools. 100% Client-Side Privacy Guaranteed.</p>
+    </footer>
 </body>
 </html>
 """
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(portal_html)
-    print("[Success] Rebuilt portal index.html with $5 CVR pricing structure.")
+    print("[Success] Rebuilt portal index.html with fully clickable Stripe payment CTAs.")
 
 if __name__ == "__main__":
     rebuild_portal()
