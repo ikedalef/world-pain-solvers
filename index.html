@@ -10,29 +10,30 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500 selection:text-white flex flex-col justify-between">
     <!-- Header -->
     <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
+            <a href="index.html" class="flex items-center space-x-3">
                 <div class="h-4 w-4 rounded-full bg-emerald-500 animate-pulse"></div>
                 <span class="text-lg font-bold text-white tracking-tight">PainKillers<span class="text-indigo-400">.pro</span></span>
-            </div>
+            </a>
             <div class="flex items-center space-x-3">
-                <span class="text-xs font-semibold px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
-                <span class="text-xs font-semibold px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">100% Client-Side Privacy</span>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="text-xs font-bold px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-full transition-all shadow-md shadow-emerald-500/20">
+                    Get Lifetime Pass ($5)
+                </a>
             </div>
         </div>
     </header>
 
     <!-- Hero Section -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex-1">
         <div class="text-center max-w-3xl mx-auto mb-16">
             <h1 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight mb-6">
                 Stop wasting hours on <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">repetitive manual workflows</span>.
             </h1>
             <p class="text-lg sm:text-xl text-slate-400 leading-relaxed">
-                Autonomous, privacy-first web tools designed to solve real operational bottlenecks. No servers. No data leaks. Instant execution.
+                Autonomous, privacy-first web tools designed to solve real operational bottlenecks. 100% in-browser. No servers. No data leaks. Instant execution.
             </p>
         </div>
 
@@ -42,8 +43,34 @@
         <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
             <div>
                 <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Recruiting & Data Operations</span>
+                    <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>⚡ $5 Lifetime</span>
+                    </a>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">RecruitClean: AI-Ready Candidate CSV Deduplicator & Scoring Engine</h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Recruiting agencies and HR teams waste hours manually cleaning messy candidate CSVs, fixing broken email characters (like spaces around '@' or smart quotes), removing duplicate profiles, and scoring candidates against job descriptions.</p>
+                <ul class="space-y-1.5 mb-6">
+                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Smart Character Sanitizer: Fixes broken '@' symbols, smart quotes, and hidden control characters</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Fuzzy & Exact Deduplicator: Merges duplicates by normalized email, phone, or name</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Weighted Keyword Scoring: Instantly scores candidates based on custom skill weights</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Interactive Cleaned Table: Search, filter, and inspect cleaned candidate profiles</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant Export: Download perfectly formatted CSV or JSON ready for your ATS or AI screening tools</li>
+                </ul>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="apps/recruitclean-candidate-deduplicator/index.html" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                    Launch Tool →
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="inline-flex items-center justify-center px-3 py-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl transition-colors whitespace-nowrap">
+                    Get Pro ($5)
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
+            <div>
+                <div class="flex items-center justify-between mb-4">
                     <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Marketing & Strategy</span>
-                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
+                    <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>⚡ $5 Lifetime</span>
+                    </a>
                 </div>
                 <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">OSS Marketing Strategy Builder</h3>
                 <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Navigating the transition from proprietary tools to open-source software, establishing developer community traction, and structuring release roadmaps.</p>
@@ -51,50 +78,23 @@
                     <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Target audience & channel discovery</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Open-source narrative & content roadmap generation</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Actionable developer community launch plan</li>
                 </ul>
             </div>
-            <a href="apps/oss-marketing-strategist/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
-                Launch Tool →
-            </a>
-        </div>
-        
-        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">HR & Recruiting Automation</span>
-                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">RecruitClean: Candidate List Sanitizer, Deduplicator & Skill Scorer</h3>
-                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Recruiting agencies and HR teams wasting hours manually cleaning messy candidate CSVs, fixing broken email characters, removing duplicates, and scoring resumes against job descriptions.</p>
-                <ul class="space-y-1.5 mb-6">
-                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Fuzzy & Exact Deduplication (Email/Phone/Name)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Encoding & Character Sanitizer (Fixes broken '@' symbols, smart quotes, and bad encodings)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Weighted Skill Keyword Scorer</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant CSV/TSV/JSON Parser & Exporter</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>100% Client-Side Secure Processing</li>
-                </ul>
+            <div class="flex items-center gap-3">
+                <a href="apps/oss-marketing-strategist/index.html" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                    Launch Tool →
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="inline-flex items-center justify-center px-3 py-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl transition-colors whitespace-nowrap">
+                    Get Pro ($5)
+                </a>
             </div>
-            <a href="apps/recruitclean-candidate-sanitizer/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
-                Launch Tool →
-            </a>
-        </div>
-        
-        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Data Transformation & Engineering</span>
-                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Messy CSV/TSV Data Cleaner & Deduplicator</h3>
-                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Cleaning, normalizing, trimming whitespace, fixing quote mismatches, and deduplicating messy CSV/TSV datasets instantly in the browser.</p>
-                <ul class="space-y-1.5 mb-6">
-                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant delimiter auto-detection or manual override (Comma, Tab, Pipe, Semicolon)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Advanced Deduplication based on selected columns or exact row matching</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Whitespace trimming, lowercase/uppercase normalization, and empty row purging</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Real-time summary statistics (Total rows, duplicates removed, columns detected)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>1-Click Export to CSV/TSV or Clipboard copy with zero data leaks</li>
-                </ul>
-            </div>
-            <a href="apps/messy-csv-tsv-cleaner-deduplicator/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
-                Launch Tool →
-            </a>
         </div>
         
         <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
             <div>
                 <div class="flex items-center justify-between mb-4">
                     <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Developer Tools</span>
-                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
+                    <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>⚡ $5 Lifetime</span>
+                    </a>
                 </div>
                 <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Universal Data Sanitizer, Deduplicator & Schema Mapper</h3>
                 <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Developers, QA engineers, and data analysts waste hours manually cleaning messy CSV/JSON exports, removing duplicates, fixing broken JSON syntax, and mapping mismatched schemas before importing them into databases or test suites.</p>
@@ -102,12 +102,69 @@
                     <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Auto-detects and parses messy CSV, TSV, and broken/malformed JSON</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Dynamic schema mapping (rename, exclude, or retype fields on the fly)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Advanced deduplication based on custom primary keys</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant format conversion (JSON to CSV, CSV to JSON)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Real-time data cleaning (strips nulls, trims whitespace, fixes trailing commas)</li>
                 </ul>
             </div>
-            <a href="apps/universal-data-sanitizer-mapper/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
-                Launch Tool →
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="apps/universal-data-sanitizer-mapper/index.html" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                    Launch Tool →
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="inline-flex items-center justify-center px-3 py-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl transition-colors whitespace-nowrap">
+                    Get Pro ($5)
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Data Transformation & Engineering</span>
+                    <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>⚡ $5 Lifetime</span>
+                    </a>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Messy CSV/TSV Data Cleaner & Deduplicator</h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Cleaning, normalizing, trimming whitespace, fixing quote mismatches, and deduplicating messy CSV/TSV datasets instantly in the browser.</p>
+                <ul class="space-y-1.5 mb-6">
+                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant delimiter auto-detection or manual override (Comma, Tab, Pipe, Semicolon)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Advanced Deduplication based on selected columns or exact row matching</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Whitespace trimming, lowercase/uppercase normalization, and empty row purging</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Real-time summary statistics (Total rows, duplicates removed, columns detected)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>1-Click Export to CSV/TSV or Clipboard copy with zero data leaks</li>
+                </ul>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="apps/messy-csv-tsv-cleaner-deduplicator/index.html" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                    Launch Tool →
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="inline-flex items-center justify-center px-3 py-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl transition-colors whitespace-nowrap">
+                    Get Pro ($5)
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">HR & Recruiting Automation</span>
+                    <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>⚡ $5 Lifetime</span>
+                    </a>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">RecruitClean: Candidate List Sanitizer, Deduplicator & Skill Scorer</h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Recruiting agencies and HR teams wasting hours manually cleaning messy candidate CSVs, fixing broken email characters, removing duplicates, and scoring resumes against job descriptions.</p>
+                <ul class="space-y-1.5 mb-6">
+                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Fuzzy & Exact Deduplication (Email/Phone/Name)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Encoding & Character Sanitizer (Fixes broken '@' symbols, smart quotes, and bad encodings)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Weighted Skill Keyword Scorer</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant CSV/TSV/JSON Parser & Exporter</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>100% Client-Side Secure Processing</li>
+                </ul>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="apps/recruitclean-candidate-sanitizer/index.html" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                    Launch Tool →
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="inline-flex items-center justify-center px-3 py-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl transition-colors whitespace-nowrap">
+                    Get Pro ($5)
+                </a>
+            </div>
         </div>
         
         </div>
     </main>
+
+    <footer class="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
+        <p>© PainKillers.pro — Autonomous High-Utility Tools. 100% Client-Side Privacy Guaranteed.</p>
+    </footer>
 </body>
 </html>

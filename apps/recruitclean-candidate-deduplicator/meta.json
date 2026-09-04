@@ -1,0 +1,17 @@
+{
+  "app_slug": "recruitclean-candidate-deduplicator",
+  "title": "RecruitClean: AI-Ready Candidate CSV Deduplicator & Scoring Engine",
+  "target_pain": "Recruiting agencies and HR teams waste hours manually cleaning messy candidate CSVs, fixing broken email characters (like spaces around '@' or smart quotes), removing duplicate profiles, and scoring candidates against job descriptions.",
+  "key_features": [
+    "Smart Character Sanitizer: Fixes broken '@' symbols, smart quotes, and hidden control characters",
+    "Fuzzy & Exact Deduplicator: Merges duplicates by normalized email, phone, or name",
+    "Weighted Keyword Scoring: Instantly scores candidates based on custom skill weights",
+    "Interactive Cleaned Table: Search, filter, and inspect cleaned candidate profiles",
+    "Instant Export: Download perfectly formatted CSV or JSON ready for your ATS or AI screening tools"
+  ],
+  "category": "Recruiting & Data Operations",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
