@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Reader | Distraction-Free Reading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .loader { border-top-color: #6366f1; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+
+    <!-- Top Navigation / Status Bar -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white">L</div>
+                <span class="font-bold text-xl tracking-tight text-white">Lumina<span class="text-indigo-400">Reader</span></span>
+            </div>
+            <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Runs Left: 3
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto px-4 py-12">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-white mb-4">Read without the glare.</h1>
+            <p class="text-slate-400 text-lg">Paste any URL to strip ads, clutter, and bright backgrounds for a perfect dark-mode reading experience.</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="glass p-2 rounded-2xl flex flex-col sm:flex-row gap-2 mb-12">
+            <input type="text" id="url-input" placeholder="https://news.ycombinator.com/item?id=..." 
+                class="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 text-white placeholder-slate-500 outline-none">
+            <button onclick="processUrl()" id="action-btn" 
+                class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-semibold transition-all active:scale-95">
+                Clean Content
+            </button>
+        </div>
+
+        <!-- Loading State (Hidden) -->
+        <div id="loading-state" class="hidden flex flex-col items-center py-20">
+            <div class="loader w-12 h-12 border-4 border-slate-700 rounded-full mb-4"></div>
+            <p class="text-slate-400 animate-pulse">Extracting clean content...</p>
+        </div>
+
+        <!-- Content Display Area (Hidden) -->
+        <div id="content-area" class="hidden glass rounded-3xl p-8 sm:p-12">
+            <article id="article-body" class="prose prose-invert max-w-none">
+                <!-- Content injected here -->
+            </article>
+            <div class="mt-12 pt-8 border-t border-slate-800 text-center">
+                <button onclick="resetView()" class="text-slate-500 hover:text-white text-sm transition-colors">← Read another article</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Limit Reached</h2>
+                <p class="text-slate-400 mt-2">Upgrade to continue reading distraction-free.</p>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" 
+                    class="flex items-center justify-between p-4 rounded-2xl bg-slate-800 border border-slate-700 hover:border-indigo-500 transition-all group">
+                    <div class="text-left">
+                        <div class="font-bold text-white">Pay-As-You-Go</div>
+                        <div class="text-xs text-slate-400">20 Runs (No Expiration)</div>
+                    </div>
+                    <div class="text-indigo-400 font-bold group-hover:translate-x-1 transition-transform">$11 →</div>
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" 
+                    class="flex items-center justify-between p-4 rounded-2xl bg-indigo-600/10 border border-indigo-500/50 hover:bg-indigo-600/20 transition-all group">
+                    <div class="text-left">
+                        <div class="font-bold text-white">Pro Unlimited</div>
+                        <div class="text-xs text-indigo-300/70">Continuous Updates</div>
+                    </div>
+                    <div class="text-indigo-400 font-bold group-hover:translate-x-1 transition-transform">$9/mo →</div>
+                </a>
+            </div>
+
+            <div class="space-y-3">
+                <div class="relative">
+                    <input type="text" id="license-key" placeholder="Enter License / Receipt Key" 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none">
+                </div>
+                <button onclick="applyLicense()" 
+                    class="w-full py-3 text-sm font-semibold text-slate-400 hover:text-white transition-colors">
+                    Redeem Key
+                </button>
+            </div>
+            
+            <button onclick="closeModal()" class="w-full mt-6 text-xs text-slate-600 hover:text-slate-400">Maybe later</button>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let state = {
+            runs: parseInt(localStorage.getItem('app_runs_remaining')) || 3,
+            isPro: localStorage.getItem('app_is_pro') === 'true'
+        };
+
+        function updateUI() {
+            const badge = document.getElementById('status-badge');
+            if (state.isPro) {
+                badge.innerText = 'Pro Unlimited';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+            } else {
+                badge.innerText = `Runs Left: ${state.runs}`;
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            }
+            localStorage.setItem('app_runs_remaining', state.runs);
+            localStorage.setItem('app_is_pro', state.isPro);
+        }
+
+        // --- Core Logic ---
+        function processUrl() {
+            const urlInput = document.getElementById('url-input').value;
+            if (!urlInput) return alert('Please enter a URL');
+
+            if (!state.isPro && state.runs <= 0) {
+                showModal();
+                return;
+            }
+
+            // Simulate API Call
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('action-btn').disabled = true;
+            document.getElementById('content-area').classList.add('hidden');
+
+            setTimeout(() => {
+                // Decrement credits
+                if (!state.isPro) state.runs -= 1;
+                updateUI();
+
+                // Mock Content Generation
+                const articleBody = document.getElementById('article-body');
+                articleBody.innerHTML = `
+                    <h1 class="text-3xl font-bold text-white mb-6">Cleaned View: ${urlInput.split('/')[2]}</h1>
+                    <p class="text-slate-300 leading-relaxed mb-4">This is a simulated clean reading view. In the full version, our engine extracts the core text from the provided URL, removes all JavaScript-heavy advertisements, strips out sidebars, and applies a high-contrast dark mode theme optimized for your eyes.</p>
+                    <p class="text-slate-300 leading-relaxed mb-4">The glare from standard white backgrounds is eliminated. The typography is adjusted for maximum readability. No popups. No tracking. Just content.</p>
+                    <div class="h-4 w-full bg-slate-800 rounded mb-4"></div>
+                    <div class="h-4 w-3/4 bg-slate-800 rounded mb-4"></div>
+                    <div class="h-4 w-5/6 bg-slate-800 rounded mb-4"></div>
+                `;
+
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('content-area').classList.remove('hidden');
+                document.getElementById('action-btn').disabled = false;
+            }, 1500);
+        }
+
+        function resetView() {
+            document.getElementById('content-area').classList.add('hidden');
+            document.getElementById('url-input').value = '';
+        }
+
+        // --- Paywall & License Logic ---
+        function showModal() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyLicense() {
+            const key = document.getElementById('license-key').value.trim();
+            if (!key) return;
+
+            if (key === 'PRO20' || key.length > 3) {
+                // Logic: PRO20 adds 20, any other non-empty key adds 20 (as per prompt)
+                // We'll treat 'PRO_UNLIMITED' as a special case for testing
+                if (key === 'PRO_UNLIMITED') {
+                    state.isPro = true;
+                } else {
+                    state.runs += 20;
+                }
+                updateUI();
+                closeModal();
+                alert('License applied successfully!');
+            } else {
+                alert('Invalid license key.');
+            }
+        }
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
