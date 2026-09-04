@@ -1,0 +1,16 @@
+{
+  "app_slug": "csv-tsv-cleaner-deduplicator",
+  "title": "Messy CSV/TSV Data Cleaner & Deduplicator",
+  "target_pain": "Engineers and recruiters wasting hours cleaning malformed CSV files, removing hidden whitespace, fixing quote mismatches, and deduplicating candidate or log records.",
+  "key_features": [
+    "Instant browser-side parsing & quote fixing",
+    "Smart duplicate detection by email, ID, or custom columns",
+    "Whitespace trimming & case normalization",
+    "Real CSV/TSV/JSON export with 1-click copy"
+  ],
+  "category": "Data Engineering & Recruiting Automation",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access)",
+    "$9/mo Pro Unlimited"
+  ]
+}

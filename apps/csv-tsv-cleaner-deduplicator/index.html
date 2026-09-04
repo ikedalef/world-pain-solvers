@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messy CSV/TSV Data Cleaner & Deduplicator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#020617'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header / Nav -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white font-bold p-2 rounded-lg shadow-lg">CSV</div>
+            <h1 class="text-xl font-bold tracking-tight text-white">DataCleaner <span class="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">Pro Engine</span></h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div id="credit-badge" class="text-sm bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-slate-300">
+                Free Runs Left: <span id="runs-count" class="font-bold text-indigo-400">1</span>
+            </div>
+            <button onclick="openPaywallModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow transition">
+                Unlock Unlimited
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left Panel: Input & Controls -->
+        <div class="flex flex-col space-y-4">
+            <div class="flex items-center justify-between">
+                <label for="raw-input" class="font-semibold text-sm text-slate-300">Paste Raw CSV / TSV Data</label>
+                <button onclick="loadSampleData()" class="text-xs text-indigo-400 hover:underline">Load Sample Data</button>
+            </div>
+            <textarea id="raw-input" placeholder="Paste comma or tab-separated data here...\nname,email,score\n John Doe , JOHN@EXAMPLE.COM , 85 \nJane Smith,jane@example.com,90\nJohn Doe,JOHN@EXAMPLE.COM,85" class="w-full h-64 bg-slate-900 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:border-indigo-500 text-slate-200 resize-none"></textarea>
+
+            <!-- Transformation Options -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-slate-300">Cleaning Rules</h3>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="opt-trim" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-slate-300">Trim Whitespaces</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="opt-dedup" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-slate-300">Remove Exact Duplicates</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="opt-lowercase-email" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-slate-300">Lowercase Emails</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="opt-remove-empty" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-slate-300">Remove Empty Rows</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="processData()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Clean & Deduplicate Now</span>
+            </button>
+        </div>
+
+        <!-- Right Panel: Output & Actions -->
+        <div class="flex flex-col space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="font-semibold text-sm text-slate-300">Cleaned Result</span>
+                <div class="flex items-center space-x-2">
+                    <button onclick="copyResult()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-200 transition">Copy</button>
+                    <button onclick="downloadResult()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-200 transition">Download CSV</button>
+                </div>
+            </div>
+            <textarea id="raw-output" readonly placeholder="Processed output will appear here..." class="w-full h-80 bg-slate-900 border border-slate-800 rounded-xl p-4 text-sm font-mono focus:outline-none text-indigo-300 resize-none"></textarea>
+
+            <!-- Stats Footer -->
+            <div id="stats-box" class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-400 grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <span class="block text-slate-200 font-bold text-base" id="stat-input-rows">0</span>
+                    Input Rows
+                </div>
+                <div>
+                    <span class="block text-indigo-400 font-bold text-base" id="stat-output-rows">0</span>
+                    Cleaned Rows
+                </div>
+                <div>
+                    <span class="block text-red-400 font-bold text-base" id="stat-removed">0</span>
+                    Dups Removed
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
+            <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <div class="text-center space-y-2">
+                <div class="bg-indigo-600/20 text-indigo-400 w-12 h-12 rounded-full flex items-center justify-center mx-auto border border-indigo-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <h2 class="text-xl font-bold text-white">Free Run Limit Reached</h2>
+                <p class="text-sm text-slate-400">Upgrade to Pro Unlimited to process massive datasets instantly without limits.</p>
+            </div>
+
+            <div class="space-y-3">
+                <a href="#" onclick="simulateUnlock()" class="block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold p-4 rounded-xl text-center shadow transition">
+                    $5 One-Time (Lifetime Access - Early Bird)
+                </a>
+                <a href="#" onclick="simulateUnlock()" class="block bg-slate-800 hover:bg-slate-700 text-indigo-300 font-semibold p-4 rounded-xl text-center border border-slate-700 transition">
+                    $9/month (Pro Unlimited)
+                </a>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800 text-center">
+                <p class="text-xs text-slate-500 mb-2">Already purchased? Enter PRO code:</p>
+                <div class="flex space-x-2">
+                    <input type="text" id="promo-code" placeholder="Enter PRO5" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs uppercase font-mono text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-4 py-2 rounded-lg text-slate-200 transition">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Business Logic -->
+    <script>
+        // LocalStorage Credit Management
+        function getRunsRemaining() {
+            let runs = localStorage.getItem('app_runs_remaining');
+            if (runs === null) {
+                runs = 1;
+                localStorage.setItem('app_runs_remaining', runs);
+            }
+            return parseInt(runs, 10);
+        }
+
+        function setRunsRemaining(val) {
+            localStorage.setItem('app_runs_remaining', val);
+            updateBadge();
+        }
+
+        function updateBadge() {
+            const runs = getRunsRemaining();
+            document.getElementById('runs-count').innerText = runs;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateBadge();
+        });
+
+        function loadSampleData() {
+            const sample = `name,email,score,notes\n John Doe , JOHN@EXAMPLE.COM , 85 , Candidate passed\nJane Smith,jane@example.com,90,Needs interview\nJohn Doe,JOHN@EXAMPLE.COM,85,Duplicate record\n, , ,\n Bob Builder , BOB@BUILDER.COM , 78 , Junior dev`;
+            document.getElementById('raw-input').value = sample;
+        }
+
+        function processData() {
+            let runs = getRunsRemaining();
+            if (runs <= 0) {
+                openPaywallModal();
+                return;
+            }
+
+            const input = document.getElementById('raw-input').value.trim();
+            if (!input) {
+                alert('Please paste some CSV or TSV data first.');
+                return;
+            }
+
+            // Decrement run
+            runs--;
+            setRunsRemaining(runs);
+
+            // Parse options
+            const trim = document.getElementById('opt-trim').checked;
+            const dedup = document.getElementById('opt-dedup').checked;
+            const lowerEmail = document.getElementById('opt-lowercase-email').checked;
+            const removeEmpty = document.getElementById('opt-remove-empty').checked;
+
+            // Detect delimiter (comma or tab)
+            const firstLine = input.split('\n')[0];
+            const delimiter = firstLine.includes('\t') ? '\t' : ',';
+
+            const lines = input.split('\n');
+            let inputRowsCount = lines.length;
+            const header = lines[0];
+            const dataRows = lines.slice(1);
+
+            let parsedRows = [];
+            let seenRows = new Set();
+            let removedCount = 0;
+
+            for (let line of dataRows) {
+                if (!line.trim()) {
+                    if (!removeEmpty) parsedRows.push(line);
+                    else removedCount++;
+                    continue;
+                }
+
+                // Simple CSV split (handles basic quoted strings too if needed)
+                let cols = line.split(delimiter);
+                
+                if (trim) {
+                    cols = cols.map(c => c.trim().replace(/^"|"$/g, ''));
+                }
+
+                if (removeEmpty && cols.every(c => c === '')) {
+                    removedCount++;
+                    continue;
+                }
+
+                if (lowerEmail) {
+                    cols = cols.map(c => {
+                        if (c.includes('@') && c.includes('.')) {
+                            return c.toLowerCase();
+                        }
+                        return c;
+                    });
+                }
+
+                let reconstructed = cols.join(',');
+
+                if (dedup) {
+                    if (seenRows.has(reconstructed)) {
+                        removedCount++;
+                        continue;
+                    }
+                    seenRows.add(reconstructed);
+                }
+
+                parsedRows.push(cols.join(','));
+            }
+
+            const finalOutput = [header.split(delimiter).join(','), ...parsedRows].join('\n');
+            document.getElementById('raw-output').value = finalOutput;
+
+            // Update Stats
+            document.getElementById('stat-input-rows').innerText = inputRowsCount;
+            document.getElementById('stat-output-rows').innerText = parsedRows.length + 1;
+            document.getElementById('stat-removed').innerText = removedCount;
+        }
+
+        function copyResult() {
+            const output = document.getElementById('raw-output');
+            if (!output.value) return;
+            output.select();
+            navigator.clipboard.writeText(output.value);
+            alert('Cleaned result copied to clipboard!');
+        }
+
+        function downloadResult() {
+            const output = document.getElementById('raw-output').value;
+            if (!output) return;
+            const blob = new Blob([output], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cleaned_data.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function openPaywallModal() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywallModal() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            if (code === 'PRO5' || code === 'PRO20') {
+                setRunsRemaining(999999);
+                alert('Lifetime Pro Unlimited Unlocked!');
+                closePaywallModal();
+            } else {
+                alert('Invalid Promo Code. Try PRO5');
+            }
+        }
+
+        function simulateUnlock() {
+            setRunsRemaining(999999);
+            alert('Simulated payment successful! Lifetime Pro Unlocked.');
+            closePaywallModal();
+        }
+    </script>
+</body>
+</html>
