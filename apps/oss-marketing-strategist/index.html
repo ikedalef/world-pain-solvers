@@ -1,152 +1,209 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSS Marketing Strategy Builder</title>
+    <title>OSS Marketing Strategy Builder | PainKillers.pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }\n    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="gradient-bg py-12 px-4">
-        <div class="max-w-4xl mx-auto text-center text-white">
-            <h1 class="text-4xl font-bold mb-4"><i class="fas fa-rocket mr-3"></i>OSS Marketing Strategy Builder</h1>
-            <p class="text-lg opacity-90">クローズドからオープンソースへ。あなたのプロダクトを世界に届けるための戦略を1分で構築します。</p>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col justify-between">
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="../../index.html" class="p-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white font-bold text-xs transition-colors">OSS</a>
+                <div>
+                    <h1 class="text-sm font-bold text-white">OSS Marketing Strategy Builder</h1>
+                    <p class="text-[11px] text-slate-400">Launch and scale open-source projects with developer-first playbooks</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div id="creditBadge" class="text-xs font-semibold px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full flex items-center gap-1.5">
+                    <span>⚡ Free Runs:</span><span id="runsLeft">1</span>
+                </div>
+                <button onclick="openPaywall()" class="text-xs font-semibold px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors cursor-pointer">Upgrade Pro</button>
+            </div>
         </div>
-    </div>
+    </header>
 
-    <main class="max-w-4xl mx-auto -mt-10 px-4 pb-20">
-        <div class="card rounded-xl shadow-2xl p-8 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Main Workspace -->
+    <main class="max-w-5xl mx-auto px-4 py-8 flex-1 w-full space-y-6">
+        <div class="text-center max-w-2xl mx-auto mb-4">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">Build Your Open Source Growth Plan</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Generate developer positioning, community distribution channels, and actionable release milestones in seconds.</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">プロダクト名</label>
-                    <input type="text" id="prodName" placeholder="例: SuperFastDB" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Product / Tool Name</label>
+                    <input type="text" id="projectName" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. HyperKV">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">解決する課題</label>
-                    <input type="text" id="problem" placeholder="例: データベースの遅延を解消" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Core Problem Solved</label>
+                    <input type="text" id="problemSolved" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. Database read-latency bottlenecks under massive concurrency">
                 </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">主なターゲット層</label>
-                    <select id="target" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="dev">個人開発者 / エンジニア</option>
-                        <option value="devops">DevOps / インフラエンジニア</option>
-                        <option value="data">データサイエンティスト</option>
-                        <option value="enterprise">エンタープライズ / CTO</option>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Primary Target Audience</label>
+                    <select id="targetAudience" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="Backend & Systems Engineers">Backend & Systems Engineers</option>
+                        <option value="DevOps & Platform Teams">DevOps & Platform Teams</option>
+                        <option value="Data Engineers & AI Builders">Data Engineers & AI Builders</option>
+                        <option value="Solo Indie Hackers & Founders">Solo Indie Hackers & Founders</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">現在のフェーズ</label>
-                    <select id="phase" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="alpha">アルファ版 (初期開発)</option>
-                        <option value="beta">ベータ版 (ユーザー獲得中)</option>
-                        <option value="mature">成熟期 (エコシステム拡大)</option>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Development Stage</label>
+                    <select id="projectStage" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="Alpha (First public release)">Alpha (First public release)</option>
+                        <option value="Beta (Seeking initial contributor feedback)">Beta (Seeking initial contributor feedback)</option>
+                        <option value="Production (Scaling ecosystem and commercial tier)">Production (Scaling ecosystem and commercial tier)</option>
                     </select>
                 </div>
             </div>
-            <div class="mt-8 text-center">
-                <button onclick="generateStrategy()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-full transition duration-300 transform hover:scale-105">
-                    戦略プランを生成する
-                </button>
-            </div>
+
+            <button onclick="generatePlan()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 font-bold text-sm text-white rounded-xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer">
+                Generate Strategic Roadmap
+            </button>
         </div>
 
-        <div id="resultArea" class="hidden space-y-6">
-            <div class="card rounded-xl shadow-xl p-8 border-t-4 border-indigo-500">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800" id="resTitle">Strategy Blueprint</h2>
-                    <button onclick="window.print()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
-                        <i class="fas fa-print mr-1"></i> PDFとして保存
-                    </button>
-                </div>
-
-                <div class="space-y-8">
-                    <section>
-                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-bullseye mr-2"></i>1. ポジショニング戦略</h3>
-                        <p id="resPositioning" class="text-gray-700 leading-relaxed"></p>
-                    </section>
-
-                    <section>
-                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-share-alt mr-2"></i>2. 推奨マーケティングチャネル</h3>
-                        <div id="resChannels" class="flex flex-wrap gap-2"></div>
-                    </section>
-
-                    <section>
-                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-pen-nib mr-2"></i>3. コンテンツ制作ロードマップ</h3>
-                        <ul id="resContent" class="list-disc list-inside text-gray-700 space-y-2"></ul>
-                    </section>
-
-                    <section>
-                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-users mr-2"></i>4. コミュニティ構築アクション</h3>
-                        <div id="resCommunity" class="bg-indigo-50 p-4 rounded-lg text-indigo-900 text-sm italic"></div>
-                    </section>
-                </div>
+        <!-- Output Result -->
+        <div id="outputSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 id="planHeading" class="text-sm font-bold text-white uppercase tracking-wider">Blueprint Output</h3>
+                <button onclick="copyBlueprint()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg text-slate-200 transition-colors cursor-pointer">Copy Plan</button>
             </div>
+            <pre id="blueprintContent" class="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800"></pre>
         </div>
     </main>
 
+    <!-- Paywall Modal -->
+    <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl relative">
+            <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Free Run Completed</h3>
+            <p class="text-sm text-slate-400 mb-6">Unlock lifetime access to generate unlimited OSS distribution roadmaps and launch strategies.</p>
+
+            <div class="space-y-3 mb-6">
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="block w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer">
+                    $5 One-Time (Lifetime Access)
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="block w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl transition-all cursor-pointer">
+                    $9/month (Pro Unlimited)
+                </a>
+            </div>
+
+            <div class="border-t border-slate-800 pt-4">
+                <p class="text-[11px] text-slate-400 mb-2">Have a license key?</p>
+                <div class="flex gap-2">
+                    <input type="text" id="licenseKeyInput" placeholder="Enter key (e.g. PRO5)" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <button onclick="unlockWithKey()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer">Unlock</button>
+                </div>
+            </div>
+            <button onclick="closePaywall()" class="mt-4 text-xs text-slate-500 hover:text-slate-400 cursor-pointer">Dismiss</button>
+        </div>
+    </div>
+
     <script>
-        function generateStrategy() {
-            const name = document.getElementById('prodName').value || 'Your OSS Project';
-            const problem = document.getElementById('problem').value || 'the problem it solves';
-            const target = document.getElementById('target').value;
-            const phase = document.getElementById('phase').value;
-
-            document.getElementById('resTitle').innerText = `${name} 戦略ブループリント`;
-            
-            // 1. Positioning
-            let positioning = `"${name}"は、${problem}という課題を抱える層に対し、オープンソースの透明性と柔軟性を提供することで、既存のクローズドなソリューションに代わる信頼できる選択肢として位置づけます。`;
-            document.getElementById('resPositioning').innerText = positioning;
-
-            // 2. Channels
-            const channels = {
-                dev: ['GitHub', 'Hacker News', 'Reddit (r/programming)', 'Dev.to', 'X (Twitter)'],
-                devops: ['Medium', 'Stack Overflow', 'Cloud Native Community', 'LinkedIn', 'Tech Blogs'],
-                data: ['Towards Data Science', 'Kaggle', 'Substack', 'Twitter', 'Conferences'],
-                enterprise: ['LinkedIn', 'Whitepapers', 'Webinars', 'Case Studies', 'Direct Outreach']
-            };
-            const channelContainer = document.getElementById('resChannels');
-            channelContainer.innerHTML = '';
-            channels[target].forEach(c => {
-                const span = document.createElement('span');
-                span.className = 'bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium';
-                span.innerText = c;
-                channelContainer.appendChild(span);
-            });
-
-            // 3. Content
-            const content = {
-                alpha: ['Quick Start Guide (README)', 'Basic Architecture Diagram', 'Minimal Demo Repo'],
-                beta: ['Deep Dive Technical Blog', 'Comparison with Competitors', 'Video Tutorials', 'API Documentation'],
-                mature: ['Case Studies', 'Contributor Guide', 'Ecosystem Integration Guides', 'Security Audit Reports']
-            };
-            const contentList = document.getElementById('resContent');
-            contentList.innerHTML = '';
-            content[phase].forEach(item => {
-                const li = document.createElement('li');
-                li.innerText = item;
-                contentList.appendChild(li);
-            });
-
-            // 4. Community
-            const community = {
-                dev: 'GitHub Discussionsを立ち上げ、Issueへの迅速なレスポンスで「開発者に優しいプロジェクト」の印象を確立してください。',
-                devops: 'SlackやDiscordのコミュニティを構築し、運用上のトラブルシューティングを共有できる場を作ってください。',
-                data: 'Jupyter Notebookのテンプレートや、データセットを用いたサンプルコードを公開し、即座に試せる環境を提供してください。',
-                enterprise: '公式ドキュメントの信頼性を高め、エンタープライズ向けのサポート窓口やセキュリティポリシーを明文化してください。'
-            };
-            document.getElementById('resCommunity').innerText = community[target];
-
-            // Show result
-            const resultArea = document.getElementById('resultArea');
-            resultArea.classList.remove('hidden');
-            resultArea.scrollIntoView({ behavior: 'smooth' });
+        function getRemainingRuns() {
+            let r = localStorage.getItem('oss_runs_remaining');
+            if (r === null) {
+                localStorage.setItem('oss_runs_remaining', '1');
+                return 1;
+            }
+            return parseInt(r, 10);
         }
+
+        function updateUI() {
+            let r = getRemainingRuns();
+            let badge = document.getElementById('runsLeft');
+            badge.innerText = r >= 999 ? 'Unlimited Pro' : r;
+        }
+
+        function openPaywall() { document.getElementById('paywallModal').classList.remove('hidden'); }
+        function closePaywall() { document.getElementById('paywallModal').classList.add('hidden'); }
+
+        function unlockWithKey() {
+            let key = document.getElementById('licenseKeyInput').value.trim().toUpperCase();
+            if (key === 'PRO5' || key === 'PRO20' || key.length >= 4) {
+                localStorage.setItem('oss_runs_remaining', '9999');
+                alert('Success: Lifetime Access Unlocked!');
+                closePaywall();
+                updateUI();
+            } else {
+                alert('Invalid license key.');
+            }
+        }
+
+        function generatePlan() {
+            let runs = getRemainingRuns();
+            if (runs <= 0) {
+                openPaywall();
+                return;
+            }
+
+            let name = document.getElementById('projectName').value.trim() || 'MyOpenProject';
+            let pain = document.getElementById('problemSolved').value.trim() || 'Developer workflow bottlenecks';
+            let target = document.getElementById('targetAudience').value;
+            let stage = document.getElementById('projectStage').value;
+
+            document.getElementById('planHeading').innerText = `${name} — Go-To-Community Execution Plan`;
+
+            let blueprint = `========================================================================
+1. POSITIONING & VALUE PROPOSITION
+========================================================================
+- Project Name: ${name}
+- Solves: "${pain}"
+- Primary Persona: ${target}
+- Core Angle: "The transparent, high-performance open-source alternative designed specifically for modern engineering stacks."
+
+========================================================================
+2. DISTRIBUTION & LAUNCH CHANNELS
+========================================================================
+- Hacker News (Show HN):
+  Format: "Show HN: ${name} – A developer-first tool solving ${pain}"
+  Timing: Tuesday or Wednesday between 06:00 - 08:30 PT.
+  Rule: Include live benchmarks directly in the top comment.
+
+- Targeted Subreddits:
+  Post to r/programming, r/opensource, and domain-specific subreddits for ${target}.
+  Strategy: Share architectural challenges and lessons learned, not sales pitches.
+
+- Developer Ecosystems:
+  Submit PRs to relevant 'awesome-*' repositories and Dev.to deep-dives.
+
+========================================================================
+3. EXECUTION ROADMAP (${stage.toUpperCase()})
+========================================================================
+- Milestone 1 (Day 1-7): Polish README with a 3-command quickstart snippet and benchmark charts.
+- Milestone 2 (Day 8-14): Publish public roadmap in GitHub Discussions with "good-first-issue" tags.
+- Milestone 3 (Day 15-30): Launch initial Discord / Slack community with sub-24h first response SLA.
+            `.trim();
+
+            document.getElementById('blueprintContent').innerText = blueprint;
+            document.getElementById('outputSection').classList.remove('hidden');
+
+            if (runs < 999) {
+                runs = Math.max(0, runs - 1);
+                localStorage.setItem('oss_runs_remaining', runs.toString());
+                updateUI();
+                if (runs === 0) setTimeout(openPaywall, 800);
+            }
+        }
+
+        function copyBlueprint() {
+            let text = document.getElementById('blueprintContent').innerText;
+            navigator.clipboard.writeText(text).then(() => alert('Copied blueprint to clipboard!'));
+        }
+
+        window.onload = updateUI;
     </script>
 </body>
 </html>
