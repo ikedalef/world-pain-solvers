@@ -11,9 +11,9 @@ class SolvedAppSchema(BaseModel):
     app_slug: str = Field(default="useful-paid-tool")
     title: str = Field(default="Professional Problem Solver")
     target_pain: str = Field(default="Automate high-value manual tasks for global professionals.")
-    key_features: list[str] = Field(default_factory=lambda: ["Instant local execution", "20-run pack or unlimited access", "100% Client-side privacy"])
+    key_features: list[str] = Field(default_factory=lambda: ["Instant local execution", "$5 Lifetime Access", "100% Client-side privacy"])
     category: str = Field(default="Productivity")
-    pricing_options: list[str] = Field(default_factory=lambda: ["$11 One-Time (20 Runs)", "$9/mo Unlimited Pro"])
+    pricing_options: list[str] = Field(default_factory=lambda: ["$5 One-Time (Lifetime Access)", "$9/mo Pro Unlimited"])
     html_content: str = Field(default="")
 
 def extract_safe_json(text: str) -> dict:
@@ -84,12 +84,15 @@ Every web tool you build MUST HAVE 100% REAL, FUNCTIONING, JAVASCRIPT-POWERED BU
 2. HIGH-VALUE REAL PAIN POINTS ONLY:
    - Select real operations: Messy CSV/TSV Data Cleaner & Deduplicator, Broken JSON Fixer & Parser, Multi-currency Freelance Invoice Calculator, Regex Matcher & Replacer, Bulk Text Formatter.
    - Avoid cross-origin web scrapers (which fail in browser). Build direct data transformation tools.
-3. PRICING & CREDIT ARCHITECTURE (Option A):
-   - 3 Free Runs default.
-   - "$11 One-Time (20 Runs Pack)" and "$9/month (Unlimited Pro)" linking to `{stripe_link}`.
-   - Top credit badge: `Runs Left: X`.
-   - LocalStorage key: `app_runs_remaining`. Decrements on click.
-   - When 0, trigger paywall modal. Entering `PRO20` unlocks 20 additional runs or unlimited.
+3. PRICING & CREDIT ARCHITECTURE (High CVR Optimized):
+   - 1 Free Run default (Instant test of value, then trigger paywall to maximize conversion).
+   - High-converting options:
+     * "$5 One-Time (Lifetime Access - Early Bird)"
+     * "$9/month (Pro Unlimited)"
+   - Top credit badge: `Free Run: X left`.
+   - LocalStorage key: `app_runs_remaining`. Default is 1 if unset. Decrements on execution.
+   - When 0, trigger paywall modal. Entering `PRO5` or `PRO20` unlocks lifetime unlimited access.
+   - Link all buy buttons to `{stripe_link}`.
 4. EXPORT / UTILITY:
    - Provide a real "Download Result" or "Copy to Clipboard" button that actually downloads or copies the real output.
 5. 100% Polished English UI with Tailwind CSS CDN. Dark mode (slate-950).
@@ -108,7 +111,7 @@ Output strictly valid JSON with keys:
 - target_pain: string
 - key_features: list of strings
 - category: string
-- pricing_options: list of strings (["$11 One-Time (20 Runs)", "$9/mo Unlimited Pro"])
+- pricing_options: list of strings (["$5 One-Time (Lifetime Access)", "$9/mo Pro Unlimited"])
 - html_content: standalone <!DOCTYPE html> string with 100% working, non-mock transformation JS.
 """
 
