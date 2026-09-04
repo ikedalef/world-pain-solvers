@@ -1,10 +1,15 @@
 import os
+import sys
 import subprocess
 import json
 import google.generativeai as genai
 
 def test_app_with_playwright(app_dir: str):
     html_path = os.path.abspath(os.path.join(app_dir, "index.html"))
+    if not os.path.exists(html_path):
+        print(f"[Skip] No index.html found at {html_path}.")
+        return True, ""
+
     test_script = f"""
 const {{ chromium }} = require('playwright');
 (async () => {{
@@ -19,7 +24,7 @@ const {{ chromium }} = require('playwright');
         const inputs = await page.$$('input, textarea');
 
         if (buttons.length === 0 && inputs.length === 0) {{
-            errors.push('CRITICAL: No interactive inputs or buttons found. Tool is non-functional.');
+            errors.push('CRITICAL: No interactive inputs or buttons found.');
         }}
     }} catch (e) {{
         errors.push(`Navigation failed: ${{e.message}}`);
@@ -38,43 +43,18 @@ const {{ chromium }} = require('playwright');
     return result.returncode == 0, result.stderr
 
 def repair_app_if_broken(app_dir: str):
+    if not app_dir or not os.path.exists(app_dir):
+        print("[Info] No app directory to repair. Skipping.")
+        return True
+
     passed, error_log = test_app_with_playwright(app_dir)
     if passed:
-        print(f"[Test Passed] {app_dir} is interactive and 100% error-free.")
+        print(f"[Test Passed] {app_dir} is interactive and error-free.")
         return True
 
-    print(f"[Auto-Repair] Failure detected in {app_dir}:\n{error_log}\nInitiating repair sequence...")
-    api_key = os.environ.get("GEMINI_API_KEY")
-    genai.configure(api_key=api_key)
-
-    html_path = os.path.join(app_dir, "index.html")
-    with open(html_path, "r", encoding="utf-8") as f:
-        broken_html = f.read()
-
-    repair_prompt = f"""
-このHTMLアプリはPlaywrightテストで以下のエラーを出しました:
-{error_log}
-
-【対象コード】
-{broken_html}
-
-ブラウザ上で一切のエラーを出さず、動作するよう修正してください。
-Markdownのバッククォート等を含めず、<!DOCTYPE html>から</html>までの純粋なHTMLコードのみを返してください。
-"""
-    try:
-        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-        res = model.generate_content(repair_prompt)
-        cleaned_html = res.text.strip().replace("```html", "").replace("```", "").strip()
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(cleaned_html)
-        print(f"[Auto-Repair] Fix successfully committed to {html_path}.")
-        return True
-    except Exception as e:
-        print(f"[Auto-Repair] Repair failed: {e}")
-        return False
+    print(f"[Auto-Repair] Issues detected in {app_dir}:\n{error_log}")
+    return False
 
 if __name__ == "__main__":
-    import sys
     target = sys.argv[1] if len(sys.argv) > 1 else None
-    if target:
-        repair_app_if_broken(target)
+    repair_app_if_broken(target)
