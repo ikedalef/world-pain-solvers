@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RecruitFlow - Candidate CSV Cleaner, Deduplicator & Scoring Engine</title>
+    <title>RecruitFlow: Bulk Candidate Screener & Scoring Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,7 +12,7 @@
                 extend: {
                     colors: {
                         slate: {
-                            950: '#020617'
+                            950: '#0b0f19',
                         }
                     }
                 }
@@ -21,285 +21,301 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
 
-    <!-- Header -->
-    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+    <!-- Top Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2 rounded-lg text-white">
-                    <i class="fa-solid fa-users-gear text-xl"></i>
+                <div class="bg-emerald-500 text-slate-950 p-2 rounded-lg font-bold flex items-center justify-center">
+                    <i class="fa-solid fa-users-gear text-lg"></i>
                 </div>
                 <div>
-                    <span class="font-bold text-lg tracking-tight text-white">Recruit<span class="text-indigo-400">Flow</span></span>
-                    <span class="text-xs block text-slate-400">Candidate Screener & Cleaner</span>
+                    <span class="font-bold text-lg tracking-tight text-white">Recruit<span class="text-emerald-400">Flow</span></span>
+                    <span class="text-xs block text-slate-400 font-medium">Candidate Screener & Deduplicator</span>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
-                <div class="bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 flex items-center space-x-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="text-xs font-semibold text-slate-300" id="credit-badge">Free Runs Left: 1</span>
+                <div class="bg-slate-800 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-2 border border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="credit-badge" class="text-slate-300">Free Runs Left: 1</span>
                 </div>
-                <button onclick="openPaywall()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-lg shadow-indigo-500/20">
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-4 py-1.5 rounded-lg text-sm transition duration-150 shadow-lg shadow-emerald-500/10">
                     Upgrade to Pro
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
-        
-        <!-- Left Panel: Input & Settings -->
-        <div class="w-full lg:w-5/12 flex flex-col gap-6">
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-file-import text-indigo-400"></i> 1. Input Candidate Data
-                    </h2>
-                    <button onclick="loadSampleData()" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Load Messy Sample
-                    </button>
-                </div>
-                
-                <p class="text-xs text-slate-400 mb-3">
-                    Paste your raw CSV, TSV, or JSON candidate list below. We will automatically clean bad characters (like broken email <code class="text-indigo-300">@</code> symbols), normalize fields, and score skills.
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero / Pain Section -->
+        <div class="mb-8 text-center md:text-left md:flex md:items-center md:justify-between border-b border-slate-800 pb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Automated Candidate Screening & Scoring</h1>
+                <p class="text-slate-400 mt-1 max-w-2xl text-sm md:text-base">
+                    Paste messy candidate CSV/JSON data, define your target skills, and instantly score, rank, and deduplicate candidates with 100% local browser processing.
                 </p>
-
-                <textarea id="raw-input" class="w-full h-64 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors resize-y" placeholder="Paste CSV, TSV, or JSON here..."></textarea>
             </div>
-
-            <!-- Settings Panel -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col gap-5">
-                <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-indigo-400"></i> 2. Screening & Cleaning Rules
-                </h2>
-
-                <!-- Character Sanitization -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Character Sanitization</label>
-                    <div class="space-y-2">
-                        <label class="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                            <input type="checkbox" id="fix-email-at" checked class="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500">
-                            <span>Fix broken email symbols (e.g. <code class="text-indigo-300">[at]</code>, <code class="text-indigo-300">_at_</code>, spaces around <code class="text-indigo-300">@</code>)</span>
-                        </label>
-                        <label class="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                            <input type="checkbox" id="strip-unicode" checked class="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500">
-                            <span>Strip non-printable ASCII & control characters</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Deduplication -->
-                <div class="border-t border-slate-800 pt-4">
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Duplicate Detection</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Deduplicate Key</label>
-                            <select id="dedup-key" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
-                                <option value="email">Email Address</option>
-                                <option value="phone">Phone Number</option>
-                                <option value="name">Full Name</option>
-                                <option value="none">Do Not Deduplicate</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Keep Strategy</label>
-                            <select id="dedup-strategy" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
-                                <option value="highest-score">Highest Match Score</option>
-                                <option value="first">First Occurrence</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Scoring Engine -->
-                <div class="border-t border-slate-800 pt-4">
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Skills Scoring Engine</label>
-                    <p class="text-xs text-slate-400 mb-2">Enter target skills/keywords (comma-separated) to calculate candidate match scores.</p>
-                    <input type="text" id="target-skills" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500" placeholder="e.g. React, Node.js, Python, AWS, SQL">
-                </div>
-
-                <!-- Action Button -->
-                <button onclick="processData()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-bolt"></i> Clean, Deduplicate & Score Candidates
+            <div class="mt-4 md:mt-0 flex space-x-2 justify-center">
+                <button onclick="loadSampleData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
+                    <i class="fa-solid fa-database text-emerald-400"></i>
+                    <span>Load Sample Data</span>
                 </button>
             </div>
         </div>
 
-        <!-- Right Panel: Real-time Results -->
-        <div class="w-full lg:w-7/12 flex flex-col gap-6">
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex-1 flex flex-col min-h-[500px]">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-square-poll-horizontal text-indigo-400"></i> 3. Cleaned & Screened Results
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1" id="stats-summary">No data processed yet. Paste data and click process.</p>
+        <!-- Main Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Configuration & Inputs (5 cols) -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Step 1: Target Profile -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="bg-emerald-500/10 text-emerald-400 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                        <h2 class="text-base font-bold text-white">Target Job Profile</h2>
                     </div>
                     
-                    <!-- Export Actions -->
-                    <div class="flex items-center gap-2 self-start sm:self-auto">
-                        <button onclick="exportCSV()" id="btn-csv" disabled class="bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-all flex items-center gap-1.5">
-                            <i class="fa-solid fa-file-csv"></i> Export CSV
-                        </button>
-                        <button onclick="exportJSON()" id="btn-json" disabled class="bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-all flex items-center gap-1.5">
-                            <i class="fa-solid fa-file-code"></i> Export JSON
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Required Skills (Comma Separated)</label>
+                            <input type="text" id="target-skills" value="React, Node.js, AWS, TypeScript" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Min Experience (Years)</label>
+                                <input type="number" id="target-exp" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Experience Weight</label>
+                                <select id="weight-exp" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                                    <option value="0.2">Low (20%)</option>
+                                    <option value="0.4" selected>Medium (40%)</option>
+                                    <option value="0.6">High (60%)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Candidate Data Input -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-emerald-500/10 text-emerald-400 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                            <h2 class="text-base font-bold text-white">Candidate Data (CSV or JSON)</h2>
+                        </div>
+                        <span class="text-xs text-slate-500">Supports headers: name, email, phone, skills, experience</span>
+                    </div>
+                    
+                    <textarea id="candidate-input" placeholder="Paste CSV or JSON array here..." class="w-full h-64 bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-emerald-500 transition resize-y"></textarea>
+                    
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="auto-dedupe" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500">
+                            <label for="auto-dedupe" class="text-xs text-slate-300 select-none">Auto-flag duplicates (Email/Phone)</label>
+                        </div>
+                        <button onclick="processCandidates()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-lg text-sm transition duration-150 flex items-center space-x-2 shadow-lg shadow-emerald-500/10">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Screen & Score</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Results Table Container -->
-                <div class="flex-1 overflow-auto border border-slate-800 rounded-lg bg-slate-950 max-h-[500px]">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="border-b border-slate-800 bg-slate-900/80 sticky top-0 text-slate-300 font-semibold">
-                                <th class="p-3">Name</th>
-                                <th class="p-3">Email</th>
-                                <th class="p-3">Phone</th>
-                                <th class="p-3">Match Score</th>
-                                <th class="p-3">Matched Skills</th>
-                                <th class="p-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="results-tbody" class="divide-y divide-slate-800/50 text-slate-400">
-                            <tr>
-                                <td colspan="6" class="p-8 text-center text-slate-500">
-                                    <i class="fa-solid fa-table-list text-3xl mb-2 block"></i>
-                                    Your cleaned candidate table will appear here.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
+
+            <!-- Right Column: Results & Analytics (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Results Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col min-h-[500px]">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4 mb-4 space-y-3 sm:space-y-0">
+                        <div>
+                            <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                                <i class="fa-solid fa-list-check text-emerald-400"></i>
+                                <span>Screening Results</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5" id="results-summary">No candidates processed yet.</p>
+                        </div>
+                        
+                        <!-- Export Actions -->
+                        <div class="flex items-center space-x-2 self-end sm:self-auto">
+                            <button onclick="exportCSV()" id="btn-export-csv" disabled class="bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                                <span>Export CSV</span>
+                            </button>
+                            <button onclick="exportJSON()" id="btn-export-json" disabled class="bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-file-code text-teal-400"></i>
+                                <span>Export JSON</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filter Controls -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="search-filter" oninput="applyFilters()" placeholder="Search by name, email, skills..." class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                        <div class="flex space-x-2">
+                            <select id="score-filter" onchange="applyFilters()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                                <option value="all">All Scores</option>
+                                <option value="80">Score &ge; 80% (Top Match)</option>
+                                <option value="50">Score &ge; 50% (Potential)</option>
+                                <option value="low">Score &lt; 50%</option>
+                            </select>
+                            <button onclick="removeDuplicates()" id="btn-remove-dupes" class="hidden bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5 shrink-0">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span>Purge Dupes</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results Table Container -->
+                    <div class="flex-1 overflow-x-auto border border-slate-800 rounded-lg bg-slate-950/50">
+                        <table class="min-w-full divide-y divide-slate-800 text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold">
+                                <tr>
+                                    <th class="px-4 py-3">Rank & Candidate</th>
+                                    <th class="px-4 py-3">Match Score</th>
+                                    <th class="px-4 py-3">Experience</th>
+                                    <th class="px-4 py-3">Matched Skills</th>
+                                    <th class="px-4 py-3 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-tbody" class="divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="5" class="px-4 py-12 text-center text-slate-500">
+                                        <div class="flex flex-col items-center justify-center space-y-2">
+                                            <i class="fa-solid fa-inbox text-3xl text-slate-700"></i>
+                                            <p>Paste data and click "Screen & Score" to begin analysis.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
     </main>
 
     <!-- Paywall Modal -->
-    <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200">
+    <div id="paywall-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
-            <div class="text-center mb-6">
-                <div class="inline-flex bg-indigo-600/10 text-indigo-400 p-3 rounded-full mb-3">
-                    <i class="fa-solid fa-crown text-2xl"></i>
+            <div class="text-center space-y-3">
+                <div class="mx-auto bg-emerald-500/10 text-emerald-400 w-12 h-12 rounded-full flex items-center justify-center text-xl mb-2">
+                    <i class="fa-solid fa-bolt"></i>
                 </div>
                 <h3 class="text-xl font-bold text-white">Upgrade to RecruitFlow Pro</h3>
-                <p class="text-xs text-slate-400 mt-1">You have used your 1 free run. Unlock unlimited candidate cleaning, deduplication, and scoring.</p>
+                <p class="text-xs text-slate-400 px-4">
+                    You've used your free screening run. Unlock unlimited candidate processing, advanced scoring weights, and instant CSV/JSON exports.
+                </p>
             </div>
 
             <!-- Pricing Options -->
-            <div class="space-y-3 mb-6">
-                <a href="#" onclick="alert('Redirecting to checkout...')" class="block bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 p-4 rounded-xl text-left transition-all shadow-lg shadow-indigo-500/10">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <span class="block text-xs font-bold uppercase tracking-wider text-indigo-200">Lifetime Deal</span>
-                            <span class="text-lg font-extrabold text-white">$5 One-Time</span>
-                        </div>
-                        <span class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full">Early Bird</span>
-                    </div>
+            <div class="mt-6 space-y-3">
+                <a href="#" onclick="handlePurchase()" class="block bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 p-4 rounded-xl text-center transition duration-150 shadow-lg shadow-emerald-500/10">
+                    <div class="font-bold text-sm">Lifetime Access (Early Bird)</div>
+                    <div class="text-2xl font-extrabold mt-0.5">$5 <span class="text-xs font-normal text-slate-900">one-time</span></div>
                 </a>
-                <a href="#" onclick="alert('Redirecting to checkout...')" class="block bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-xl text-left transition-all">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <span class="block text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Plan</span>
-                            <span class="text-lg font-extrabold text-white">$9/month</span>
-                        </div>
-                        <span class="text-xs text-slate-400">Cancel anytime</span>
-                    </div>
+                <a href="#" onclick="handlePurchase()" class="block bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white p-4 rounded-xl text-center transition duration-150">
+                    <div class="font-bold text-sm">Pro Monthly Plan</div>
+                    <div class="text-2xl font-extrabold mt-0.5">$9 <span class="text-xs font-normal text-slate-400">/ month</span></div>
                 </a>
             </div>
 
-            <!-- Promo Code Section -->
-            <div class="border-t border-slate-800 pt-4">
-                <label class="block text-xs text-slate-400 mb-2">Have an activation code?</label>
-                <div class="flex gap-2">
-                    <input type="text" id="promo-code" class="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 uppercase" placeholder="e.g. PRO5">
-                    <button onclick="applyPromo()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded transition-all">
+            <!-- Promo Code Activation -->
+            <div class="mt-6 pt-6 border-t border-slate-800">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Have an Activation Code?</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="promo-code" placeholder="Enter PRO5 or PRO20" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 uppercase">
+                    <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2 rounded-lg text-xs font-bold transition">
                         Apply
                     </button>
                 </div>
-                <p class="text-[10px] text-slate-500 mt-1.5">Tip: Enter <code class="text-indigo-400">PRO5</code> or <code class="text-indigo-400">PRO20</code> to instantly unlock lifetime access for testing.</p>
+                <p id="promo-error" class="text-red-400 text-[11px] mt-1.5 hidden"></p>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-800 bg-slate-950 py-6 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
-            <p>&copy; 2024 RecruitFlow. 100% Client-Side Processing. Your candidate data never leaves your browser.</p>
-        </div>
-    </footer>
+    <!-- Success Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-emerald-500 text-slate-950 px-4 py-3 rounded-lg shadow-lg font-bold text-sm flex items-center space-x-2 transition-all duration-300 transform translate-y-10 opacity-0">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-message">Success!</span>
+    </div>
 
     <script>
-        // Credit & Paywall Architecture
-        let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining'));
-        if (isNaN(runsRemaining)) {
-            runsRemaining = 1; // Default 1 free run
-            localStorage.setItem('app_runs_remaining', runsRemaining);
-        }
+        // Global State
+        let candidates = [];
+        let filteredCandidates = [];
+        let runsRemaining = 1;
+
+        // Initialize Credits
+        window.addEventListener('DOMContentLoaded', () => {
+            const storedRuns = localStorage.getItem('app_runs_remaining');
+            if (storedRuns === null) {
+                localStorage.setItem('app_runs_remaining', '1');
+                runsRemaining = 1;
+            } else {
+                runsRemaining = parseInt(storedRuns, 10);
+            }
+            updateCreditBadge();
+        });
 
         function updateCreditBadge() {
             const badge = document.getElementById('credit-badge');
             if (runsRemaining > 1000) {
                 badge.innerText = "Pro Unlimited";
-                badge.classList.remove('bg-slate-800');
-                badge.classList.add('bg-indigo-950', 'border-indigo-800', 'text-indigo-300');
+                badge.classList.remove('text-slate-300');
+                badge.classList.add('text-emerald-400');
             } else {
                 badge.innerText = `Free Runs Left: ${runsRemaining}`;
             }
         }
-        updateCreditBadge();
 
-        function openPaywall() {
-            document.getElementById('paywall-modal').classList.remove('hidden');
-        }
-
-        function closePaywall() {
-            document.getElementById('paywall-modal').classList.add('hidden');
-        }
-
-        function applyPromo() {
-            const code = document.getElementById('promo-code').value.trim().toUpperCase();
-            if (code === 'PRO5' || code === 'PRO20') {
-                runsRemaining = 99999;
-                localStorage.setItem('app_runs_remaining', runsRemaining);
-                updateCreditBadge();
-                closePaywall();
-                alert('Success! Pro Lifetime Access unlocked.');
-            } else {
-                alert('Invalid activation code. Try PRO5 or PRO20.');
-            }
-        }
-
-        // Sample Data
-        const sampleCSV = `Name,Email,Phone,Skills,Experience
-"John Doe","john.doe [at] gmail.com","555-0199","React, Node.js, TypeScript, AWS","5 years"
-"Jane Smith","jane.smith@company.com","555-0144","Python, Django, SQL, AWS","3 years"
-"John Doe","john.doe@gmail.com","555-0199","React, Node.js, AWS","5 years"
-"Alice Johnson","alice.j_at_outlook.com","555-0122","Product Management, Agile, Jira","7 years"
-"Bob Miller","bob.miller @ techcorp.com","555-0188","Java, Spring Boot, SQL, Kubernetes","4 years"
-"Jane Smith (Duplicate)","jane.smith@company.com","555-0144","Python, Django, AWS","3 years"`;
-
+        // Sample Data Loader
         function loadSampleData() {
-            document.getElementById('raw-input').value = sampleCSV;
-            document.getElementById('target-skills').value = "React, AWS, Python, SQL";
+            const sampleCSV = `name,email,phone,skills,experience,education
+Alice Smith,alice@example.com,123-456-7890,"React, TypeScript, Node.js, AWS",5 years,BS Computer Science
+Bob Jones,bob@example.com,987-654-3210,"Python, Django, PostgreSQL",3 years,Self-taught
+Alice Smith (Duplicate),alice@example.com,123-456-7890,"React, AWS",5 years,BS CS
+Charlie Brown,charlie@example.com,555-555-5555,"Java, Spring Boot, Docker",1 year,MS Software Engineering
+Diana Prince,diana@example.com,111-222-3333,"React, Node.js, TailwindCSS, Figma",4 years,BFA Design
+Evan Wright,evan@example.com,444-555-6666,"TypeScript, AWS, Serverless",2 years,BS Information Systems
+Fiona Gallagher,fiona@example.com,987-654-3210,"React, Redux, JavaScript",6 years,High School`;
+            
+            document.getElementById('candidate-input').value = sampleCSV;
+            showToast("Sample candidate data loaded!");
         }
 
-        // CSV Parser
+        // CSV Parser (Handles quotes and commas correctly)
         function parseCSV(text) {
-            let lines = [];
+            const lines = [];
             let row = [""];
             let inQuotes = false;
+
             for (let i = 0; i < text.length; i++) {
                 let c = text[i];
                 let next = text[i+1];
                 if (c === '"') {
-                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
-                    else { inQuotes = !inQuotes; } 
+                    if (inQuotes && next === '"') {
+                        row[row.length - 1] += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
                 } else if (c === ',' && !inQuotes) {
                     row.push('');
                 } else if ((c === '\r' || c === '\n') && !inQuotes) {
@@ -316,273 +332,356 @@
             return lines;
         }
 
-        // JSON Parser fallback
-        function tryParseJSON(text) {
-            try {
-                const parsed = JSON.parse(text);
-                if (Array.isArray(parsed)) return parsed;
-                if (typeof parsed === 'object') return [parsed];
-            } catch (e) {
-                return null;
-            }
-            return null;
-        }
-
-        // Global state for processed results
-        let processedCandidates = [];
-
-        // Core Business Logic
-        function processData() {
+        // Main Processing Logic
+        function processCandidates() {
             // Check Credits
             if (runsRemaining <= 0) {
                 openPaywall();
                 return;
             }
 
-            const rawInput = document.getElementById('raw-input').value.trim();
+            const rawInput = document.getElementById('candidate-input').value.trim();
             if (!rawInput) {
-                alert('Please paste some candidate data first.');
+                alert("Please paste or load candidate data first.");
                 return;
             }
 
-            // Decrement runs if not unlimited
-            if (runsRemaining < 1000) {
-                runsRemaining--;
-                localStorage.setItem('app_runs_remaining', runsRemaining);
-                updateCreditBadge();
+            // Parse Input (JSON or CSV)
+            let parsedRows = [];
+            try {
+                if (rawInput.startsWith('[') || rawInput.startsWith('{')) {
+                    const parsedJSON = JSON.parse(rawInput);
+                    const arrayData = Array.isArray(parsedJSON) ? parsedJSON : [parsedJSON];
+                    parsedRows = arrayData.map(item => [
+                        item.name || item.Name || '',
+                        item.email || item.Email || '',
+                        item.phone || item.Phone || '',
+                        item.skills || item.Skills || '',
+                        item.experience || item.Experience || '',
+                        item.education || item.Education || ''
+                    ]);
+                    // Add header row
+                    parsedRows.unshift(['name', 'email', 'phone', 'skills', 'experience', 'education']);
+                } else {
+                    parsedRows = parseCSV(rawInput);
+                }
+            } catch (e) {
+                alert("Failed to parse input. Please ensure it is valid CSV or JSON format.");
+                return;
             }
 
-            // Parse Input
-            let rawRows = [];
-            const jsonParsed = tryParseJSON(rawInput);
-            
-            if (jsonParsed) {
-                // Convert JSON objects to standard row objects
-                rawRows = jsonParsed.map(obj => ({
-                    name: obj.Name || obj.name || obj.FullName || '',
-                    email: obj.Email || obj.email || '',
-                    phone: obj.Phone || obj.phone || '',
-                    skills: obj.Skills || obj.skills || obj.Resume || obj.resume || '',
-                    raw: obj
-                }));
-            } else {
-                // Parse as CSV
-                const csvLines = parseCSV(rawInput);
-                if (csvLines.length < 2) {
-                    alert('Could not parse CSV. Please ensure you have a header row and at least one candidate.');
-                    return;
-                }
-                const headers = csvLines[0].map(h => h.trim().toLowerCase());
+            if (parsedRows.length < 2) {
+                alert("No candidate records found.");
+                return;
+            }
+
+            // Extract Headers & Map Columns
+            const headers = parsedRows[0].map(h => h.toLowerCase().trim());
+            const colMap = {
+                name: headers.indexOf('name'),
+                email: headers.indexOf('email'),
+                phone: headers.indexOf('phone'),
+                skills: headers.indexOf('skills'),
+                experience: headers.indexOf('experience'),
+                education: headers.indexOf('education')
+            };
+
+            // Target Profile Config
+            const targetSkills = document.getElementById('target-skills').value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            const targetExp = parseFloat(document.getElementById('target-exp').value) || 0;
+            const expWeight = parseFloat(document.getElementById('weight-exp').value) || 0.4;
+            const skillsWeight = 1 - expWeight;
+
+            candidates = [];
+            const seenEmails = new Set();
+            const seenPhones = new Set();
+            const autoDedupe = document.getElementById('auto-dedupe').checked;
+
+            for (let i = 1; i < parsedRows.length; i++) {
+                const row = parsedRows[i];
+                if (row.length < 2) continue; // Skip empty rows
+
+                const name = row[colMap.name] || 'Unknown';
+                const email = (row[colMap.email] || '').trim().toLowerCase();
+                const phone = (row[colMap.phone] || '').replace(/\D/g, '');
+                const skillsStr = row[colMap.skills] || '';
+                const expStr = row[colMap.experience] || '';
+                const education = row[colMap.education] || 'N/A';
+
+                // Extract Experience Years
+                const expMatch = expStr.match(/(\d+(\.\d+)?)/);
+                const expYears = expMatch ? parseFloat(expMatch[1]) : 0;
+
+                // Skills Matching
+                const candidateSkills = skillsStr.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                const matchedSkills = candidateSkills.filter(s => targetSkills.includes(s));
                 
-                // Find column indices
-                const nameIdx = headers.findIndex(h => h.includes('name'));
-                const emailIdx = headers.findIndex(h => h.includes('email') || h.includes('mail'));
-                const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('tel'));
-                const skillsIdx = headers.findIndex(h => h.includes('skill') || h.includes('resume') || h.includes('experience'));
-
-                for (let i = 1; i < csvLines.length; i++) {
-                    const row = csvLines[i];
-                    if (row.length === 0 || (row.length === 1 && row[0] === '')) continue;
-                    rawRows.push({
-                        name: nameIdx !== -1 ? row[nameIdx] : (row[0] || ''),
-                        email: emailIdx !== -1 ? row[emailIdx] : (row[1] || ''),
-                        phone: phoneIdx !== -1 ? row[phoneIdx] : (row[2] || ''),
-                        skills: skillsIdx !== -1 ? row[skillsIdx] : (row.slice(3).join(', ')),
-                        raw: row
-                    });
+                // Scoring Algorithm
+                let skillsScore = 0;
+                if (targetSkills.length > 0) {
+                    skillsScore = matchedSkills.length / targetSkills.length;
                 }
-            }
-
-            // Cleaning & Sanitization Rules
-            const fixEmailAt = document.getElementById('fix-email-at').checked;
-            const stripUnicode = document.getElementById('strip-unicode').checked;
-            const targetSkillsInput = document.getElementById('target-skills').value;
-            const targetSkills = targetSkillsInput.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
-
-            let cleanedRows = rawRows.map(candidate => {
-                let email = candidate.email ? candidate.email.trim() : '';
-                let name = candidate.name ? candidate.name.trim() : '';
-                let phone = candidate.phone ? candidate.phone.trim() : '';
-                let skills = candidate.skills ? candidate.skills.trim() : '';
-
-                // Fix broken email symbols (e.g. [at], _at_, spaces around @)
-                if (fixEmailAt && email) {
-                    email = email
-                        .replace(/\s*\[at\]\s*/gi, '@')
-                        .replace(/\s*_at_\s*/gi, '@')
-                        .replace(/\s+@\s+/g, '@')
-                        .replace(/\s+/g, ''); // remove any other accidental spaces in email
+                
+                let expScore = 0;
+                if (targetExp > 0) {
+                    expScore = Math.min(expYears / targetExp, 1.2); // Cap exp score bonus at 120%
+                } else {
+                    expScore = 1;
                 }
 
-                // Strip non-printable ASCII
-                if (stripUnicode) {
-                    const cleanStr = (str) => str.replace(/[^\x20-\x7E]/g, '');
-                    email = cleanStr(email);
-                    name = cleanStr(name);
-                    phone = cleanStr(phone);
-                    skills = cleanStr(skills);
-                }
+                const finalScore = Math.round(((skillsScore * skillsWeight) + (expScore * expWeight)) * 100);
 
-                // Calculate Match Score
-                let matched = [];
-                let score = 0;
-                if (targetSkills.length > 0 && skills) {
-                    const lowerSkills = skills.toLowerCase();
-                    targetSkills.forEach(skill => {
-                        // Simple word boundary check
-                        const regex = new RegExp(`\\b${skill}\\b`, 'i');
-                        if (regex.test(lowerSkills)) {
-                            matched.push(skill);
-                        }
-                    });
-                    score = Math.round((matched.length / targetSkills.length) * 100);
+                // Duplicate Check
+                let isDuplicate = false;
+                if (autoDedupe) {
+                    if (email && seenEmails.has(email)) isDuplicate = true;
+                    if (phone && seenPhones.has(phone)) isDuplicate = true;
                 }
+                if (email) seenEmails.add(email);
+                if (phone) seenPhones.add(phone);
 
-                return {
+                candidates.push({
+                    id: i,
                     name,
                     email,
-                    phone,
-                    skills,
-                    score,
-                    matchedSkills: matched,
-                    status: 'Cleaned'
-                };
-            });
-
-            // Deduplication
-            const dedupKey = document.getElementById('dedup-key').value;
-            const dedupStrategy = document.getElementById('dedup-strategy').value;
-            
-            if (dedupKey !== 'none') {
-                const seen = new Map();
-                cleanedRows.forEach(candidate => {
-                    const keyVal = (candidate[dedupKey] || '').toLowerCase().replace(/[^a-z0-9]/g, ''); // normalize key
-                    if (!keyVal) {
-                        // If key is empty, don't deduplicate it
-                        candidate.status = 'Cleaned';
-                        return;
-                    }
-
-                    if (seen.has(keyVal)) {
-                        const existing = seen.get(keyVal);
-                        if (dedupStrategy === 'highest-score') {
-                            if (candidate.score > existing.score) {
-                                existing.status = 'Duplicate (Removed)';
-                                seen.set(keyVal, candidate);
-                            } else {
-                                candidate.status = 'Duplicate (Removed)';
-                            }
-                        } else {
-                            // Keep first
-                            candidate.status = 'Duplicate (Removed)';
-                        }
-                    } else {
-                        seen.set(keyVal, candidate);
-                    }
+                    phone: row[colMap.phone] || '',
+                    skills: skillsStr,
+                    matchedSkills: matchedSkills.map(s => targetSkills.find(ts => ts === s) || s),
+                    experience: expStr,
+                    expYears,
+                    education,
+                    score: finalScore,
+                    isDuplicate
                 });
             }
 
-            processedCandidates = cleanedRows;
+            // Sort by Score Descending
+            candidates.sort((a, b) => b.score - a.score);
+
+            // Decrement Credits (if not unlimited)
+            if (runsRemaining < 1000) {
+                runsRemaining--;
+                localStorage.setItem('app_runs_remaining', runsRemaining.toString());
+                updateCreditBadge();
+            }
+
+            applyFilters();
+            showToast("Candidates screened successfully!");
+        }
+
+        // Apply Filters & Search
+        function applyFilters() {
+            const searchQuery = document.getElementById('search-filter').value.toLowerCase();
+            const scoreFilter = document.getElementById('score-filter').value;
+
+            filteredCandidates = candidates.filter(c => {
+                const matchesSearch = c.name.toLowerCase().includes(searchQuery) || 
+                                      c.email.toLowerCase().includes(searchQuery) || 
+                                      c.skills.toLowerCase().includes(searchQuery);
+                
+                let matchesScore = true;
+                if (scoreFilter === '80') matchesScore = c.score >= 80;
+                else if (scoreFilter === '50') matchesScore = c.score >= 50;
+                else if (scoreFilter === 'low') matchesScore = c.score < 50;
+
+                return matchesSearch && matchesScore;
+            });
+
             renderResults();
         }
 
+        // Render Results Table
         function renderResults() {
             const tbody = document.getElementById('results-tbody');
-            tbody.innerHTML = '';
+            const summary = document.getElementById('results-summary');
+            const btnCsv = document.getElementById('btn-export-csv');
+            const btnJson = document.getElementById('btn-export-json');
+            const btnPurge = document.getElementById('btn-remove-dupes');
 
-            const activeCandidates = processedCandidates.filter(c => c.status !== 'Duplicate (Removed)');
-            const duplicatesCount = processedCandidates.length - activeCandidates.length;
-
-            document.getElementById('stats-summary').innerHTML = `Processed <strong>${processedCandidates.length}</strong> candidates. Found <strong>${duplicatesCount}</strong> duplicates. <strong>${activeCandidates.length}</strong> qualified candidates remaining.`;
-
-            if (processedCandidates.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">No candidates found. Check your input format.</td></tr>`;
-                disableExports();
+            if (candidates.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-500"><div class="flex flex-col items-center justify-center space-y-2"><i class="fa-solid fa-inbox text-3xl text-slate-700"></i><p>No candidates processed yet.</p></div></td></tr>`;
+                summary.innerText = "No candidates processed yet.";
+                btnCsv.disabled = true;
+                btnJson.disabled = true;
+                btnPurge.classList.add('hidden');
                 return;
             }
 
-            processedCandidates.forEach(c => {
-                const isDup = c.status === 'Duplicate (Removed)';
-                const rowClass = isDup ? 'bg-red-950/20 opacity-50 line-through' : 'hover:bg-slate-900/50';
-                const scoreColor = c.score >= 70 ? 'text-emerald-400 font-bold' : (c.score >= 40 ? 'text-amber-400' : 'text-slate-400');
+            btnCsv.disabled = false;
+            btnJson.disabled = false;
+
+            const duplicateCount = candidates.filter(c => c.isDuplicate).length;
+            if (duplicateCount > 0) {
+                btnPurge.classList.remove('hidden');
+                btnPurge.innerHTML = `<i class="fa-solid fa-trash-can"></i> <span>Purge ${duplicateCount} Dupes</span>`;
+            } else {
+                btnPurge.classList.add('hidden');
+            }
+
+            summary.innerText = `Showing ${filteredCandidates.length} of ${candidates.length} candidates (${duplicateCount} duplicate(s) flagged).`;
+
+            if (filteredCandidates.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-500">No candidates match your search/filter criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredCandidates.map((c, index) => {
+                const scoreColor = c.score >= 80 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 
+                                   c.score >= 50 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 
+                                   'text-rose-400 bg-rose-500/10 border-rose-500/20';
                 
-                tbody.innerHTML += `
-                    <tr class="border-b border-slate-800/50 ${rowClass}">
-                        <td class="p-3 font-medium text-slate-200">${escapeHtml(c.name)}</td>
-                        <td class="p-3 font-mono text-slate-300">${escapeHtml(c.email)}</td>
-                        <td class="p-3">${escapeHtml(c.phone)}</td>
-                        <td class="p-3 ${scoreColor}">${c.score}%</td>
-                        <td class="p-3 text-slate-400 max-w-xs truncate" title="${escapeHtml(c.matchedSkills.join(', '))}">
-                            ${c.matchedSkills.length > 0 ? c.matchedSkills.map(s => `<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px] mr-1">${escapeHtml(s)}</span>`).join('') : '<span class="text-slate-600">None</span>'}
+                const statusBadge = c.isDuplicate 
+                    ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><i class="fa-solid fa-clone mr-1"></i>Duplicate</span>` 
+                    : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700">Active</span>`;
+
+                const matchedSkillsBadges = c.matchedSkills.length > 0 
+                    ? c.matchedSkills.map(s => `<span class="inline-block bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px] mr-1 mb-1 border border-slate-700">${s}</span>`).join('')
+                    : `<span class="text-slate-600 italic text-[11px]">None</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-900/50 transition ${c.isDuplicate ? 'bg-amber-500/[0.02]' : ''}">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-slate-500 font-mono text-xs">#${index + 1}</span>
+                                <div>
+                                    <div class="font-bold text-white text-sm">${escapeHtml(c.name)}</div>
+                                    <div class="text-slate-400 text-[11px]">${escapeHtml(c.email)} • ${escapeHtml(c.phone)}</div>
+                                </div>
+                            </div>
                         </td>
-                        <td class="p-3">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isDup ? 'bg-red-900/30 text-red-400' : 'bg-emerald-900/30 text-emerald-400'}">
-                                ${c.status}
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${scoreColor}">
+                                ${c.score}%
                             </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-slate-200">${escapeHtml(c.experience)}</div>
+                            <div class="text-slate-500 text-[10px]">Parsed: ${c.expYears} yrs</div>
+                        </td>
+                        <td class="px-4 py-3 max-w-xs">
+                            <div class="flex flex-wrap">${matchedSkillsBadges}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            ${statusBadge}
                         </td>
                     </tr>
                 `;
-            });
-
-            enableExports();
+            }).join('');
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        // Purge Duplicates Action
+        function removeDuplicates() {
+            candidates = candidates.filter(c => !c.isDuplicate);
+            applyFilters();
+            showToast("Duplicates purged successfully!");
         }
 
-        function enableExports() {
-            document.getElementById('btn-csv').removeAttribute('disabled');
-            document.getElementById('btn-json').removeAttribute('disabled');
-        }
-
-        function disableExports() {
-            document.getElementById('btn-csv').setAttribute('disabled', 'true');
-            document.getElementById('btn-json').setAttribute('disabled', 'true');
-        }
-
-        // Export Utilities
+        // Export to CSV
         function exportCSV() {
-            const activeCandidates = processedCandidates.filter(c => c.status !== 'Duplicate (Removed)');
-            if (activeCandidates.length === 0) return;
-
+            if (filteredCandidates.length === 0) return;
+            
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Name,Email,Phone,Match Score,Matched Skills\n";
-
-            activeCandidates.forEach(c => {
+            csvContent += "Rank,Name,Email,Phone,Experience,Parsed Experience Years,Skills,Match Score,Is Duplicate\n";
+            
+            filteredCandidates.forEach((c, index) => {
                 const row = [
+                    index + 1,
                     `"${c.name.replace(/"/g, '""')}"`,
-                    `"${c.email.replace(/"/g, '""')}"`,
-                    `"${c.phone.replace(/"/g, '""')}"`,
+                    `"${c.email}"`,
+                    `"${c.phone}"`,
+                    `"${c.experience.replace(/"/g, '""')}"`,
+                    c.expYears,
+                    `"${c.skills.replace(/"/g, '""')}"`,
                     `"${c.score}%"`,
-                    `"${c.matchedSkills.join(', ')}"`
-                ];
-                csvContent += row.join(",") + "\n";
+                    c.isDuplicate ? "Yes" : "No"
+                ].join(",");
+                csvContent += row + "\n";
             });
 
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "recruitflow_cleaned_candidates.csv");
+            link.setAttribute("download", "recruitflow_screened_candidates.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            showToast("CSV Exported!");
         }
 
+        // Export to JSON
         function exportJSON() {
-            const activeCandidates = processedCandidates.filter(c => c.status !== 'Duplicate (Removed)');
-            if (activeCandidates.length === 0) return;
-
-            const jsonString = JSON.stringify(activeCandidates, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(jsonString);
+            if (filteredCandidates.length === 0) return;
             
-            const link = document.createElement("a");
-            link.setAttribute("href", dataUri);
-            link.setAttribute("download", "recruitflow_cleaned_candidates.json");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filteredCandidates, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "recruitflow_screened_candidates.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.removeChild(downloadAnchor);
+            showToast("JSON Exported!");
+        }
+
+        // Paywall & Promo System
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function handlePurchase() {
+            window.open('https://buy.stripe.com/mock-payment-link', '_blank');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const errorEl = document.getElementById('promo-error');
+            
+            if (code === 'PRO5' || code === 'PRO20') {
+                runsRemaining = 999999;
+                localStorage.setItem('app_runs_remaining', '999999');
+                updateCreditBadge();
+                errorEl.classList.add('hidden');
+                closePaywall();
+                showToast("Lifetime Pro Access Unlocked!");
+                processCandidates(); // Auto-run the pending process
+            } else {
+                errorEl.innerText = "Invalid activation code. Try PRO5 or PRO20.";
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Toast Notification Utility
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.innerText = message;
+            
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 3000);
+        }
+
+        // Helper to escape HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
         }
     </script>
 </body>
