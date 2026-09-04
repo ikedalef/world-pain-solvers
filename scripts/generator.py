@@ -15,9 +15,7 @@ class SolvedAppSchema(BaseModel):
     html_content: str = Field(default="")
 
 def extract_safe_json(text: str) -> dict:
-    """Markdownタグや前後テキストを除去して安全に辞書化"""
     cleaned = text.strip()
-    # ```json や ```html の除去
     cleaned = re.sub(r"^```[a-zA-Z]*\n", "", cleaned)
     cleaned = re.sub(r"\n```$", "", cleaned)
     try:
@@ -26,7 +24,6 @@ def extract_safe_json(text: str) -> dict:
         match = re.search(r"(\{[\s\S]*\})", cleaned)
         if match:
             return json.loads(match.group(1))
-        # 万一純粋なHTMLだけが返ってきた場合の救済
         if "<!DOCTYPE html>" in text or "<html" in text:
             return {
                 "app_slug": f"tool-{int(time.time())}",
@@ -66,8 +63,9 @@ html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き
 - html_content: <!DOCTYPE html>で始まる完全なHTML
 """
 
-    model_name = "gemini-3.6-flash"
-    print(f"[Info] Generating solution app with: {model_name}")
+    # 1日1500回無料枠が提供されている公式安定モデルを使用
+    model_name = "gemini-1.5-flash"
+    print(f"[Info] Generating solution app with production model: {model_name}")
 
     model = genai.GenerativeModel(
         model_name=model_name,
@@ -82,16 +80,13 @@ html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き
             res = model.generate_content(prompt)
             raw_dict = extract_safe_json(res.text)
             
-            # HTMLが正しく含まれているか確認
             html = raw_dict.get("html_content", "")
             if not html or "<!DOCTYPE html>" not in html:
-                # 文字列全体がHTMLの場合はそれを採用
                 if "<!DOCTYPE html>" in res.text:
                     raw_dict["html_content"] = res.text
 
             app_data = SolvedAppSchema(**raw_dict)
 
-            # スラッグの正規化
             slug = re.sub(r"[^a-zA-Z0-9\-]", "", app_data.app_slug.lower().replace(" ", "-")) or f"tool-{int(time.time())}"
             target_dir = os.path.join("apps", slug)
             os.makedirs(target_dir, exist_ok=True)
@@ -106,8 +101,10 @@ html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き
             return slug
 
         except Exception as e:
-            print(f"[Warn] Attempt {attempt+1} encountered error: {e}")
-            time.sleep(10)
+            wait_sec = 40 + (attempt * 20)
+            print(f"[Warn] Attempt {attempt+1} failed: {e}")
+            print(f"[Info] Waiting {wait_sec}s before retry...")
+            time.sleep(wait_sec)
 
     raise RuntimeError("Failed to finalize app generation after retries.")
 
