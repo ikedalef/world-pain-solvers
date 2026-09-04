@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messy CSV/TSV Data Cleaner & Deduplicator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 950: '#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased flex flex-col">
+
+    <!-- Header / Nav -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 p-2 rounded-xl text-white font-bold text-xl shadow-lg shadow-indigo-500/25">🧹</div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">CSV/TSV Master Cleaner</h1>
+                <p class="text-xs text-slate-400">Sanitize, deduplicate, and decode raw tabular data instantly</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div id="credit-badge" class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-medium flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Runs Left: <strong id="runs-count" class="text-white">3</strong></span>
+            </div>
+            <button onclick="openUpgradeModal()" class="bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md transition">
+                Get Pro / 20 Runs
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left Panel: Input & Controls -->
+        <section class="flex flex-col space-y-4">
+            <div class="flex items-center justify-between">
+                <label for="raw-input" class="text-sm font-semibold text-slate-300">Raw CSV / TSV / Text Input</label>
+                <button onclick="loadSampleData()" class="text-xs text-indigo-400 hover:text-indigo-300 underline">Load Sample Data</button>
+            </div>
+            
+            <textarea id="raw-input" placeholder="Paste your messy CSV or TSV data here..." class="w-full h-64 bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 transition resize-y"></textarea>
+
+            <!-- Controls Panel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Transformation Options</h3>
+                
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Delimiter</label>
+                        <select id="opt-delimiter" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="auto">Auto-detect (Comma/Tab/Pipe)</option>
+                            <option value=",">Comma (,)</option>
+                            <option value="\t">Tab (\t)</option>
+                            <option value="|">Pipe (|)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Deduplication</label>
+                        <select id="opt-dedup" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="none">Keep All Rows</option>
+                            <option value="exact">Exact Row Match</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-xs pt-2">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="opt-trim" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-slate-300">Trim Whitespace</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="opt-decode" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-slate-300">Decode HTML Entities (&#x27;)</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="executeCleanData()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2">
+                <span>Clean & Process Data</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+        </section>
+
+        <!-- Right Panel: Output & Stats -->
+        <section class="flex flex-col space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-slate-300">Processed Output</span>
+                <div class="flex items-center space-x-2">
+                    <select id="export-format" class="bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none">
+                        <option value="csv">CSV Format</option>
+                        <option value="json">JSON Format</option>
+                    </select>
+                    <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition">Copy</button>
+                    <button onclick="downloadOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition">Download</button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div id="stats-bar" class="grid grid-cols-3 gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3 text-center text-xs">
+                <div>
+                    <span class="block text-slate-400">Rows Processed</span>
+                    <strong id="stat-rows" class="text-white text-sm">0</strong>
+                </div>
+                <div>
+                    <span class="block text-slate-400">Duplicates Removed</span>
+                    <strong id="stat-dups" class="text-emerald-400 text-sm">0</strong>
+                </div>
+                <div>
+                    <span class="block text-slate-400">Columns</span>
+                    <strong id="stat-cols" class="text-white text-sm">0</strong>
+                </div>
+            </div>
+
+            <textarea id="output-result" readonly placeholder="Processed output will appear here..." class="w-full flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs font-mono text-emerald-400 focus:outline-none resize-y min-h-[280px]"></textarea>
+        </section>
+
+    </main>
+
+    <!-- Upgrade Modal -->
+    <div id="upgrade-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white">Unlock Unlimited Runs</h2>
+                <button onclick="closeUpgradeModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            <p class="text-xs text-slate-300">
+                You have exhausted your free runs. Upgrade to Professional or enter your license key / promo code (<code class="text-indigo-400">PRO20</code>) below.
+            </p>
+            <div class="space-y-3">
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="block w-full bg-indigo-600 hover:bg-indigo-500 text-white text-center font-semibold py-2.5 rounded-xl text-xs transition">
+                    Buy $11 One-Time (20 Runs Pack)
+                </a>
+                <a href="https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j" target="_blank" class="block w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-center font-semibold py-2.5 rounded-xl text-xs transition">
+                    Subscribe $9/month (Unlimited Pro)
+                </a>
+            </div>
+            <div class="pt-4 border-t border-slate-800 flex space-x-2">
+                <input type="text" id="promo-code-input" placeholder="Enter code (e.g. PRO20)" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                <button onclick="applyPromoCode()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-4 py-2 rounded-lg font-semibold transition">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        &copy; <script>document.write(new Date().getFullYear())</script> CSV/TSV Data Cleaner. 100% Client-Side Processing.
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        // LocalStorage Credit System Setup
+        const STORAGE_KEY = 'app_runs_remaining';
+        const DEFAULT_RUNS = 3;
+
+        function getRuns() {
+            let runs = localStorage.getItem(STORAGE_KEY);
+            if (runs === null) {
+                runs = DEFAULT_RUNS;
+                localStorage.setItem(STORAGE_KEY, runs);
+            }
+            return parseInt(runs, 10);
+        }
+
+        function setRuns(val) {
+            localStorage.setItem(STORAGE_KEY, val);
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('runs-count').innerText = getRuns();
+        }
+
+        function openUpgradeModal() {
+            document.getElementById('upgrade-modal').classList.remove('hidden');
+        }
+
+        function closeUpgradeModal() {
+            document.getElementById('upgrade-modal').classList.add('hidden');
+        }
+
+        function applyPromoCode() {
+            const code = document.getElementById('promo-code-input').value.trim();
+            if (code === 'PRO20' || code === 'UNLIMITED') {
+                setRuns(999);
+                alert('Success! Additional runs unlocked.');
+                closeUpgradeModal();
+            } else {
+                alert('Invalid code. Try PRO20.');
+            }
+        }
+
+        function loadSampleData() {
+            const sample = `source,title,context\n"HackerNews Ask HN","Who is accountable for Frontier AI Companies agent\'s criminal actions?","Supposed rogue agents breached huggingface. Had that been done by human hackers, they&#x27;d be accountable and persecuted of caught. Companies like O"\n"HackerNews Ask HN","Ask HN: Why is HN native dark mode not implemented yet?","Long time user. I avoid opening HN during night just to avoid the glare. Is there any specific reason why native dark mode is not implemented yet? Let"\n"HackerNews Ask HN","Who is accountable for Frontier AI Companies agent\'s criminal actions?","Supposed rogue agents breached huggingface. Had that been done by human hackers, they&#x27;d be accountable and persecuted of caught. Companies like O"`;
+            document.getElementById('raw-input').value = sample;
+        }
+
+        // HTML Entity Decoder
+        function decodeHtmlEntities(str) {
+            if (!str) return '';
+            return str.replace(/&#x([0-9a-fA-F]+);/gi, (match, dec) => String.fromCharCode(parseInt(dec, 16)))
+                      .replace(/&#([0-9]+);/gi, (match, dec) => String.fromCharCode(parseInt(dec, 10)))
+                      .replace(/&amp;/g, '&')
+                      .replace(/&lt;/g, '<')
+                      .replace(/&gt;/g, '>')
+                      .replace(/&quot;/g, '"')
+                      .replace(/&#39;/g, "'");
+        }
+
+        // Robust CSV Parser handling quotes and embedded commas/newlines
+        function parseCSV(text, delimiter) {
+            let rows = [];
+            let currentRow = [];
+            let currentVal = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                let c = text[i];
+                let nextC = text[i+1];
+
+                if (c === '"') {
+                    if (inQuotes && nextC === '"') {
+                        currentVal += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (c === delimiter && !inQuotes) {
+                    currentRow.push(currentVal);
+                    currentVal = '';
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && nextC === '\n') { i++; }
+                    currentRow.push(currentVal);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentVal = '';
+                } else {
+                    currentVal += c;
+                }
+            }
+            if (currentVal !== '' || currentRow.length > 0) {
+                currentRow.push(currentVal);
+                rows.push(currentRow);
+            }
+            return rows.filter(r => r.length > 0 && !(r.length === 1 && r[0] === ''));
+        }
+
+        function detectDelimiter(text) {
+            const sample = text.slice(0, 1000);
+            const commas = (sample.match(/,/g) || []).length;
+            const tabs = (sample.match(/\t/g) || []).length;
+            const pipes = (sample.match(/\|/g) || []).length;
+            if (tabs > commas && tabs > pipes) return '\t';
+            if (pipes > commas && pipes > tabs) return '|';
+            return ',';
+        }
+
+        let lastProcessedData = { headers: [], rows: [] };
+
+        function executeCleanData() {
+            let runs = getRuns();
+            if (runs <= 0) {
+                openUpgradeModal();
+                return;
+            }
+
+            const rawText = document.getElementById('raw-input').value;
+            if (!rawText.trim()) {
+                alert('Please enter or paste some data to clean.');
+                return;
+            }
+
+            // Decrement run
+            if (runs < 999) {
+                setRuns(runs - 1);
+            }
+
+            let delimOpt = document.getElementById('opt-delimiter').value;
+            const delimiter = delimOpt === 'auto' ? detectDelimiter(rawText) : delimOpt;
+            
+            const doTrim = document.getElementById('opt-trim').checked;
+            const doDecode = document.getElementById('opt-decode').checked;
+            const dedupMode = document.getElementById('opt-dedup').value;
+
+            let parsedRows = parseCSV(rawText, delimiter);
+            if (parsedRows.length === 0) {
+                alert('No valid rows found.');
+                return;
+            }
+
+            let headers = parsedRows[0];
+            let dataRows = parsedRows.slice(1);
+
+            // Apply cleaning logic
+            let cleanedRows = dataRows.map(row => {
+                return row.map(cell => {
+                    let val = cell;
+                    if (doTrim) val = val.trim();
+                    if (doDecode) val = decodeHtmlEntities(val);
+                    return val;
+                });
+            });
+
+            let originalRowCount = cleanedRows.length;
+            let duplicateCount = 0;
+
+            // Deduplication
+            if (dedupMode === 'exact') {
+                let seen = new Set();
+                let uniqueRows = [];
+                cleanedRows.forEach(row => {
+                    let key = row.join('|||');
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueRows.push(row);
+                    } else {
+                        duplicateCount++;
+                    }
+                });
+                cleanedRows = uniqueRows;
+            }
+
+            lastProcessedData = { headers, rows: cleanedRows };
+
+            // Update Stats
+            document.getElementById('stat-rows').innerText = cleanedRows.length;
+            document.getElementById('stat-dups').innerText = duplicateCount;
+            document.getElementById('stat-cols').innerText = headers.length;
+
+            renderOutput();
+        }
+
+        function renderOutput() {
+            const format = document.getElementById('export-format').value;
+            const { headers, rows } = lastProcessedData;
+            if (!headers || headers.length === 0) return;
+
+            let outputText = '';
+
+            if (format === 'json') {
+                let jsonArr = rows.map(row => {
+                    let obj = {};
+                    headers.forEach((h, idx) => {
+                        obj[h] = row[idx] !== undefined ? row[idx] : '';
+                    });
+                    return obj;
+                });
+                outputText = JSON.stringify(jsonArr, null, 2);
+            } else {
+                // CSV Format
+                let escapeCSV = (str) => {
+                    if (str === undefined || str === null) return '';
+                    let s = String(str);
+                    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                        return '"' + s.replace(/"/g, '""') + '"';
+                    }
+                    return s;
+                };
+
+                let csvLines = [headers.map(escapeCSV).join(',')];
+                rows.forEach(r => {
+                    csvLines.push(r.map(escapeCSV).join(','));
+                });
+                outputText = csvLines.join('\n');
+            }
+
+            document.getElementById('output-result').value = outputText;
+        }
+
+        document.getElementById('export-format').addEventListener('change', renderOutput);
+
+        function copyOutput() {
+            const val = document.getElementById('output-result').value;
+            if (!val) return;
+            navigator.clipboard.writeText(val).then(() => {
+                alert('Output copied to clipboard!');
+            });
+        }
+
+        function downloadOutput() {
+            const val = document.getElementById('output-result').value;
+            const format = document.getElementById('export-format').value;
+            if (!val) return;
+            const blob = new Blob([val], { type: format === 'json' ? 'application/json' : 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cleaned_data.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize UI on load
+        updateUI();
+    </script>
+</body>
+</html>
