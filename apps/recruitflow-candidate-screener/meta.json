@@ -1,0 +1,17 @@
+{
+  "app_slug": "recruitflow-candidate-screener",
+  "title": "RecruitFlow: Candidate CSV Cleaner, Deduplicator & Scoring Engine",
+  "target_pain": "Recruiting agencies and hiring managers waste hours manually cleaning messy candidate CSVs, fixing broken email characters (like corrupted '@' symbols), removing duplicate applicants, and scoring resumes against target skills.",
+  "key_features": [
+    "Robust CSV/TSV parser with automatic column mapping",
+    "Smart character sanitization (fixes broken '@' symbols, encoding bugs, and hidden whitespace)",
+    "Configurable duplicate detection (by Email, Phone, or Name)",
+    "Keyword-based skills scoring engine (0-100% match score)",
+    "Instant export to clean CSV or JSON"
+  ],
+  "category": "Recruiting & Data Operations",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
