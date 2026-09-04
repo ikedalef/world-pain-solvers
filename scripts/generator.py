@@ -35,50 +35,30 @@ def extract_safe_json(text: str) -> dict:
             }
         raise ValueError(f"Unable to parse output: {text[:200]}")
 
-def discover_working_model():
-    """現在クォータが残っており、generateContentが実行できるモデルを探索"""
-    print("[Discovery] Fetching available models...")
+def get_usable_model_pool():
     try:
         models = [
             m.name.replace("models/", "")
             for m in genai.list_models()
             if 'generateContent' in m.supported_generation_methods
         ]
-        print(f"[Discovery] Detected models: {models}")
     except Exception as e:
         print(f"[Warn] ListModels failed: {e}")
         models = []
 
-    # 優先順位（独立したクォータ枠を持つ各世代のFlashモデル群）
-    candidate_order = [
-        "gemini-2.0-flash",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash-exp",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro-latest",
+    preferred = [
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.1-flash-preview",
+        "gemini-2.5-pro",
+        "gemini-pro-latest",
         "gemini-3.6-flash"
     ]
-
-    # APIから取得できたモデルを優先順にソート
-    sorted_candidates = [m for m in candidate_order if m in models]
+    pool = [m for m in preferred if m in models]
     for m in models:
-        if m not in sorted_candidates:
-            sorted_candidates.append(m)
-
-    for model_name in sorted_candidates:
-        try:
-            print(f"[Probe] Testing: {model_name} ...", end=" ")
-            m = genai.GenerativeModel(model_name=model_name)
-            res = m.generate_content("ok", generation_config={"max_output_tokens": 5})
-            if res and res.text:
-                print("-> SUCCESS (Quota Active)")
-                return model_name
-        except Exception as e:
-            err = str(e)
-            print(f"-> SKIPPED ({err[:40]}...)")
-            time.sleep(2)
-
-    return None
+        if m not in pool and "flash" in m:
+            pool.append(m)
+    return pool if pool else ["gemini-3.5-flash", "gemini-flash-latest"]
 
 def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -86,46 +66,42 @@ def generate_solution_app():
         raise ValueError("CRITICAL: GEMINI_API_KEY is not defined.")
 
     stripe_link = os.environ.get("STRIPE_PAYMENT_LINK", "https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j")
-
     genai.configure(api_key=api_key)
-    active_model = discover_working_model()
 
-    if not active_model:
-        print("[Notice] All candidate models currently have exhausted daily free quota.")
-        print("[Notice] Gracefully sleeping workflow until next scheduled run. Exiting safely.")
-        sys.exit(0)
+    model_pool = get_usable_model_pool()
+    print(f"[Discovery] Usable model pool: {model_pool}")
 
     pains = get_curated_pain_points()[:2]
 
     system_instruction = f"""
-You are an elite Silicon Valley software architect building high-converting, monetized Micro-SaaS tools.
-Target Market: Global English-speaking users.
+You are an elite software engineer. You NEVER build fake, simulated, or dummy placeholder tools.
+Every web tool you build MUST HAVE 100% REAL, FUNCTIONING, JAVASCRIPT-POWERED BUSINESS LOGIC.
 
-【Monetization Model (Strict Architecture - Option A)】
-1. Pricing Tiers:
-   - Free Trial: 3 free runs included by default.
-   - Option 1 (Pay-As-You-Go): "$11 One-Time - 20 Runs Pack (No Expiration)"
-   - Option 2 (Pro): "$9/month - Unlimited Access + Continuous Updates"
-2. Checkout URL: Both checkout buttons must link directly to: `{stripe_link}`
-3. Credit Management Logic (100% In-Browser JavaScript):
-   - Store credits in localStorage (`app_runs_remaining`). Initialize to 3 if not present.
-   - Display a clean top badge: "Runs Left: X" (or "Pro Unlimited").
-   - When a user performs the core tool action, decrement by 1.
-   - When credits reach 0, show a sleek Paywall Modal displaying the two pricing options and an "Enter License / Receipt Key" field.
-   - If user enters code `PRO20` or any non-empty key in license modal, add 20 runs or set unlimited and save to localStorage.
-4. UI & Usability:
-   - Complete single-file HTML using Tailwind CSS CDN (https://cdn.tailwindcss.com).
-   - Modern dark mode (slate-950 background, slate-900 cards, indigo/emerald accents).
-   - 100% English copywriting.
+【STRICT ZERO-TOLERANCE RULES】
+1. NO SIMULATIONS / NO PLACEHOLDERS:
+   - Absolute ban on text like "This is a simulated view", "In the full version...", or dummy sample outputs.
+   - The user must be able to paste REAL input (CSV text, JSON data, log files, multi-line lists) and get 100% REAL TRANSFORMED RESULTS immediately in the browser.
+2. HIGH-VALUE REAL PAIN POINTS ONLY:
+   - Select real operations: Messy CSV/TSV Data Cleaner & Deduplicator, Broken JSON Fixer & Parser, Multi-currency Freelance Invoice Calculator, Regex Matcher & Replacer, Bulk Text Formatter.
+   - Avoid cross-origin web scrapers (which fail in browser). Build direct data transformation tools.
+3. PRICING & CREDIT ARCHITECTURE (Option A):
+   - 3 Free Runs default.
+   - "$11 One-Time (20 Runs Pack)" and "$9/month (Unlimited Pro)" linking to `{stripe_link}`.
+   - Top credit badge: `Runs Left: X`.
+   - LocalStorage key: `app_runs_remaining`. Decrements on click.
+   - When 0, trigger paywall modal. Entering `PRO20` unlocks 20 additional runs or unlimited.
+4. EXPORT / UTILITY:
+   - Provide a real "Download Result" or "Copy to Clipboard" button that actually downloads or copies the real output.
+5. 100% Polished English UI with Tailwind CSS CDN. Dark mode (slate-950).
 """
 
     prompt = f"""
 {system_instruction}
 
-【Verified Global User Pain Points】
+【Pain Data Target】
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 
-Build a single-page monetized web app solving one of these pains with the exact credit & paywall model.
+Build a fully functioning, REAL data-transforming web tool that directly solves high-friction manual work.
 Output strictly valid JSON with keys:
 - app_slug: string (kebab-case)
 - title: string
@@ -133,20 +109,19 @@ Output strictly valid JSON with keys:
 - key_features: list of strings
 - category: string
 - pricing_options: list of strings (["$11 One-Time (20 Runs)", "$9/mo Unlimited Pro"])
-- html_content: complete standalone <!DOCTYPE html> string with Tailwind CSS and the complete credit/paywall JS logic.
+- html_content: standalone <!DOCTYPE html> string with 100% working, non-mock transformation JS.
 """
 
-    print(f"[Execution] Generating monetized application via: {active_model}")
-    model = genai.GenerativeModel(
-        model_name=active_model,
-        generation_config={
-            "response_mime_type": "application/json",
-            "temperature": 0.3
-        }
-    )
-
-    for attempt in range(3):
+    for model_name in model_pool:
+        print(f"[Execution] Generating real tool with: {model_name}")
         try:
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                generation_config={
+                    "response_mime_type": "application/json",
+                    "temperature": 0.2
+                }
+            )
             res = model.generate_content(prompt)
             raw_dict = extract_safe_json(res.text)
             app_data = SolvedAppSchema(**raw_dict)
@@ -161,13 +136,14 @@ Output strictly valid JSON with keys:
             with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
                 json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
 
-            print(f"[Success] Built monetized product at: {target_dir}")
+            print(f"[Success] Real working product created at: {target_dir}")
             return slug
-        except Exception as e:
-            print(f"[Warn] Attempt {attempt+1} failed: {e}")
-            time.sleep(10)
 
-    print("[Warn] App generation attempt budget finished. Exiting gracefully.")
+        except Exception as e:
+            print(f"[Warn] Model {model_name} failed: {str(e)[:100]}")
+            time.sleep(3)
+
+    print("[Notice] Pool exhausted. Sleeping gracefully.")
     sys.exit(0)
 
 if __name__ == "__main__":
