@@ -1,0 +1,17 @@
+{
+  "app_slug": "recruitclean-candidate-dedup-scoring",
+  "title": "RecruitClean: Candidate Data Sanitizer, Deduplicator & Scoring Engine",
+  "target_pain": "Recruiting agencies and HR teams wasting hours manually cleaning messy candidate CSVs, fixing broken character encodings, removing duplicate applicants, and scoring resumes against target skills.",
+  "key_features": [
+    "Invisible character & control code stripper (fixes '@' and unicode errors)",
+    "Smart duplicate detection (by Email, Phone, or Name with merge options)",
+    "Customizable skills-matching & experience scoring engine",
+    "Instant CSV/TSV/JSON parser with live interactive data table preview",
+    "One-click export to clean CSV or JSON"
+  ],
+  "category": "HR & Recruiting Automation",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/mo Pro Unlimited"
+  ]
+}

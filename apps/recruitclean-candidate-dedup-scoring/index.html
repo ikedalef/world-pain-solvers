@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecruitClean - Candidate Data Sanitizer, Deduplicator & Scoring Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#0b0f19',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-emerald-500 to-teal-600 p-2 rounded-lg shadow-lg shadow-emerald-500/20">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        RecruitClean <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v1.2 PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">AI-Ready Candidate Data Sanitizer & Deduplicator</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Credit Badge -->
+                <div class="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-full px-4 py-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-medium text-slate-300" id="credit-badge-text">Free Run: 1 left</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-lg shadow-orange-500/10 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M2.166 4.9c.522-.521 1.36-.521 1.882 0L10 10.958l5.952-6.058a1.33 1.33 0 111.88 1.88l-7.01 7.129a1.33 1.33 0 01-1.88 0L2.166 6.78a1.33 1.33 0 010-1.88z" clip-rule="evenodd"></path><path fill-rule="evenodd" d="M2.166 12.4c.522-.521 1.36-.521 1.882 0L10 18.458l5.952-6.058a1.33 1.33 0 111.88 1.88l-7.01 7.129a1.33 1.33 0 01-1.88 0L2.166 14.28a1.33 1.33 0 010-1.88z" clip-rule="evenodd"></path></svg>
+                    Upgrade to Lifetime
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- LEFT COLUMN: CONFIGURATION & INPUT -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Step 1: Input Data -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="block text-sm font-semibold text-slate-200">1. Paste Candidate Data (CSV, TSV, or JSON)</label>
+                    <button onclick="loadSampleData()" class="text-xs text-emerald-400 hover:text-emerald-300 underline transition-colors">
+                        Load Messy Sample
+                    </button>
+                </div>
+                <textarea id="input-data" class="w-full h-64 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-emerald-500 transition-colors resize-y" placeholder="Paste your messy CSV rows or JSON array here..."></textarea>
+                <div class="mt-2 flex justify-between text-[11px] text-slate-500">
+                    <span>Supports headers: Name, Email, Phone, Skills, Experience</span>
+                    <span id="input-stats">0 characters</span>
+                </div>
+            </div>
+
+            <!-- Step 2: Cleaning & Deduplication Rules -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col gap-4">
+                <h3 class="text-sm font-semibold text-slate-200 border-b border-slate-800 pb-2">2. Sanitization & Deduplication Settings</h3>
+                
+                <!-- Sanitization Toggles -->
+                <div class="space-y-2.5">
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <input type="checkbox" id="clean-control-chars" checked class="mt-1 rounded bg-slate-950 border-slate-800 text-emerald-500 focus:ring-0 focus:ring-offset-0">
+                        <div>
+                            <span class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">Strip Hidden Control Characters</span>
+                            <p class="text-[11px] text-slate-500">Removes zero-width spaces, bad unicode, and fixes broken '@' symbols.</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <input type="checkbox" id="normalize-emails" checked class="mt-1 rounded bg-slate-950 border-slate-800 text-emerald-500 focus:ring-0 focus:ring-offset-0">
+                        <div>
+                            <span class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">Normalize Emails & Phones</span>
+                            <p class="text-[11px] text-slate-500">Trims spaces, lowercases emails, and strips non-numeric characters from phone numbers.</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <input type="checkbox" id="dedup-enabled" checked class="mt-1 rounded bg-slate-950 border-slate-800 text-emerald-500 focus:ring-0 focus:ring-offset-0">
+                        <div>
+                            <span class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">Enable Smart Deduplication</span>
+                            <p class="text-[11px] text-slate-500">Detects and merges duplicate candidates automatically.</p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Deduplication Key Selection -->
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/60">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Dedup Primary Key</label>
+                        <select id="dedup-key" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+                            <option value="email">Email Address</option>
+                            <option value="phone">Phone Number</option>
+                            <option value="name">Candidate Name</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Duplicate Strategy</label>
+                        <select id="dedup-strategy" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+                            <option value="keep-first">Keep First Record</option>
+                            <option value="keep-last">Keep Last Record</option>
+                            <option value="merge">Merge Skills & Exp</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Scoring Engine -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col gap-4">
+                <h3 class="text-sm font-semibold text-slate-200 border-b border-slate-800 pb-2">3. Skills-Matching & Scoring Engine</h3>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Target Skills (Comma separated)</label>
+                    <input type="text" id="target-skills" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500" placeholder="e.g., React, Python, AWS, SQL">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Skill Match Weight</label>
+                        <select id="weight-skills" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+                            <option value="0.7">70% Skills / 30% Exp</option>
+                            <option value="0.5" selected>50% Skills / 50% Exp</option>
+                            <option value="0.3">30% Skills / 70% Exp</option>
+                            <option value="1.0">100% Skills Only</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Min Experience (Yrs)</label>
+                        <input type="number" id="min-experience" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-emerald-500" value="2" min="0">
+                    </div>
+                </div>
+
+                <button onclick="processData()" class="w-full mt-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Clean, Deduplicate & Score Now
+                </button>
+            </div>
+
+        </section>
+
+        <!-- RIGHT COLUMN: OUTPUT PREVIEW & EXPORT -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Stats Dashboard -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Total Parsed</span>
+                    <p class="text-2xl font-extrabold text-white mt-1" id="stat-parsed">0</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Duplicates Removed</span>
+                    <p class="text-2xl font-extrabold text-rose-500 mt-1" id="stat-duplicates">0</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Cleaned Records</span>
+                    <p class="text-2xl font-extrabold text-emerald-400 mt-1" id="stat-cleaned">0</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Avg Match Score</span>
+                    <p class="text-2xl font-extrabold text-amber-400 mt-1" id="stat-avg-score">0%</p>
+                </div>
+            </div>
+
+            <!-- Interactive Output Table -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex-grow flex flex-col min-h-[400px]">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-200">Cleaned & Ranked Candidates</h3>
+                        <p class="text-xs text-slate-500">Real-time preview of sanitized, deduplicated, and scored profiles.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportData('csv')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Export CSV
+                        </button>
+                        <button onclick="exportData('json')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Export JSON
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Container -->
+                <div class="overflow-x-auto flex-grow rounded-lg border border-slate-800 bg-slate-950">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/50 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4">Rank</th>
+                                <th class="py-3 px-4">Candidate</th>
+                                <th class="py-3 px-4">Contact Info</th>
+                                <th class="py-3 px-4">Skills Match</th>
+                                <th class="py-3 px-4 text-right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="output-table-body" class="divide-y divide-slate-800/60 text-xs text-slate-300">
+                            <tr>
+                                <td colspan="5" class="py-12 text-center text-slate-500">
+                                    No data processed yet. Paste candidate data and click "Clean, Deduplicate & Score Now".
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-900/40 py-6 px-6 mt-12">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>© 2024 RecruitClean. All rights reserved. 100% client-side secure processing.</p>
+            <div class="flex gap-4">
+                <a href="#" onclick="openPaywall()" class="hover:text-slate-300 transition-colors">Privacy Policy</a>
+                <a href="#" onclick="openPaywall()" class="hover:text-slate-300 transition-colors">Terms of Service</a>
+                <a href="#" onclick="openPaywall()" class="hover:text-slate-300 transition-colors">Contact Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- PAYWALL MODAL -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            
+            <!-- Close Button -->
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div class="text-center">
+                <div class="inline-flex bg-amber-500/10 text-amber-400 border border-amber-500/20 p-3 rounded-full mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-extrabold text-white mb-2">Upgrade to RecruitClean Pro</h3>
+                <p class="text-xs text-slate-400 mb-6">You have used your 1 free run. Unlock unlimited candidate sanitization, deduplication, and scoring instantly.</p>
+            </div>
+
+            <!-- Pricing Options -->
+            <div class="space-y-3 mb-6">
+                <a href="#" class="block bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 p-4 rounded-xl text-left transition-all shadow-lg shadow-emerald-500/10">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider opacity-80">Early Bird Offer</span>
+                            <h4 class="text-lg font-extrabold">$5 One-Time</h4>
+                        </div>
+                        <span class="text-xs font-extrabold bg-slate-950 text-emerald-400 px-2.5 py-1 rounded-full">Lifetime Access</span>
+                    </div>
+                </a>
+
+                <a href="#" class="block bg-slate-800 hover:bg-slate-750 border border-slate-700 p-4 rounded-xl text-left transition-all">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">SaaS Subscription</span>
+                            <h4 class="text-lg font-extrabold text-white">$9/month</h4>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-300 bg-slate-900 px-2.5 py-1 rounded-full">Pro Unlimited</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Promo Code Bypass -->
+            <div class="border-t border-slate-800 pt-4">
+                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Have a lifetime license key or promo code?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="promo-code" class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500" placeholder="Enter PRO5 or PRO20">
+                    <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-700 transition-colors">
+                        Apply
+                    </button>
+                </div>
+                <p id="promo-error" class="text-[11px] text-rose-500 mt-1.5 hidden">Invalid promo code. Please try again.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-200 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs transition-all transform translate-y-20 opacity-0 z-50">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="toast-message">Success!</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // State Management
+        let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining') ?? '1');
+        let isUpgraded = localStorage.getItem('app_upgraded') === 'true';
+        let processedCandidates = [];
+
+        // Initialize UI
+        updateCreditBadge();
+        loadSampleData();
+
+        function updateCreditBadge() {
+            const badge = document.getElementById('credit-badge-text');
+            if (isUpgraded) {
+                badge.textContent = "Pro Unlimited Active";
+                badge.parentElement.classList.remove('border-slate-700');
+                badge.parentElement.classList.add('border-emerald-500/30', 'bg-emerald-500/5');
+            } else {
+                badge.textContent = `Free Run: ${runsRemaining} left`;
+            }
+        }
+
+        function loadSampleData() {
+            // Realistic messy candidate data with hidden characters, duplicate emails, weird formatting
+            const messySample = `Name,Email,Phone,Skills,Experience
+"John Doe","john.doe@gmail.com ","(555) 123-4567","React, Node.js, JavaScript, AWS",5
+"Jane Smith","jane.smith@yahoo.com","+1-555-987-6543","Python, Django, SQL, PostgreSQL",3
+"John Doe","john.doe@gmail.com","5551234567","React, Node.js, TypeScript",6
+"Alice\u200B Johnson","alice.j@outlook.com","555-222-3333","Java, Spring Boot, Docker, Kubernetes",8
+"Bob Smith","bob.smith@company.com","","HTML, CSS, JavaScript, Figma",1
+"Jane Smith","jane.smith@yahoo.com","555-987-6543","Python, Django, AWS, Docker",4`;
+            
+            document.getElementById('input-data').value = messySample;
+            document.getElementById('target-skills').value = "React, Python, AWS, Docker";
+            updateInputStats();
+        }
+
+        // Track input length
+        document.getElementById('input-data').addEventListener('input', updateInputStats);
+        function updateInputStats() {
+            const text = document.getElementById('input-data').value;
+            document.getElementById('input-stats').textContent = `${text.length} characters`;
+        }
+
+        // CSV Parser
+        function parseCSV(text) {
+            let lines = [];
+            let row = [""];
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                let c = text[i];
+                let next = text[i+1];
+                if (c === '"') {
+                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
+                    else { inQuotes = !inQuotes; } 
+                } else if (c === ',' && !inQuotes) {
+                    row.push('');
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && next === '\n') { i++; }
+                    lines.push(row);
+                    row = [''];
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || row[0] !== '') {
+                lines.push(row);
+            }
+            return lines;
+        }
+
+        // Sanitization Helpers
+        function sanitizeString(str) {
+            if (!str) return '';
+            // Strip zero-width spaces, control characters, but keep standard punctuation and letters
+            return str.replace(/[\u200B-\u200D\uFEFF]/g, '')
+                      .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+                      .trim();
+        }
+
+        function cleanEmail(email) {
+            if (!email) return '';
+            // Strip spaces, lowercase, fix common broken characters
+            return sanitizeString(email).toLowerCase().replace(/\s+/g, '');
+        }
+
+        function cleanPhone(phone) {
+            if (!phone) return '';
+            // Keep only digits
+            return phone.replace(/\D/g, '');
+        }
+
+        // Main Processing Logic
+        function processData() {
+            // Check Credits / Paywall
+            if (runsRemaining <= 0 && !isUpgraded) {
+                openPaywall();
+                return;
+            }
+
+            const rawInput = document.getElementById('input-data').value.trim();
+            if (!rawInput) {
+                showToast("Please paste some candidate data first.");
+                return;
+            }
+
+            let rawRows = [];
+            // Detect JSON vs CSV
+            if (rawInput.startsWith('[') || rawInput.startsWith('{')) {
+                try {
+                    const parsedJson = JSON.parse(rawInput);
+                    rawRows = Array.isArray(parsedJson) ? parsedJson : [parsedJson];
+                } catch (e) {
+                    showToast("Invalid JSON format. Please check your syntax.");
+                    return;
+                }
+            } else {
+                // Parse CSV
+                const parsedCsv = parseCSV(rawInput);
+                if (parsedCsv.length < 2) {
+                    showToast("Invalid CSV format. Needs at least a header and one row.");
+                    return;
+                }
+                const headers = parsedCsv[0].map(h => h.trim().toLowerCase());
+                for (let i = 1; i < parsedCsv.length; i++) {
+                    const row = parsedCsv[i];
+                    if (row.length < headers.length) continue;
+                    let obj = {};
+                    headers.forEach((header, idx) => {
+                        obj[header] = row[idx];
+                    });
+                    rawRows.push(obj);
+                }
+            }
+
+            // Settings
+            const stripControl = document.getElementById('clean-control-chars').checked;
+            const normEmails = document.getElementById('normalize-emails').checked;
+            const dedupEnabled = document.getElementById('dedup-enabled').checked;
+            const dedupKey = document.getElementById('dedup-key').value;
+            const dedupStrategy = document.getElementById('dedup-strategy').value;
+            const targetSkills = document.getElementById('target-skills').value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            const weightSkills = parseFloat(document.getElementById('weight-skills').value);
+            const minExp = parseInt(document.getElementById('min-experience').value) || 0;
+
+            let cleanedList = [];
+            let duplicateCount = 0;
+            let seenKeys = new Map();
+
+            rawRows.forEach(row => {
+                // Extract & Clean fields
+                let name = row.name || row.candidate || '';
+                let email = row.email || '';
+                let phone = row.phone || row.telephone || '';
+                let skills = row.skills || row.technologies || '';
+                let experience = parseInt(row.experience || row.years || 0) || 0;
+
+                if (stripControl) {
+                    name = sanitizeString(name);
+                    skills = sanitizeString(skills);
+                }
+                if (normEmails) {
+                    email = cleanEmail(email);
+                    phone = cleanPhone(phone);
+                }
+
+                const candidate = {
+                    name,
+                    email,
+                    phone,
+                    skills,
+                    experience,
+                    score: 0,
+                    matchedSkills: []
+                };
+
+                // Deduplication Logic
+                if (dedupEnabled) {
+                    let keyVal = '';
+                    if (dedupKey === 'email') keyVal = email;
+                    else if (dedupKey === 'phone') keyVal = phone;
+                    else if (dedupKey === 'name') keyVal = name.toLowerCase();
+
+                    if (keyVal && seenKeys.has(keyVal)) {
+                        duplicateCount++;
+                        const existingIdx = seenKeys.get(keyVal);
+                        if (dedupStrategy === 'keep-last') {
+                            cleanedList[existingIdx] = candidate;
+                        } else if (dedupStrategy === 'merge') {
+                            // Merge skills & take max experience
+                            const existing = cleanedList[existingIdx];
+                            const mergedSkills = Array.from(new Set([
+                                ...existing.skills.split(',').map(s => s.trim()),
+                                ...candidate.skills.split(',').map(s => s.trim())
+                            ])).filter(Boolean).join(', ');
+                            existing.skills = mergedSkills;
+                            existing.experience = Math.max(existing.experience, candidate.experience);
+                        }
+                        // If keep-first, we do nothing (ignore current candidate)
+                        return;
+                    } else if (keyVal) {
+                        seenKeys.set(keyVal, cleanedList.length);
+                    }
+                }
+
+                cleanedList.push(candidate);
+            });
+
+            // Scoring Logic
+            cleanedList.forEach(candidate => {
+                let skillScore = 0;
+                let matched = [];
+                const candSkills = candidate.skills.toLowerCase();
+
+                if (targetSkills.length > 0) {
+                    targetSkills.forEach(skill => {
+                        if (candSkills.includes(skill)) {
+                            matched.push(skill);
+                        }
+                    });
+                    skillScore = (matched.length / targetSkills.length) * 100;
+                }
+
+                // Experience Score (capped at 100, e.g., 10 years = 100%)
+                const expScore = Math.min((candidate.experience / 10) * 100, 100);
+
+                // Weighted Score
+                let finalScore = 0;
+                if (targetSkills.length > 0) {
+                    finalScore = (skillScore * weightSkills) + (expScore * (1 - weightSkills));
+                } else {
+                    finalScore = expScore;
+                }
+
+                candidate.score = Math.round(finalScore);
+                candidate.matchedSkills = matched;
+            });
+
+            // Sort by Score descending
+            cleanedList.sort((a, b) => b.score - a.score);
+            processedCandidates = cleanedList;
+
+            // Update Stats
+            document.getElementById('stat-parsed').textContent = rawRows.length;
+            document.getElementById('stat-duplicates').textContent = duplicateCount;
+            document.getElementById('stat-cleaned').textContent = cleanedList.length;
+            
+            const avgScore = cleanedList.length > 0 
+                ? Math.round(cleanedList.reduce((acc, curr) => acc + curr.score, 0) / cleanedList.length) 
+                : 0;
+            document.getElementById('stat-avg-score').textContent = `${avgScore}%`;
+
+            // Render Table
+            renderTable(cleanedList);
+
+            // Decrement Credits
+            if (!isUpgraded) {
+                runsRemaining = Math.max(0, runsRemaining - 1);
+                localStorage.setItem('app_runs_remaining', runsRemaining.toString());
+                updateCreditBadge();
+            }
+
+            showToast("Data successfully cleaned and scored!");
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('output-table-body');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-500">No records match your criteria.</td></tr>`;
+                return;
+            }
+
+            data.forEach((cand, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/40 transition-colors";
+                
+                // Score Badge Color
+                let scoreColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+                if (cand.score >= 75) scoreColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                else if (cand.score >= 40) scoreColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-semibold text-slate-400">#${idx + 1}</td>
+                    <td class="py-3.5 px-4">
+                        <div class="font-semibold text-white">${escapeHtml(cand.name || 'N/A')}</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">Exp: ${cand.experience} yrs</div>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <div class="text-slate-300">${escapeHtml(cand.email || 'N/A')}</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(cand.phone || 'N/A')}</div>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <div class="text-slate-300 max-w-xs truncate" title="${escapeHtml(cand.skills)}">${escapeHtml(cand.skills || 'N/A')}</div>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            ${cand.matchedSkills.map(s => `<span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/10">${escapeHtml(s)}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 text-right">
+                        <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${scoreColor}">
+                            ${cand.score}%
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Export Utilities
+        function exportData(format) {
+            if (processedCandidates.length === 0) {
+                showToast("No processed data to export.");
+                return;
+            }
+
+            let content = '';
+            let filename = `recruitclean-export-${new Date().toISOString().slice(0,10)}`;
+            let mimeType = '';
+
+            if (format === 'json') {
+                content = JSON.stringify(processedCandidates, null, 2);
+                filename += '.json';
+                mimeType = 'application/json';
+            } else {
+                // CSV
+                const headers = ['Name', 'Email', 'Phone', 'Skills', 'Experience', 'Score'];
+                const rows = processedCandidates.map(c => [
+                    `"${c.name.replace(/"/g, '""')}"`,
+                    `"${c.email}"`,
+                    `"${c.phone}"`,
+                    `"${c.skills.replace(/"/g, '""')}"`,
+                    c.experience,
+                    c.score
+                ]);
+                content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                filename += '.csv';
+                mimeType = 'text/csv';
+            }
+
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`Successfully exported ${format.toUpperCase()}!`);
+        }
+
+        // Paywall Modal Logic
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+            document.getElementById('promo-error').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            if (code === 'PRO5' || code === 'PRO20') {
+                isUpgraded = true;
+                localStorage.setItem('app_upgraded', 'true');
+                updateCreditBadge();
+                closePaywall();
+                showToast("Lifetime Pro Access Unlocked! Thank you!");
+            } else {
+                document.getElementById('promo-error').classList.remove('hidden');
+            }
+        }
+
+        // Toast Notification Helper
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
