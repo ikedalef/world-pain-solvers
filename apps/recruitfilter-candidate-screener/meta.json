@@ -1,0 +1,17 @@
+{
+  "app_slug": "recruitfilter-candidate-screener",
+  "title": "RecruitFilter: Candidate Screener, Fuzzy Deduplicator & Unicode Sanitizer",
+  "target_pain": "Recruiting agencies and hiring managers struggle with messy candidate lists, duplicate profiles, weird character encoding issues (like broken '@' symbols or hidden unicode characters), and manual skills-matching overhead.",
+  "key_features": [
+    "Fuzzy Name & Email Deduplication (Levenshtein Distance)",
+    "Unicode & Character Sanitizer (fixes broken '@' symbols, smart quotes, zero-width spaces)",
+    "Automated Skills Matcher & Scoring Engine",
+    "Multi-format Parser (CSV, TSV, JSON, or Raw Text)",
+    "Clean Data Export (CSV, JSON, or Clipboard)"
+  ],
+  "category": "Recruiting & Data Operations",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

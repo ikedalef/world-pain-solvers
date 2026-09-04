@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecruitFilter - Candidate Screener & Deduplicator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#020617'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-filter-list text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight text-white">Recruit<span class="text-indigo-400">Filter</span></span>
+                    <span class="ml-2 px-2 py-0.5 text-xs font-semibold bg-indigo-500/10 text-indigo-400 rounded-full border border-indigo-500/20">v1.2 Pro</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="credit-badge" class="bg-slate-800 border border-slate-700 px-3.5 py-1.5 rounded-full text-sm font-medium flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-slate-300">Free Runs Left: <span id="runs-count" class="font-bold text-white">1</span></span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/20 transition-all duration-200">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero / Pain Point Intro -->
+        <div class="mb-8 bg-gradient-to-r from-slate-900 to-slate-900/50 border border-slate-800 rounded-2xl p-6 sm:p-8">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">Clean, Deduplicate & Score Messy Candidate Lists Instantly</h1>
+            <p class="text-slate-400 max-w-3xl text-sm sm:text-base">
+                Tired of broken email addresses (like full-width <code class="text-indigo-300 bg-slate-800 px-1 rounded">＠</code> or hidden unicode characters), duplicate profiles, and manual resume matching? Paste your raw candidate data, set your target skills, and let RecruitFilter sanitize, deduplicate, and score everything instantly.
+            </p>
+        </div>
+
+        <!-- Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Inputs -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- Input Panel -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-file-import text-indigo-400"></i> 1. Candidate Data
+                        </h2>
+                        <button onclick="loadSampleData()" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 transition-colors">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Load Messy Sample
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Paste CSV, TSV, JSON, or Raw Text</label>
+                        <textarea id="candidate-input" class="w-full h-64 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" placeholder="name,email,skills,experience
+John Doe,john.doe＠email.com,React Node.js Python,5 years
+John Doe,john.doe@email.com,React Node.js,5 years
+Jane Smith,jane.smith[at]gmail.com,Python Django SQL,3 years"></textarea>
+                    </div>
+
+                    <!-- Job Requirements / Skills -->
+                    <div class="space-y-3 pt-2">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-bullseye text-indigo-400"></i> 2. Target Requirements
+                        </h2>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Required Skills (Comma Separated)</label>
+                            <input id="target-skills" type="text" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" placeholder="React, Node.js, Python, SQL">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Fuzzy Match Threshold</label>
+                                <select id="fuzzy-threshold" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                                    <option value="0.85">High (85% similarity)</option>
+                                    <option value="0.75" selected>Medium (75% similarity)</option>
+                                    <option value="0.60">Low (60% similarity)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Min Score to Highlight</label>
+                                <input id="min-score" type="number" min="0" max="100" value="40" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button onclick="processData()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-indigo-600/20 transition-all duration-200 flex items-center justify-center gap-2 mt-4">
+                        <i class="fa-solid fa-bolt"></i> Clean, Deduplicate & Score
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Results Panel -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col h-full min-h-[500px]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-square-poll-horizontal text-indigo-400"></i> Processing Results
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Real-time sanitized, deduplicated, and scored output</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                <i class="fa-solid fa-file-csv"></i> Export CSV
+                            </button>
+                            <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                <i class="fa-solid fa-file-code"></i> Export JSON
+                            </button>
+                            <button onclick="copyToClipboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                <i class="fa-solid fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Bar -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-3 text-center">
+                            <span class="block text-xs text-slate-400 font-medium">Total Parsed</span>
+                            <span id="stat-total" class="text-xl font-bold text-white">0</span>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-3 text-center">
+                            <span class="block text-xs text-slate-400 font-medium">Sanitized</span>
+                            <span id="stat-sanitized" class="text-xl font-bold text-emerald-400">0</span>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-3 text-center">
+                            <span class="block text-xs text-slate-400 font-medium">Duplicates</span>
+                            <span id="stat-duplicates" class="text-xl font-bold text-rose-400">0</span>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-3 text-center">
+                            <span class="block text-xs text-slate-400 font-medium">Top Matches</span>
+                            <span id="stat-matches" class="text-xl font-bold text-indigo-400">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Output Table Container -->
+                    <div class="flex-1 overflow-x-auto border border-slate-800 rounded-lg bg-slate-950 max-h-[400px]">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-slate-800 bg-slate-900/50 text-slate-400 uppercase tracking-wider font-semibold">
+                                    <th class="p-3">Name</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Skills Found</th>
+                                    <th class="p-3 text-center">Score</th>
+                                    <th class="p-3 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-tbody" class="divide-y divide-slate-800/50 text-slate-300">
+                                <tr>
+                                    <td colspan="5" class="p-8 text-center text-slate-500">
+                                        <i class="fa-solid fa-arrow-left text-2xl mb-2 block"></i>
+                                        Paste candidate data and click "Clean, Deduplicate & Score" to begin.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-4">
+                <div class="inline-flex bg-indigo-500/10 text-indigo-400 p-3 rounded-full border border-indigo-500/20 mb-2">
+                    <i class="fa-solid fa-crown text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-extrabold text-white">Unlock Unlimited Runs</h3>
+                <p class="text-slate-400 text-sm">
+                    You've used your free run. Upgrade to Pro to process unlimited candidates, unlock advanced fuzzy matching, and export clean datasets anytime.
+                </p>
+
+                <!-- Pricing Cards -->
+                <div class="grid grid-cols-1 gap-4 pt-4">
+                    <!-- Lifetime Deal -->
+                    <a href="#" class="block bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 p-4 rounded-xl text-left border border-indigo-500/30 shadow-lg transition-all duration-200 group">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-indigo-200">Early Bird Deal</span>
+                                <h4 class="text-lg font-bold text-white">Lifetime Access</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-2xl font-black text-white">$5</span>
+                                <span class="block text-xs text-indigo-200">one-time</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Monthly Subscription -->
+                    <a href="#" class="block bg-slate-800 hover:bg-slate-700 p-4 rounded-xl text-left border border-slate-700 transition-all duration-200">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Pro Subscription</span>
+                                <h4 class="text-lg font-bold text-white">Monthly Plan</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-2xl font-black text-white">$9</span>
+                                <span class="block text-xs text-slate-400">/ month</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Promo Code Input -->
+                <div class="pt-4 border-t border-slate-800">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Have a Promo Code?</label>
+                    <div class="flex gap-2">
+                        <input id="promo-code" type="text" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="Enter PRO5 or PRO20">
+                        <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                            Apply
+                        </button>
+                    </div>
+                    <p id="promo-error" class="text-rose-500 text-xs mt-1.5 hidden">Invalid promo code. Try PRO5 or PRO20.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>&copy; 2024 RecruitFilter. All rights reserved. 100% client-side secure processing.</p>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-slate-300">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-300">Terms of Service</a>
+                <a href="#" class="hover:text-slate-300">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // State Management
+        let runsRemaining = 1;
+        let processedResults = [];
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            const storedRuns = localStorage.getItem('app_runs_remaining');
+            if (storedRuns !== null) {
+                runsRemaining = parseInt(storedRuns, 10);
+            } else {
+                localStorage.setItem('app_runs_remaining', '1');
+                runsRemaining = 1;
+            }
+            updateCreditBadge();
+        });
+
+        function updateCreditBadge() {
+            const badge = document.getElementById('credit-badge');
+            const countSpan = document.getElementById('runs-count');
+            if (runsRemaining === 999999) {
+                countSpan.innerText = 'Unlimited (Pro)';
+                badge.classList.remove('border-slate-700');
+                badge.classList.add('border-indigo-500/30', 'bg-indigo-950/30');
+            } else {
+                countSpan.innerText = runsRemaining;
+            }
+        }
+
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const errorEl = document.getElementById('promo-error');
+            if (code === 'PRO5' || code === 'PRO20') {
+                runsRemaining = 999999;
+                localStorage.setItem('app_runs_remaining', '999999');
+                updateCreditBadge();
+                closePaywall();
+                errorEl.classList.add('hidden');
+                alert('Success! Unlimited Pro Access Unlocked.');
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Sample Data
+        const sampleData = `name,email,skills,experience
+John Doe,john.doe＠email.com,React Node.js Python,5 years
+John Doe,john.doe@email.com,React Node.js,5 years
+Jane Smith,jane.smith[at]gmail.com,Python Django SQL,3 years
+Jαne Smith,jane.smith@gmail.com,Python Django SQL,3 years
+Bob Johnson,bob.j@outlook.com,Java Spring Boot,8 years
+Alice Brown,alice.b [at] tech.co,React TypeScript Tailwind,2 years
+Alice Brown,alice.b@tech.co,React TypeScript,2 years
+Weird Unicode Char,weird\u200Bchar@domain.com,Go Kubernetes Docker,4 years`;
+
+        function loadSampleData() {
+            document.getElementById('candidate-input').value = sampleData;
+            document.getElementById('target-skills').value = 'React, Python, SQL, TypeScript';
+        }
+
+        // Fuzzy Matching Helper (Levenshtein Distance)
+        function levenshtein(a, b) {
+            const tmp = [];
+            let i, j, alen = a.length, blen = b.length;
+            if (alen === 0) return blen;
+            if (blen === 0) return alen;
+            for (i = 0; i <= alen; i++) tmp[i] = [i];
+            for (j = 0; j <= blen; j++) tmp[0][j] = j;
+            for (i = 1; i <= alen; i++) {
+                for (j = 1; j <= blen; j++) {
+                    tmp[i][j] = Math.min(
+                        tmp[i - 1][j] + 1,
+                        tmp[i][j - 1] + 1,
+                        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+                    );
+                }
+            }
+            return tmp[alen][blen];
+        }
+
+        function isFuzzyDuplicate(name1, name2, threshold = 0.75) {
+            const n1 = name1.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const n2 = name2.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (n1 === n2) return true;
+            const distance = levenshtein(n1, n2);
+            const maxLength = Math.max(n1.length, n2.length);
+            if (maxLength === 0) return false;
+            const similarity = 1 - (distance / maxLength);
+            return similarity >= threshold;
+        }
+
+        // Unicode & Character Sanitizer
+        function sanitizeText(text) {
+            if (!text) return '';
+            // Normalize unicode (NFKD) to separate accents/diacritics
+            let cleaned = text.normalize('NFKD');
+            // Replace full-width/weird '@' symbols (solving the '@' pain point!)
+            cleaned = cleaned.replace(/[＠@]/g, '@');
+            cleaned = cleaned.replace(/\s*\[\s*at\s*\]\s*/gi, '@');
+            cleaned = cleaned.replace(/\s*\(at\)\s*/gi, '@');
+            cleaned = cleaned.replace(/\s*\[at\]\s*/gi, '@');
+            cleaned = cleaned.replace(/\s*at\s*/gi, '@'); // Fallback for spaces around 'at'
+            // Remove zero-width spaces and control characters
+            cleaned = cleaned.replace(/[\u200B-\u200D\uFEFF]/g, '');
+            cleaned = cleaned.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
+            // Normalize smart quotes
+            cleaned = cleaned.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+            return cleaned.trim();
+        }
+
+        // CSV Parser
+        function parseInput(text) {
+            const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+            if (lines.length === 0) return [];
+            
+            // Detect delimiter
+            const firstLine = lines[0];
+            const delimiter = firstLine.includes('\t') ? '\t' : ',';
+            
+            const splitLine = (line) => {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === delimiter && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            };
+
+            const headers = splitLine(lines[0]).map(h => h.replace(/^["']|["']$/g, '').toLowerCase());
+            const records = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = splitLine(lines[i]);
+                const record = {};
+                headers.forEach((header, index) => {
+                    let val = values[index] || '';
+                    record[header] = val.replace(/^["']|["']$/g, '');
+                });
+                records.push(record);
+            }
+            return records;
+        }
+
+        // Main Processing Logic
+        function processData() {
+            // Check Credits
+            if (runsRemaining <= 0) {
+                openPaywall();
+                return;
+            }
+
+            const rawInput = document.getElementById('candidate-input').value.trim();
+            const targetSkillsInput = document.getElementById('target-skills').value.trim();
+            const threshold = parseFloat(document.getElementById('fuzzy-threshold').value);
+            const minScore = parseInt(document.getElementById('min-score').value, 10) || 40;
+
+            if (!rawInput) {
+                alert('Please enter some candidate data first.');
+                return;
+            }
+
+            // Parse target skills
+            const targetSkills = targetSkillsInput.split(',').map(s => s.trim().toLowerCase()).filter(s => s !== '');
+
+            // Parse records
+            let rawRecords = [];
+            try {
+                if (rawInput.startsWith('[') || rawInput.startsWith('{')) {
+                    rawRecords = JSON.parse(rawInput);
+                    if (!Array.isArray(rawRecords)) rawRecords = [rawRecords];
+                } else {
+                    rawRecords = parseInput(rawInput);
+                }
+            } catch (e) {
+                alert('Failed to parse input. Please check your CSV/JSON format.');
+                return;
+            }
+
+            // Process and Sanitize
+            const processed = [];
+            let sanitizedCount = 0;
+            let duplicateCount = 0;
+            let topMatchCount = 0;
+
+            rawRecords.forEach((record, index) => {
+                // Find keys dynamically
+                const nameKey = Object.keys(record).find(k => k.includes('name')) || Object.keys(record)[0];
+                const emailKey = Object.keys(record).find(k => k.includes('email') || k.includes('mail')) || Object.keys(record)[1];
+                const skillsKey = Object.keys(record).find(k => k.includes('skill') || k.includes('resume') || k.includes('exp')) || Object.keys(record)[2];
+
+                let rawName = record[nameKey] || '';
+                let rawEmail = record[emailKey] || '';
+                let rawSkills = record[skillsKey] || '';
+
+                // Sanitize
+                let cleanName = sanitizeText(rawName);
+                let cleanEmail = sanitizeText(rawEmail);
+                let cleanSkills = sanitizeText(rawSkills);
+
+                let isSanitized = (rawName !== cleanName) || (rawEmail !== cleanEmail) || (rawSkills !== cleanSkills);
+                if (isSanitized) sanitizedCount++;
+
+                // Calculate Skills Match Score
+                let score = 0;
+                let matchedSkills = [];
+                if (targetSkills.length > 0) {
+                    const candidateSkillsLower = cleanSkills.toLowerCase();
+                    targetSkills.forEach(skill => {
+                        if (candidateSkillsLower.includes(skill)) {
+                            matchedSkills.push(skill);
+                        }
+                    });
+                    score = Math.round((matchedSkills.length / targetSkills.length) * 100);
+                } else {
+                    score = 0;
+                }
+
+                if (score >= minScore) topMatchCount++;
+
+                // Deduplication Check
+                let isDuplicate = false;
+                let duplicateOf = null;
+                for (let i = 0; i < processed.length; i++) {
+                    const existing = processed[i];
+                    const emailMatch = cleanEmail && existing.email && (cleanEmail.toLowerCase() === existing.email.toLowerCase());
+                    const nameMatch = cleanName && existing.name && isFuzzyDuplicate(cleanName, existing.name, threshold);
+                    
+                    if (emailMatch || nameMatch) {
+                        isDuplicate = true;
+                        duplicateOf = existing.name;
+                        duplicateCount++;
+                        break;
+                    }
+                }
+
+                processed.push({
+                    id: index + 1,
+                    name: cleanName,
+                    email: cleanEmail,
+                    skills: cleanSkills,
+                    matchedSkills: matchedSkills.join(', '),
+                    score: score,
+                    isDuplicate: isDuplicate,
+                    duplicateOf: duplicateOf,
+                    isSanitized: isSanitized
+                });
+            });
+
+            processedResults = processed;
+
+            // Render Results Table
+            renderTable(processed, minScore);
+
+            // Update Stats
+            document.getElementById('stat-total').innerText = processed.length;
+            document.getElementById('stat-sanitized').innerText = sanitizedCount;
+            document.getElementById('stat-duplicates').innerText = duplicateCount;
+            document.getElementById('stat-matches').innerText = topMatchCount;
+
+            // Decrement Runs
+            if (runsRemaining !== 999999) {
+                runsRemaining--;
+                localStorage.setItem('app_runs_remaining', runsRemaining.toString());
+                updateCreditBadge();
+            }
+        }
+
+        function renderTable(data, minScore) {
+            const tbody = document.getElementById('results-tbody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">No valid records found.</td></tr>`;
+                return;
+            }
+
+            data.forEach(row => {
+                let statusBadge = '';
+                let rowClass = '';
+
+                if (row.isDuplicate) {
+                    statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Duplicate of ${row.duplicateOf}</span>`;
+                    rowClass = 'bg-rose-950/10 opacity-60';
+                } else if (row.score >= minScore) {
+                    statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Top Match</span>`;
+                    rowClass = 'bg-emerald-950/10';
+                } else {
+                    statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Clean</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors ${rowClass}`;
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-white">
+                        <div class="flex items-center gap-1.5">
+                            ${row.name}
+                            ${row.isSanitized ? '<i class="fa-solid fa-wand-magic text-emerald-400 text-[10px]" title="Sanitized Unicode/Characters"></i>' : ''}
+                        </div>
+                    </td>
+                    <td class="p-3 text-slate-400 font-mono">${row.email}</td>
+                    <td class="p-3 text-slate-400 max-w-xs truncate" title="${row.skills}">${row.matchedSkills || row.skills || '-'}</td>
+                    <td class="p-3 text-center font-bold ${row.score >= minScore ? 'text-emerald-400' : 'text-slate-400'}">${row.score}%</td>
+                    <td class="p-3 text-right">${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Export Utilities
+        function exportCSV() {
+            if (processedResults.length === 0) {
+                alert('No data to export. Please process some data first.');
+                return;
+            }
+            const headers = ['Name', 'Email', 'Skills', 'Match Score', 'Is Duplicate', 'Duplicate Of'];
+            const rows = processedResults.map(r => [
+                `"${r.name.replace(/"/g, '""')}"`,
+                `"${r.email.replace(/"/g, '""')}"`,
+                `"${r.skills.replace(/"/g, '""')}"`,
+                r.score,
+                r.isDuplicate,
+                r.duplicateOf ? `"${r.duplicateOf.replace(/"/g, '""')}"` : ''
+            ]);
+            
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "recruitfilter_cleaned_candidates.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportJSON() {
+            if (processedResults.length === 0) {
+                alert('No data to export. Please process some data first.');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(processedResults, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "recruitfilter_cleaned_candidates.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.removeChild(downloadAnchor);
+        }
+
+        function copyToClipboard() {
+            if (processedResults.length === 0) {
+                alert('No data to copy. Please process some data first.');
+                return;
+            }
+            const text = JSON.stringify(processedResults, null, 2);
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Cleaned JSON copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy text: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>
