@@ -34,39 +34,46 @@ def extract_safe_json(text: str) -> dict:
         raise ValueError(f"Unable to parse output: {text[:200]}")
 
 def discover_working_model():
-    """現在のAPIキーで実際に疎通可能かつクォータが残っているモデルを探索"""
-    print("[Discovery] Probing available models on current API key...")
+    """APIキーで実際に疎通可能かつ利用可能なモデルを安全に探索"""
+    print("[Discovery] Fetching available models...")
     try:
-        models = [
-            m.name for m in genai.list_models()
+        available = [
+            m.name.replace("models/", "")
+            for m in genai.list_models()
             if 'generateContent' in m.supported_generation_methods
         ]
-        print(f"[Discovery] Found {len(models)} candidate models: {models}")
+        print(f"[Discovery] Available supported models: {available}")
     except Exception as e:
-        print(f"[Warn] Failed to list models: {e}. Falling back to default list.")
-        models = ["models/gemini-3.6-flash", "models/gemini-2.0-flash", "models/gemini-1.5-flash"]
+        print(f"[Warn] ListModels failed: {e}")
+        available = []
 
-    # Flash系・高速モデルを優先してプローブ
-    sorted_models = sorted(models, key=lambda x: 0 if "flash" in x.lower() else 1)
+    # 優先順位リスト
+    priorities = [
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
+        "gemini-1.5-pro-latest",
+        "gemini-1.5-pro",
+        "gemini-2.0-flash-exp"
+    ]
 
-    for m in sorted_models:
+    # 利用可能リストに存在するものを優先順で抽出
+    candidates = [p for p in priorities if p in available]
+    if not candidates:
+        candidates = available if available else ["gemini-1.5-flash"]
+
+    for model_name in candidates:
         try:
-            print(f"[Probe] Testing model: {m} ...", end=" ")
-            probe_model = genai.GenerativeModel(model_name=m)
-            # 1文字投げてクォータ・サポート確認
-            res = probe_model.generate_content("ping", generation_config={"max_output_tokens": 5})
+            print(f"[Probe] Testing: {model_name} ...", end=" ")
+            m = genai.GenerativeModel(model_name=model_name)
+            res = m.generate_content("hello", generation_config={"max_output_tokens": 10})
             if res and res.text:
-                print("-> OK (Active & Quota Available)")
-                return m
+                print("-> SUCCESS")
+                return model_name
         except Exception as e:
-            err_msg = str(e)
-            if "429" in err_msg or "quota" in err_msg.lower():
-                print(f"-> Skipped (Quota Exceeded / Rate Limit)")
-            elif "404" in err_msg or "not found" in err_msg.lower():
-                print(f"-> Skipped (Deprecated / Unsupported)")
-            else:
-                print(f"-> Failed ({err_msg[:60]}...)")
-            time.sleep(2)
+            err = str(e)
+            print(f"-> FAILED ({err[:50]}...)")
+            time.sleep(3)
 
     return None
 
@@ -77,12 +84,9 @@ def generate_solution_app():
 
     genai.configure(api_key=api_key)
 
-    active_model_name = discover_working_model()
-    if not active_model_name:
-        print("[Notice] All candidate models currently exhausted daily free quota or are unavailable.")
-        print("[Notice] Gracefully sleeping pipeline until next scheduled cycle to avoid broken builds.")
-        # エラーでビルドを赤く落とさず、クォータ回復を待つ安全終了
-        exit(0)
+    active_model = discover_working_model()
+    if not active_model:
+        raise RuntimeError("No active Gemini models responded successfully to probe.")
 
     pains = get_curated_pain_points()[:2]
 
@@ -108,9 +112,9 @@ html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き
 - html_content: <!DOCTYPE html>で始まる完全なHTML
 """
 
-    print(f"[Execution] Generating application with validated model: {active_model_name}")
+    print(f"[Execution] Generating application with: {active_model}")
     model = genai.GenerativeModel(
-        model_name=active_model_name,
+        model_name=active_model,
         generation_config={
             "response_mime_type": "application/json",
             "temperature": 0.3
@@ -139,15 +143,14 @@ html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き
             with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
                 json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
 
-            print(f"[Success] Built and verified solution at: {target_dir}")
+            print(f"[Success] Built and saved solution at: {target_dir}")
             return slug
 
         except Exception as e:
             print(f"[Warn] Attempt {attempt+1} failed: {e}")
-            time.sleep(15)
+            time.sleep(10)
 
-    print("[Warn] Model failed to generate JSON within attempt budget.")
-    exit(0)
+    raise RuntimeError("Failed to generate and save app.")
 
 if __name__ == "__main__":
     generate_solution_app()
