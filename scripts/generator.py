@@ -2,6 +2,7 @@ import os
 import json
 import time
 import re
+import sys
 from pydantic import BaseModel, Field
 import google.generativeai as genai
 from pain_miner import get_curated_pain_points
@@ -35,49 +36,49 @@ def extract_safe_json(text: str) -> dict:
         raise ValueError(f"Unable to parse output: {text[:200]}")
 
 def discover_working_model():
-    """APIから実際に利用可能なモデル名を取得し、疎通確認して返す"""
-    print("[Discovery] Querying supported models from API...")
+    """現在クォータが残っており、generateContentが実行できるモデルを探索"""
+    print("[Discovery] Fetching available models...")
     try:
-        raw_models = [
+        models = [
             m.name.replace("models/", "")
             for m in genai.list_models()
             if 'generateContent' in m.supported_generation_methods
         ]
-        print(f"[Discovery] Available supported models: {raw_models}")
+        print(f"[Discovery] Detected models: {models}")
     except Exception as e:
         print(f"[Warn] ListModels failed: {e}")
-        raw_models = []
+        models = []
 
-    # API側が現在アクティブにサポートしている順に指定
-    preferred = [
-        "gemini-3.6-flash",
-        "gemini-2.0-flash-exp",
+    # 優先順位（独立したクォータ枠を持つ各世代のFlashモデル群）
+    candidate_order = [
         "gemini-2.0-flash",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash-exp",
         "gemini-1.5-flash-latest",
-        "gemini-1.5-pro-latest"
+        "gemini-1.5-pro-latest",
+        "gemini-3.6-flash"
     ]
 
-    # 利用可能リストに存在するものを優先順に整理
-    candidates = [p for p in preferred if p in raw_models]
-    # なければAPIが返したリストそのものを使用
-    if not candidates:
-        candidates = raw_models
+    # APIから取得できたモデルを優先順にソート
+    sorted_candidates = [m for m in candidate_order if m in models]
+    for m in models:
+        if m not in sorted_candidates:
+            sorted_candidates.append(m)
 
-    for model_name in candidates:
+    for model_name in sorted_candidates:
         try:
             print(f"[Probe] Testing: {model_name} ...", end=" ")
             m = genai.GenerativeModel(model_name=model_name)
-            res = m.generate_content("ping", generation_config={"max_output_tokens": 5})
+            res = m.generate_content("ok", generation_config={"max_output_tokens": 5})
             if res and res.text:
-                print("-> SUCCESS")
+                print("-> SUCCESS (Quota Active)")
                 return model_name
         except Exception as e:
             err = str(e)
-            print(f"-> FAILED ({err[:40]}...)")
-            time.sleep(3)
+            print(f"-> SKIPPED ({err[:40]}...)")
+            time.sleep(2)
 
-    # 最後の手段（API推奨モデル）
-    return "gemini-3.6-flash"
+    return None
 
 def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -88,13 +89,19 @@ def generate_solution_app():
 
     genai.configure(api_key=api_key)
     active_model = discover_working_model()
+
+    if not active_model:
+        print("[Notice] All candidate models currently have exhausted daily free quota.")
+        print("[Notice] Gracefully sleeping workflow until next scheduled run. Exiting safely.")
+        sys.exit(0)
+
     pains = get_curated_pain_points()[:2]
 
     system_instruction = f"""
 You are an elite Silicon Valley software architect building high-converting, monetized Micro-SaaS tools.
 Target Market: Global English-speaking users.
 
-【Monetization Model (Strict Architecture)】
+【Monetization Model (Strict Architecture - Option A)】
 1. Pricing Tiers:
    - Free Trial: 3 free runs included by default.
    - Option 1 (Pay-As-You-Go): "$11 One-Time - 20 Runs Pack (No Expiration)"
@@ -160,7 +167,8 @@ Output strictly valid JSON with keys:
             print(f"[Warn] Attempt {attempt+1} failed: {e}")
             time.sleep(10)
 
-    raise RuntimeError("Failed to finalize monetized app generation.")
+    print("[Warn] App generation attempt budget finished. Exiting gracefully.")
+    sys.exit(0)
 
 if __name__ == "__main__":
     generate_solution_app()
