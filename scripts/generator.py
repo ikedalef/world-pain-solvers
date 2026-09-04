@@ -35,33 +35,49 @@ def extract_safe_json(text: str) -> dict:
         raise ValueError(f"Unable to parse output: {text[:200]}")
 
 def discover_working_model():
-    priorities = [
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-8b",
-        "gemini-2.0-flash-exp",
-        "gemini-1.5-pro-latest"
-    ]
+    """APIから実際に利用可能なモデル名を取得し、疎通確認して返す"""
+    print("[Discovery] Querying supported models from API...")
     try:
-        available = [
+        raw_models = [
             m.name.replace("models/", "")
             for m in genai.list_models()
             if 'generateContent' in m.supported_generation_methods
         ]
-    except Exception:
-        available = []
+        print(f"[Discovery] Available supported models: {raw_models}")
+    except Exception as e:
+        print(f"[Warn] ListModels failed: {e}")
+        raw_models = []
 
-    candidates = [p for p in priorities if p in available] or ["gemini-1.5-flash"]
+    # API側が現在アクティブにサポートしている順に指定
+    preferred = [
+        "gemini-3.6-flash",
+        "gemini-2.0-flash-exp",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro-latest"
+    ]
+
+    # 利用可能リストに存在するものを優先順に整理
+    candidates = [p for p in preferred if p in raw_models]
+    # なければAPIが返したリストそのものを使用
+    if not candidates:
+        candidates = raw_models
 
     for model_name in candidates:
         try:
+            print(f"[Probe] Testing: {model_name} ...", end=" ")
             m = genai.GenerativeModel(model_name=model_name)
             res = m.generate_content("ping", generation_config={"max_output_tokens": 5})
             if res and res.text:
+                print("-> SUCCESS")
                 return model_name
-        except Exception:
-            time.sleep(2)
-    return "gemini-1.5-flash"
+        except Exception as e:
+            err = str(e)
+            print(f"-> FAILED ({err[:40]}...)")
+            time.sleep(3)
+
+    # 最後の手段（API推奨モデル）
+    return "gemini-3.6-flash"
 
 def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
