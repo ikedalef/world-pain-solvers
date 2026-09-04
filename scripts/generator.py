@@ -7,11 +7,12 @@ import google.generativeai as genai
 from pain_miner import get_curated_pain_points
 
 class SolvedAppSchema(BaseModel):
-    app_slug: str = Field(default="useful-web-tool")
-    title: str = Field(default="Everyday Problem Solver Tool")
-    target_pain: str = Field(default="Streamline manual workflows and solve repetitive tasks.")
-    key_features: list[str] = Field(default_factory=lambda: ["Instant in-browser processing", "100% Privacy focused", "Responsive UI"])
+    app_slug: str = Field(default="useful-paid-tool")
+    title: str = Field(default="Professional Problem Solver")
+    target_pain: str = Field(default="Automate high-value manual tasks for global professionals.")
+    key_features: list[str] = Field(default_factory=lambda: ["Instant local execution", "20-run pack or unlimited access", "100% Client-side privacy"])
     category: str = Field(default="Productivity")
+    pricing_options: list[str] = Field(default_factory=lambda: ["$11 One-Time (20 Runs)", "$9/mo Unlimited Pro"])
     html_content: str = Field(default="")
 
 def extract_safe_json(text: str) -> dict:
@@ -34,85 +35,85 @@ def extract_safe_json(text: str) -> dict:
         raise ValueError(f"Unable to parse output: {text[:200]}")
 
 def discover_working_model():
-    """APIキーで実際に疎通可能かつ利用可能なモデルを安全に探索"""
-    print("[Discovery] Fetching available models...")
+    priorities = [
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
+        "gemini-2.0-flash-exp",
+        "gemini-1.5-pro-latest"
+    ]
     try:
         available = [
             m.name.replace("models/", "")
             for m in genai.list_models()
             if 'generateContent' in m.supported_generation_methods
         ]
-        print(f"[Discovery] Available supported models: {available}")
-    except Exception as e:
-        print(f"[Warn] ListModels failed: {e}")
+    except Exception:
         available = []
 
-    # 優先順位リスト
-    priorities = [
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-8b",
-        "gemini-1.5-pro-latest",
-        "gemini-1.5-pro",
-        "gemini-2.0-flash-exp"
-    ]
-
-    # 利用可能リストに存在するものを優先順で抽出
-    candidates = [p for p in priorities if p in available]
-    if not candidates:
-        candidates = available if available else ["gemini-1.5-flash"]
+    candidates = [p for p in priorities if p in available] or ["gemini-1.5-flash"]
 
     for model_name in candidates:
         try:
-            print(f"[Probe] Testing: {model_name} ...", end=" ")
             m = genai.GenerativeModel(model_name=model_name)
-            res = m.generate_content("hello", generation_config={"max_output_tokens": 10})
+            res = m.generate_content("ping", generation_config={"max_output_tokens": 5})
             if res and res.text:
-                print("-> SUCCESS")
                 return model_name
-        except Exception as e:
-            err = str(e)
-            print(f"-> FAILED ({err[:50]}...)")
-            time.sleep(3)
-
-    return None
+        except Exception:
+            time.sleep(2)
+    return "gemini-1.5-flash"
 
 def generate_solution_app():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("CRITICAL: GEMINI_API_KEY is not defined.")
 
+    stripe_link = os.environ.get("STRIPE_PAYMENT_LINK", "https://buy.stripe.com/evqaEXafF6jw6kV0jg5J60j")
+
     genai.configure(api_key=api_key)
-
     active_model = discover_working_model()
-    if not active_model:
-        raise RuntimeError("No active Gemini models responded successfully to probe.")
-
     pains = get_curated_pain_points()[:2]
 
-    system_instruction = """
-あなたは世界中の人々のリアルな困りごとをブラウザ上で解決する最高峰のエンジニアです。
-ユーザーが手作業で苦労していた作業を、ブラウザ上で1秒・完全ローカル・無料で解決する単一HTMLのWebツールを作成してください。
-必ず指定されたJSON形式（app_slug, title, target_pain, key_features, category, html_content）を厳守して出力してください。
-html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き）を入れてください。
+    system_instruction = f"""
+You are an elite Silicon Valley software architect building high-converting, monetized Micro-SaaS tools.
+Target Market: Global English-speaking users.
+
+【Monetization Model (Strict Architecture)】
+1. Pricing Tiers:
+   - Free Trial: 3 free runs included by default.
+   - Option 1 (Pay-As-You-Go): "$11 One-Time - 20 Runs Pack (No Expiration)"
+   - Option 2 (Pro): "$9/month - Unlimited Access + Continuous Updates"
+2. Checkout URL: Both checkout buttons must link directly to: `{stripe_link}`
+3. Credit Management Logic (100% In-Browser JavaScript):
+   - Store credits in localStorage (`app_runs_remaining`). Initialize to 3 if not present.
+   - Display a clean top badge: "Runs Left: X" (or "Pro Unlimited").
+   - When a user performs the core tool action, decrement by 1.
+   - When credits reach 0, show a sleek Paywall Modal displaying the two pricing options and an "Enter License / Receipt Key" field.
+   - If user enters code `PRO20` or any non-empty key in license modal, add 20 runs or set unlimited and save to localStorage.
+4. UI & Usability:
+   - Complete single-file HTML using Tailwind CSS CDN (https://cdn.tailwindcss.com).
+   - Modern dark mode (slate-950 background, slate-900 cards, indigo/emerald accents).
+   - 100% English copywriting.
 """
 
     prompt = f"""
 {system_instruction}
 
-【解決すべき困りごと】
+【Verified Global User Pain Points】
 {json.dumps(pains, ensure_ascii=False, indent=2)}
 
-【必須JSONキー】
-- app_slug: 半角英数ハイフンのスラッグ（例: csv-cleaner-pro）
-- title: アプリ名
-- target_pain: 解決した具体的な課題
-- key_features: 主な機能リスト
-- category: カテゴリ
-- html_content: <!DOCTYPE html>で始まる完全なHTML
+Build a single-page monetized web app solving one of these pains with the exact credit & paywall model.
+Output strictly valid JSON with keys:
+- app_slug: string (kebab-case)
+- title: string
+- target_pain: string
+- key_features: list of strings
+- category: string
+- pricing_options: list of strings (["$11 One-Time (20 Runs)", "$9/mo Unlimited Pro"])
+- html_content: complete standalone <!DOCTYPE html> string with Tailwind CSS and the complete credit/paywall JS logic.
 """
 
-    print(f"[Execution] Generating application with: {active_model}")
+    print(f"[Execution] Generating monetized application via: {active_model}")
     model = genai.GenerativeModel(
         model_name=active_model,
         generation_config={
@@ -125,12 +126,6 @@ html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き
         try:
             res = model.generate_content(prompt)
             raw_dict = extract_safe_json(res.text)
-
-            html = raw_dict.get("html_content", "")
-            if not html or "<!DOCTYPE html>" not in html:
-                if "<!DOCTYPE html>" in res.text:
-                    raw_dict["html_content"] = res.text
-
             app_data = SolvedAppSchema(**raw_dict)
 
             slug = re.sub(r"[^a-zA-Z0-9\-]", "", app_data.app_slug.lower().replace(" ", "-")) or f"tool-{int(time.time())}"
@@ -143,14 +138,13 @@ html_contentには完全な単一のindex.htmlコード（Tailwind CSS CDN付き
             with open(os.path.join(target_dir, "meta.json"), "w", encoding="utf-8") as f:
                 json.dump(app_data.model_dump(exclude={"html_content"}), f, ensure_ascii=False, indent=2)
 
-            print(f"[Success] Built and saved solution at: {target_dir}")
+            print(f"[Success] Built monetized product at: {target_dir}")
             return slug
-
         except Exception as e:
             print(f"[Warn] Attempt {attempt+1} failed: {e}")
             time.sleep(10)
 
-    raise RuntimeError("Failed to generate and save app.")
+    raise RuntimeError("Failed to finalize monetized app generation.")
 
 if __name__ == "__main__":
     generate_solution_app()
