@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecruitClean: Candidate List Sanitizer, Deduplicator & Skill Scorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#0b0f19'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
+
+    <!-- Top Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/30">
+                    <i class="fa-solid fa-user-shield text-emerald-400 text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight text-white">Recruit<span class="text-emerald-400">Clean</span></span>
+                    <span class="text-xs block text-slate-400">Candidate Data Sanitizer & Scorer</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="credit-badge"></div>
+                <button onclick="openPaywall()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm transition-all shadow-lg shadow-emerald-500/10">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero / Pain Intro -->
+        <div class="mb-8 bg-gradient-to-r from-slate-900 to-slate-900/40 border border-slate-800 rounded-2xl p-6 md:p-8">
+            <div class="max-w-3xl">
+                <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20">Recruiting Workflow Optimizer</span>
+                <h1 class="text-2xl md:text-3xl font-bold text-white mt-3 mb-2">Clean, Deduplicate & Score Candidate Lists Instantly</h1>
+                <p class="text-slate-400 text-sm md:text-base leading-relaxed">
+                    Stop wrestling with broken email characters (like messy <code class="text-emerald-400">@</code> encodings), duplicate applicants, and manual resume matching. Paste your raw CSV, TSV, or JSON candidate list, define your target skills, and get a perfectly structured, scored, and deduplicated pipeline in seconds.
+                </p>
+            </div>
+        </div>
+
+        <!-- Main Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Input & Configuration (5 Cols) -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- Input Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-file-import text-emerald-400"></i> 1. Paste Candidate Data
+                        </h2>
+                        <button onclick="loadSampleData()" class="text-xs text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Load Messy Sample
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1.5">Supports CSV, TSV, or JSON format</label>
+                        <textarea id="raw-input" rows="10" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-emerald-500 transition" placeholder="Name, Email, Phone, Skills, Experience
+John Doe, john.doe [at] gmail.com, +1-555-0199, React Node Python, 5 years
+John Doe, johndoe@gmail.com, 5550199, ReactJS Node.js, 5 yrs
+Alice Smith, alice.smith@yahoo.com, 555-0144, Python Django AWS, 3 years"></textarea>
+                    </div>
+                </div>
+
+                <!-- Configuration Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
+                    <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-emerald-400"></i> 2. Rules & Scoring Engine
+                    </h2>
+
+                    <!-- Deduplication Rules -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-slate-300">Deduplication Strategy</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 rounded-lg p-2.5 cursor-pointer hover:border-emerald-500/50 transition text-xs">
+                                <input type="checkbox" id="dedup-email" checked class="accent-emerald-500">
+                                <span>Email</span>
+                            </label>
+                            <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 rounded-lg p-2.5 cursor-pointer hover:border-emerald-500/50 transition text-xs">
+                                <input type="checkbox" id="dedup-phone" checked class="accent-emerald-500">
+                                <span>Phone</span>
+                            </label>
+                            <label class="flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 rounded-lg p-2.5 cursor-pointer hover:border-emerald-500/50 transition text-xs">
+                                <input type="checkbox" id="dedup-name" class="accent-emerald-500">
+                                <span>Fuzzy Name</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Character Sanitization Rules -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-slate-300">Sanitization Filters</label>
+                        <div class="space-y-2 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="fix-emails" checked class="accent-emerald-500">
+                                <span>Fix broken emails (e.g. replace '[at]' or '_at_' with @)</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="clean-unicode" checked class="accent-emerald-500">
+                                <span>Strip smart quotes & normalize unicode characters</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="normalize-phones" checked class="accent-emerald-500">
+                                <span>Normalize phone formats (strip dashes, spaces, parens)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Skill Scoring Rules -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-medium text-slate-300">Target Skills & Weights</label>
+                            <span class="text-[10px] text-slate-500">Format: skill:weight (e.g. React:5)</span>
+                        </div>
+                        <input type="text" id="target-skills" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition" placeholder="React:5, Node:4, Python:3, AWS:2">
+                    </div>
+
+                    <!-- Action Button -->
+                    <button onclick="processData()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> Clean, Deduplicate & Score
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Real-time Cleaned Output (7 Cols) -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col h-full min-h-[600px]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-emerald-400"></i> Cleaned & Scored Pipeline
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1" id="stats-summary">No data processed yet.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportData('csv')" id="btn-export-csv" disabled class="bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-csv"></i> Export CSV
+                            </button>
+                            <button onclick="exportData('json')" id="btn-export-json" disabled class="bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-code"></i> Export JSON
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Output Table Container -->
+                    <div class="flex-1 overflow-auto mt-4 max-h-[500px] border border-slate-800 rounded-lg bg-slate-950">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-900 border-b border-slate-800 text-slate-400 font-medium">
+                                    <th class="p-3">Name</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Phone</th>
+                                    <th class="p-3">Matched Skills</th>
+                                    <th class="p-3 text-right">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="output-table-body" class="divide-y divide-slate-800/50 text-slate-300">
+                                <tr>
+                                    <td colspan="5" class="p-8 text-center text-slate-500">
+                                        <i class="fa-solid fa-table-list text-3xl mb-2 block"></i>
+                                        Cleaned candidate rows will appear here in real-time.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-4">
+                <div class="mx-auto bg-emerald-500/10 w-16 h-16 rounded-full flex items-center justify-center border border-emerald-500/30">
+                    <i class="fa-solid fa-crown text-emerald-400 text-2xl"></i>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold text-white">Upgrade to RecruitClean Pro</h3>
+                    <p class="text-slate-400 text-xs mt-1">You've used your 1 free run. Unlock unlimited processing, advanced fuzzy matching, and custom scoring weights.</p>
+                </div>
+
+                <!-- Pricing Options -->
+                <div class="space-y-3 pt-2">
+                    <a href="#" onclick="handlePurchase()" class="block bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-emerald-500/20">
+                        <div class="text-sm">$5 One-Time (Lifetime Access)</div>
+                        <div class="text-[10px] opacity-80">Early Bird Special Offer</div>
+                    </a>
+                    <a href="#" onclick="handlePurchase()" class="block bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-xl transition border border-slate-700">
+                        <div class="text-sm">$9/month (Pro Unlimited)</div>
+                        <div class="text-[10px] text-slate-400">Cancel anytime • Priority support</div>
+                    </a>
+                </div>
+
+                <div class="border-t border-slate-800/80 my-4 pt-4">
+                    <label class="block text-xs text-slate-400 mb-2">Have an activation/promo code?</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="promo-code" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500" placeholder="Enter PRO5 or PRO20">
+                        <button onclick="applyPromo()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2 rounded-lg text-xs font-semibold transition">
+                            Apply
+                        </button>
+                    </div>
+                    <p id="promo-error" class="text-red-400 text-[10px] mt-1 hidden">Invalid promo code. Try PRO5 or PRO20.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-message">Action completed successfully!</span>
+    </div>
+
+    <script>
+        // Credit & Paywall State Management
+        let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining'));
+        let isUnlocked = localStorage.getItem('app_unlocked') === 'true';
+
+        if (isNaN(runsRemaining)) {
+            runsRemaining = 1;
+            localStorage.setItem('app_runs_remaining', runsRemaining);
+        }
+
+        function updateCreditBadge() {
+            const badge = document.getElementById('credit-badge');
+            if (isUnlocked) {
+                badge.innerHTML = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                    <i class="fa-solid fa-crown"></i> PRO UNLIMITED
+                </span>`;
+            } else {
+                badge.innerHTML = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                    <i class="fa-solid fa-bolt"></i> Free Runs Left: ${runsRemaining}
+                </span>`;
+            } 
+        }
+
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            if (code === 'PRO5' || code === 'PRO20') {
+                isUnlocked = true;
+                localStorage.setItem('app_unlocked', 'true');
+                updateCreditBadge();
+                closePaywall();
+                showToast('Success! Unlimited Pro Access Unlocked.');
+            } else {
+                const err = document.getElementById('promo-error');
+                err.classList.remove('hidden');
+                setTimeout(() => err.classList.add('hidden'), 3000);
+            }
+        }
+
+        function handlePurchase() {
+            // Redirect to purchase link as requested
+            window.location.href = 'https://checkout.stripe.com';
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Sample Data
+        const messySample = `Name, Email, Phone, Skills, Experience
+John Doe, john.doe [at] gmail.com, +1-555-0199, React Node Python, 5 years
+John Doe, johndoe@gmail.com, 5550199, ReactJS Node.js, 5 yrs
+Alice Smith, alice.smith@yahoo.com, 555-0144, Python Django AWS, 3 years
+Bob Johnson, bob_at_techcorp.com, (555) 0122-333, Java Spring Kubernetes Docker, 8 years
+Bob Johnson, bob@techcorp.com, 5550122333, Java Spring Boot, 8 yrs
+"Sarah ""SmartQuotes"" Connor", sarah.connor@sky.net, +1 555 0100, C++ Rust Security, 10 years`;
+
+        function loadSampleData() {
+            document.getElementById('raw-input').value = messySample;
+            showToast('Sample data loaded!');
+        }
+
+        // Core Business Logic: Parsing, Sanitizing, Deduplicating, Scoring
+        let processedResults = [];
+
+        function parseCSV(text) {
+            const lines = [];
+            let row = [""];
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                const next = text[i+1];
+                if (c === '"') {
+                    if (inQuotes && next === '"') {
+                        row[row.length - 1] += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (c === ',' && !inQuotes) {
+                    row.push("");
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && next === '\n') { i++; }
+                    lines.push(row);
+                    row = [""];
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || row[0] !== "") {
+                lines.push(row);
+            }
+            return lines;
+        }
+
+        function cleanEmail(email) {
+            if (!email) return '';
+            let cleaned = email.trim().toLowerCase();
+            // Fix common broken @ representations
+            cleaned = cleaned.replace(/\s*\[at\]\s*/g, '@');
+            cleaned = cleaned.replace(/\s*_at_\s*/g, '@');
+            cleaned = cleaned.replace(/\s+at\s+/g, '@');
+            cleaned = cleaned.replace(/\s+/g, ''); // strip remaining spaces
+            return cleaned;
+        }
+
+        function cleanPhone(phone) {
+            if (!phone) return '';
+            // Strip non-numeric characters except leading +
+            let cleaned = phone.trim();
+            const hasPlus = cleaned.startsWith('+');
+            cleaned = cleaned.replace(/\D/g, '');
+            return (hasPlus ? '+' : '') + cleaned;
+        }
+
+        function cleanText(text) {
+            if (!text) return '';
+            // Normalize smart quotes and unicode
+            return text.trim()
+                .replace(/[\u2018\u2019]/g, "'")
+                .replace(/[\u201C\u201D]/g, '"')
+                .replace(/\s+/g, ' ');
+        }
+
+        function calculateScore(skillsText, targetSkills) {
+            if (!skillsText || !targetSkills.length) return 0;
+            let score = 0;
+            const normalizedSkills = skillsText.toLowerCase();
+            
+            targetSkills.forEach(ts => {
+                // Simple match check
+                if (normalizedSkills.includes(ts.name.toLowerCase())) {
+                    score += ts.weight;
+                }
+            });
+            return score;
+        }
+
+        function processData() {
+            // Paywall Check
+            if (!isUnlocked && runsRemaining <= 0) {
+                openPaywall();
+                return;
+            }
+
+            const rawInput = document.getElementById('raw-input').value.trim();
+            if (!rawInput) {
+                alert('Please paste some candidate data first.');
+                return;
+            }
+
+            // Parse Input
+            let rows = [];
+            if (rawInput.startsWith('[') || rawInput.startsWith('{')) {
+                try {
+                    const parsedJson = JSON.parse(rawInput);
+                    const arr = Array.isArray(parsedJson) ? parsedJson : [parsedJson];
+                    rows = arr.map(obj => Object.values(obj));
+                } catch (e) {
+                    alert('Invalid JSON format. Please check your syntax.');
+                    return;
+                }
+            } else {
+                // Parse CSV/TSV
+                rows = parseCSV(rawInput);
+            }
+
+            if (rows.length < 2) {
+                alert('No valid candidate rows found.');
+                return;
+            }
+
+            // Extract Headers & Map Columns
+            const headers = rows[0].map(h => h.trim().toLowerCase());
+            const dataRows = rows.slice(1);
+
+            const colIndex = {
+                name: headers.findIndex(h => h.includes('name') || h.includes('candidate') || h.includes('full')),
+                email: headers.findIndex(h => h.includes('email') || h.includes('mail')),
+                phone: headers.findIndex(h => h.includes('phone') || h.includes('tel') || h.includes('mobile')),
+                skills: headers.findIndex(h => h.includes('skill') || h.includes('tech') || h.includes('resume') || h.includes('profile'))
+            };
+
+            // Fallback column mapping if headers not matched
+            if (colIndex.name === -1) colIndex.name = 0;
+            if (colIndex.email === -1) colIndex.email = 1;
+            if (colIndex.phone === -1) colIndex.phone = 2;
+            if (colIndex.skills === -1) colIndex.skills = 3;
+
+            // Parse Target Skills & Weights
+            const targetSkillsInput = document.getElementById('target-skills').value;
+            const targetSkills = targetSkillsInput.split(',').map(item => {
+                const parts = item.split(':');
+                return {
+                    name: parts[0].trim(),
+                    weight: parseInt(parts[1]) || 1
+                };
+            }).filter(ts => ts.name);
+
+            // Configuration Flags
+            const dedupEmail = document.getElementById('dedup-email').checked;
+            const dedupPhone = document.getElementById('dedup-phone').checked;
+            const dedupName = document.getElementById('dedup-name').checked;
+            const fixEmails = document.getElementById('fix-emails').checked;
+            const cleanUnicode = document.getElementById('clean-unicode').checked;
+            const normalizePhones = document.getElementById('normalize-phones').checked;
+
+            const uniqueCandidates = [];
+            const seenEmails = new Set();
+            const seenPhones = new Set();
+            const seenNames = new Set();
+
+            let duplicateCount = 0;
+
+            dataRows.forEach(row => {
+                if (row.length === 0 || (row.length === 1 && row[0] === '')) return;
+
+                let name = row[colIndex.name] || '';
+                let email = row[colIndex.email] || '';
+                let phone = row[colIndex.phone] || '';
+                let skills = row[colIndex.skills] || '';
+
+                // Apply Sanitization
+                if (cleanUnicode) {
+                    name = cleanText(name);
+                    skills = cleanText(skills);
+                }
+                if (fixEmails) {
+                    email = cleanEmail(email);
+                } else {
+                    email = email.trim();
+                }
+                if (normalizePhones) {
+                    phone = cleanPhone(phone);
+                } else {
+                    phone = phone.trim();
+                }
+
+                // Deduplication Check
+                let isDuplicate = false;
+                if (dedupEmail && email && seenEmails.has(email)) isDuplicate = true;
+                if (dedupPhone && phone && seenPhones.has(phone)) isDuplicate = true;
+                if (dedupName && name) {
+                    const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (seenNames.has(normalizedName)) isDuplicate = true;
+                }
+
+                if (isDuplicate) {
+                    duplicateCount++;
+                    return; // Skip duplicate
+                }
+
+                // Register uniqueness
+                if (email) seenEmails.add(email);
+                if (phone) seenPhones.add(phone);
+                if (name) {
+                    const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    seenNames.add(normalizedName);
+                }
+
+                // Calculate Score
+                const score = calculateScore(skills, targetSkills);
+
+                // Match details for UI display
+                const matchedSkills = targetSkills
+                    .filter(ts => skills.toLowerCase().includes(ts.name.toLowerCase()))
+                    .map(ts => ts.name);
+
+                uniqueCandidates.push({
+                    name,
+                    email,
+                    phone,
+                    skills,
+                    matchedSkills,
+                    score
+                });
+            });
+
+            // Sort by Score Descending
+            uniqueCandidates.sort((a, b) => b.score - a.score);
+            processedResults = uniqueCandidates;
+
+            // Render Results
+            renderResults(uniqueCandidates);
+
+            // Update Stats Summary
+            document.getElementById('stats-summary').innerHTML = `Processed <strong>${dataRows.length}</strong> rows • Found <strong>${uniqueCandidates.length}</strong> unique candidates • Removed <strong>${duplicateCount}</strong> duplicates.`;
+
+            // Enable Export Buttons
+            document.getElementById('btn-export-csv').removeAttribute('disabled');
+            document.getElementById('btn-export-json').removeAttribute('disabled');
+
+            // Decrement Credits if not unlocked
+            if (!isUnlocked) {
+                runsRemaining--;
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateCreditBadge();
+            }
+
+            showToast('Data processed successfully!');
+        }
+
+        function renderResults(candidates) {
+            const tbody = document.getElementById('output-table-body');
+            tbody.innerHTML = '';
+
+            if (candidates.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">No candidates found matching criteria.</td></tr>`;
+                return;
+            }
+
+            candidates.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-900/50 transition border-b border-slate-800/40';
+                
+                const skillBadges = c.matchedSkills.map(s => 
+                    `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded text-[10px] mr-1">${s}</span>`
+                ).join('') || '<span class="text-slate-600">None</span>';
+
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-white">${escapeHtml(c.name)}</td>
+                    <td class="p-3 text-slate-400 font-mono">${escapeHtml(c.email)}</td>
+                    <td class="p-3 text-slate-400 font-mono">${escapeHtml(c.phone)}</td>
+                    <td class="p-3">${skillBadges}</td>
+                    <td class="p-3 text-right font-bold text-emerald-400">${c.score}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function exportData(format) {
+            if (!processedResults.length) return;
+
+            let content = '';
+            let filename = `recruitclean_export_${new Date().toISOString().slice(0,10)}`;
+            let mimeType = '';
+
+            if (format === 'csv') {
+                mimeType = 'text/csv;charset=utf-8;';
+                filename += '.csv';
+                const headers = ['Name', 'Email', 'Phone', 'Skills', 'Match Score'];
+                const rows = processedResults.map(c => [
+                    `"${c.name.replace(/"/g, '""')}"`,
+                    `"${c.email}"`,
+                    `"${c.phone}"`,
+                    `"${c.skills.replace(/"/g, '""')}"`,
+                    c.score
+                ]);
+                content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            } else if (format === 'json') {
+                mimeType = 'application/json;charset=utf-8;';
+                filename += '.json';
+                content = JSON.stringify(processedResults, null, 2);
+            }
+
+            const blob = new Blob([content], { type: mimeType });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast(`Exported ${format.toUpperCase()} successfully!`);
+            }
+        }
+
+        // Initialize
+        updateCreditBadge();
+    </script>
+</body>
+</html>

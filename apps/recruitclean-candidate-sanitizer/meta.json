@@ -1,0 +1,17 @@
+{
+  "app_slug": "recruitclean-candidate-sanitizer",
+  "title": "RecruitClean: Candidate List Sanitizer, Deduplicator & Skill Scorer",
+  "target_pain": "Recruiting agencies and HR teams wasting hours manually cleaning messy candidate CSVs, fixing broken email characters, removing duplicates, and scoring resumes against job descriptions.",
+  "key_features": [
+    "Fuzzy & Exact Deduplication (Email/Phone/Name)",
+    "Encoding & Character Sanitizer (Fixes broken '@' symbols, smart quotes, and bad encodings)",
+    "Weighted Skill Keyword Scorer",
+    "Instant CSV/TSV/JSON Parser & Exporter",
+    "100% Client-Side Secure Processing"
+  ],
+  "category": "HR & Recruiting Automation",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

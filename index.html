@@ -5,130 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PainKillers Pro | High-Utility Privacy-First Web Tools</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
-    <!-- Navigation -->
-    <nav class="border-b border-slate-800 bg-slate-900/60 backdrop-blur">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></span>
-                <span class="font-black text-lg tracking-tight">PainKillers<span class="text-indigo-400">.pro</span></span>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="h-4 w-4 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-lg font-bold text-white tracking-tight">PainKillers<span class="text-indigo-400">.pro</span></span>
             </div>
             <div class="flex items-center space-x-3">
-                <span class="text-xs bg-emerald-950/80 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full font-semibold">
-                    $11 (20 Runs) or $9/mo
-                </span>
-                <span class="text-xs bg-indigo-900/60 text-indigo-300 border border-indigo-700 px-3 py-1 rounded-full font-medium hidden sm:inline-block">
-                    100% Client-Side Privacy
-                </span>
+                <span class="text-xs font-semibold px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
+                <span class="text-xs font-semibold px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">100% Client-Side Privacy</span>
             </div>
         </div>
-    </nav>
-
-    <!-- Hero Header -->
-    <header class="max-w-6xl mx-auto px-4 pt-16 pb-12 text-center">
-        <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white max-w-3xl mx-auto leading-tight">
-            Stop wasting hours on repetitive manual workflows.
-        </h1>
-        <p class="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
-            Autonomous, privacy-first web tools designed to solve real operational bottlenecks. No servers. No data leaks. Instant execution.
-        </p>
     </header>
 
-    <!-- Product Grid -->
-    <main class="max-w-6xl mx-auto px-4 pb-24">
+    <!-- Hero Section -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h1 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight mb-6">
+                Stop wasting hours on <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">repetitive manual workflows</span>.
+            </h1>
+            <p class="text-lg sm:text-xl text-slate-400 leading-relaxed">
+                Autonomous, privacy-first web tools designed to solve real operational bottlenecks. No servers. No data leaks. Instant execution.
+            </p>
+        </div>
+
+        <!-- Catalog Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 transition duration-200">
-                <div>
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs font-semibold px-2.5 py-1 bg-slate-800 text-indigo-400 rounded-md border border-slate-700">
-                            Marketing & Strategy
-                        </span>
-                        <div class="flex flex-col items-end">
-                            <span class="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">
-                                $11 (20 Runs)
-                            </span>
-                            <span class="text-[10px] text-slate-400 mt-1">
-                                or $9/mo Unlimited
-                            </span>
-                        </div>
-                    </div>
-                    <h2 class="text-xl font-bold mt-4 text-white leading-snug">OSS Marketing Strategy Builder</h2>
-                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">Navigating the transition from proprietary tools to open-source software, establishing developer community traction, and structuring release roadmaps.</p>
-                    
-                    <ul class="mt-4 space-y-1.5 text-xs text-slate-300">
-                        <li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Target audience & channel discovery</li><li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Open-source narrative & content roadmap generation</li><li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Actionable developer community launch plan</li>
-                    </ul>
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Marketing & Strategy</span>
+                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
                 </div>
-
-                <div class="mt-8 pt-4 border-t border-slate-800">
-                    <a href="./apps/oss-marketing-strategist/index.html" class="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-sm transition duration-150">
-                        Launch Tool &rarr;
-                    </a>
-                </div>
+                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">OSS Marketing Strategy Builder</h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Navigating the transition from proprietary tools to open-source software, establishing developer community traction, and structuring release roadmaps.</p>
+                <ul class="space-y-1.5 mb-6">
+                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Target audience & channel discovery</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Open-source narrative & content roadmap generation</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Actionable developer community launch plan</li>
+                </ul>
             </div>
-            
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 transition duration-200">
-                <div>
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs font-semibold px-2.5 py-1 bg-slate-800 text-indigo-400 rounded-md border border-slate-700">
-                            Developer Tools
-                        </span>
-                        <div class="flex flex-col items-end">
-                            <span class="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">
-                                $11 (20 Runs)
-                            </span>
-                            <span class="text-[10px] text-slate-400 mt-1">
-                                or $9/mo Unlimited
-                            </span>
-                        </div>
-                    </div>
-                    <h2 class="text-xl font-bold mt-4 text-white leading-snug">Universal Data Sanitizer, Deduplicator & Schema Mapper</h2>
-                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">Developers, QA engineers, and data analysts waste hours manually cleaning messy CSV/JSON exports, removing duplicates, fixing broken JSON syntax, and mapping mismatched schemas before importing them into databases or test suites.</p>
-                    
-                    <ul class="mt-4 space-y-1.5 text-xs text-slate-300">
-                        <li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Auto-detects and parses messy CSV, TSV, and broken/malformed JSON</li><li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Dynamic schema mapping (rename, exclude, or retype fields on the fly)</li><li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Advanced deduplication based on custom primary keys</li>
-                    </ul>
+            <a href="apps/oss-marketing-strategist/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                Launch Tool →
+            </a>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">HR & Recruiting Automation</span>
+                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
                 </div>
-
-                <div class="mt-8 pt-4 border-t border-slate-800">
-                    <a href="./apps/universal-data-sanitizer-mapper/index.html" class="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-sm transition duration-150">
-                        Launch Tool &rarr;
-                    </a>
-                </div>
+                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">RecruitClean: Candidate List Sanitizer, Deduplicator & Skill Scorer</h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Recruiting agencies and HR teams wasting hours manually cleaning messy candidate CSVs, fixing broken email characters, removing duplicates, and scoring resumes against job descriptions.</p>
+                <ul class="space-y-1.5 mb-6">
+                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Fuzzy & Exact Deduplication (Email/Phone/Name)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Encoding & Character Sanitizer (Fixes broken '@' symbols, smart quotes, and bad encodings)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Weighted Skill Keyword Scorer</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant CSV/TSV/JSON Parser & Exporter</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>100% Client-Side Secure Processing</li>
+                </ul>
             </div>
-            
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 transition duration-200">
-                <div>
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs font-semibold px-2.5 py-1 bg-slate-800 text-indigo-400 rounded-md border border-slate-700">
-                            Data Transformation & Engineering
-                        </span>
-                        <div class="flex flex-col items-end">
-                            <span class="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">
-                                $11 (20 Runs)
-                            </span>
-                            <span class="text-[10px] text-slate-400 mt-1">
-                                or $9/mo Unlimited
-                            </span>
-                        </div>
-                    </div>
-                    <h2 class="text-xl font-bold mt-4 text-white leading-snug">Messy CSV/TSV Data Cleaner & Deduplicator</h2>
-                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">Cleaning, normalizing, trimming whitespace, fixing quote mismatches, and deduplicating messy CSV/TSV datasets instantly in the browser.</p>
-                    
-                    <ul class="mt-4 space-y-1.5 text-xs text-slate-300">
-                        <li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Instant delimiter auto-detection or manual override (Comma, Tab, Pipe, Semicolon)</li><li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Advanced Deduplication based on selected columns or exact row matching</li><li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Whitespace trimming, lowercase/uppercase normalization, and empty row purging</li>
-                    </ul>
+            <a href="apps/recruitclean-candidate-sanitizer/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                Launch Tool →
+            </a>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Data Transformation & Engineering</span>
+                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
                 </div>
-
-                <div class="mt-8 pt-4 border-t border-slate-800">
-                    <a href="./apps/messy-csv-tsv-cleaner-deduplicator/index.html" class="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-sm transition duration-150">
-                        Launch Tool &rarr;
-                    </a>
-                </div>
+                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Messy CSV/TSV Data Cleaner & Deduplicator</h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Cleaning, normalizing, trimming whitespace, fixing quote mismatches, and deduplicating messy CSV/TSV datasets instantly in the browser.</p>
+                <ul class="space-y-1.5 mb-6">
+                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant delimiter auto-detection or manual override (Comma, Tab, Pipe, Semicolon)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Advanced Deduplication based on selected columns or exact row matching</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Whitespace trimming, lowercase/uppercase normalization, and empty row purging</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Real-time summary statistics (Total rows, duplicates removed, columns detected)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>1-Click Export to CSV/TSV or Clipboard copy with zero data leaks</li>
+                </ul>
             </div>
-            
+            <a href="apps/messy-csv-tsv-cleaner-deduplicator/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                Launch Tool →
+            </a>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group shadow-lg">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Developer Tools</span>
+                    <span class="text-[11px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">$5 Lifetime or $9/mo</span>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Universal Data Sanitizer, Deduplicator & Schema Mapper</h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-3 leading-relaxed">Developers, QA engineers, and data analysts waste hours manually cleaning messy CSV/JSON exports, removing duplicates, fixing broken JSON syntax, and mapping mismatched schemas before importing them into databases or test suites.</p>
+                <ul class="space-y-1.5 mb-6">
+                    <li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Auto-detects and parses messy CSV, TSV, and broken/malformed JSON</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Dynamic schema mapping (rename, exclude, or retype fields on the fly)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Advanced deduplication based on custom primary keys</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Instant format conversion (JSON to CSV, CSV to JSON)</li><li class='flex items-center text-xs text-slate-300'><span class='text-indigo-400 mr-2'>✓</span>Real-time data cleaning (strips nulls, trims whitespace, fixes trailing commas)</li>
+                </ul>
+            </div>
+            <a href="apps/universal-data-sanitizer-mapper/index.html" class="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-md shadow-indigo-600/20">
+                Launch Tool →
+            </a>
+        </div>
+        
         </div>
     </main>
 </body>
