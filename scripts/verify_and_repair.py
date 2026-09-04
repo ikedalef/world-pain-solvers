@@ -62,7 +62,7 @@ def repair_app_if_broken(app_dir: str):
 Markdownのバッククォート等を含めず、<!DOCTYPE html>から</html>までの純粋なHTMLコードのみを返してください。
 """
     try:
-        model = genai.GenerativeModel(model_name="gemini-3.6-flash")
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
         res = model.generate_content(repair_prompt)
         cleaned_html = res.text.strip().replace("```html", "").replace("```", "").strip()
         with open(html_path, "w", encoding="utf-8") as f:
