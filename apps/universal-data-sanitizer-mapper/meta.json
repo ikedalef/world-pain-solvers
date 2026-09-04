@@ -1,0 +1,17 @@
+{
+  "app_slug": "universal-data-sanitizer-mapper",
+  "title": "Universal Data Sanitizer, Deduplicator & Schema Mapper",
+  "target_pain": "Developers, QA engineers, and data analysts waste hours manually cleaning messy CSV/JSON exports, removing duplicates, fixing broken JSON syntax, and mapping mismatched schemas before importing them into databases or test suites.",
+  "key_features": [
+    "Auto-detects and parses messy CSV, TSV, and broken/malformed JSON",
+    "Dynamic schema mapping (rename, exclude, or retype fields on the fly)",
+    "Advanced deduplication based on custom primary keys",
+    "Instant format conversion (JSON to CSV, CSV to JSON)",
+    "Real-time data cleaning (strips nulls, trims whitespace, fixes trailing commas)"
+  ],
+  "category": "Developer Tools",
+  "pricing_options": [
+    "$11 One-Time (20 Runs Pack)",
+    "$9/month (Unlimited Pro)"
+  ]
+}

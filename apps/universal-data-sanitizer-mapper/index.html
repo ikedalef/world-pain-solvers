@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Data Sanitizer & Schema Mapper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#0b0f19'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- HEADER -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        DataSanitizer <span class="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">v1.2</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Clean, Deduplicate & Map Messy JSON/CSV</p>
+                </div>
+            </div>
+
+            <!-- Credit Badge & Actions -->
+            <div class="flex items-center space-x-4">
+                <div class="bg-slate-800 border border-slate-700 rounded-full px-4 py-1.5 flex items-center space-x-2 shadow-inner">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-medium text-slate-300">Runs Remaining:</span>
+                    <span id="runs-badge" class="text-xs font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full">3</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-crown text-amber-400"></i> Upgrade
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Hero / Pain Intro -->
+        <div class="bg-gradient-to-r from-slate-900 to-indigo-950/40 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <h2 class="text-xl font-bold text-white">Stop manually fixing broken JSON & messy CSVs</h2>
+                    <p class="text-sm text-slate-400 max-w-3xl">
+                        Paste raw, malformed, or duplicate-ridden data. Auto-detect schemas, map columns, strip nulls, deduplicate by key, and export perfectly formatted JSON or CSV instantly.
+                    </p>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <button onclick="loadSample('json')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fa-brands fa-js text-yellow-500"></i> Load Broken JSON Sample
+                    </button>
+                    <button onclick="loadSample('csv')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv text-emerald-500"></i> Load Messy CSV Sample
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Input & Parsing -->
+            <div class="lg:col-span-5 flex flex-col space-y-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col flex-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                            <i class="fa-solid fa-right-to-bracket text-indigo-400"></i> Raw Input Data
+                        </label>
+                        <span id="detected-format" class="text-xs font-mono bg-slate-800 text-slate-400 px-2 py-1 rounded border border-slate-700">
+                            Detecting format...
+                        </span>
+                    </div>
+                    
+                    <textarea id="input-data" 
+                        class="w-full h-96 lg:h-[450px] bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs font-mono text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none placeholder-slate-600"
+                        placeholder="Paste your messy JSON array, raw CSV, TSV, or broken JSON here..." 
+                        oninput="handleInputChanged()"></textarea>
+                    
+                    <div class="mt-4 flex items-center justify-between gap-2">
+                        <button onclick="clearInput()" class="text-xs text-slate-400 hover:text-white transition">
+                            <i class="fa-solid fa-trash-can"></i> Clear Input
+                        </button>
+                        <button onclick="analyzeSchema()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i> Analyze & Load Schema
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column: Schema Mapping & Rules -->
+            <div class="lg:col-span-7 flex flex-col space-y-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col h-full">
+                    <h3 class="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-400"></i> Transformation Rules & Schema Mapping
+                    </h3>
+
+                    <!-- Global Rules -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-slate-950 p-4 rounded-lg border border-slate-800">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Deduplicate By Key</label>
+                            <select id="dedup-key" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                                <option value="">-- No Deduplication --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Output Format</label>
+                            <select id="output-format" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                                <option value="json">JSON Array (Pretty)</option>
+                                <option value="csv">CSV (Comma Separated)</option>
+                                <option value="tsv">TSV (Tab Separated)</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 flex flex-wrap gap-4 mt-2 border-t border-slate-800 pt-3">
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="strip-nulls" checked class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                                <span>Strip Null/Empty Fields</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="trim-whitespace" checked class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                                <span>Trim Whitespace</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Schema Mapping Table -->
+                    <div class="flex-1 flex flex-col min-h-[250px]">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Field Mapping & Types</span>
+                            <span id="schema-status" class="text-xs text-slate-500">No schema loaded. Paste data and analyze.</span>
+                        </div>
+                        
+                        <div class="border border-slate-800 rounded-lg overflow-hidden flex-1 bg-slate-950 max-h-[280px] overflow-y-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-800 bg-slate-900/50 text-[11px] font-semibold text-slate-400 uppercase">
+                                        <th class="p-2.5">Source Field</th>
+                                        <th class="p-2.5">Map/Rename To</th>
+                                        <th class="p-2.5">Type Cast</th>
+                                        <th class="p-2.5 text-center">Keep?</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schema-mapping-body" class="divide-y divide-slate-800 text-xs">
+                                    <tr>
+                                        <td colspan="4" class="p-8 text-center text-slate-500 italic">
+                                            Paste data and click "Analyze & Load Schema" to configure fields.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-4 pt-4 border-t border-slate-800 flex justify-end">
+                        <button onclick="executeTransformation()" class="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm font-bold px-6 py-3 rounded-lg shadow-lg shadow-emerald-950/20 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i> Run Transformation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Output / Results Section -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center space-x-3">
+                    <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-square-poll-horizontal text-emerald-400"></i> Transformed Output
+                    </h3>
+                    <div id="stats-badge" class="hidden text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700">
+                        Processed: <span id="stat-processed" class="font-bold text-indigo-400">0</span> rows | Deduplicated: <span id="stat-deduped" class="font-bold text-amber-400">0</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2 rounded border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fa-regular fa-copy"></i> Copy to Clipboard
+                    </button>
+                    <button onclick="downloadOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2 rounded border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Download File
+                    </button>
+                </div>
+            </div>
+
+            <textarea id="output-data" readonly
+                class="w-full h-80 bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs font-mono text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none placeholder-slate-700"
+                placeholder="Your clean, mapped, and deduplicated output will appear here..."></textarea>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-900/40 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>&copy; DataSanitizer Pro. All rights reserved. 100% client-side processing.</p>
+            <div class="flex space-x-4">
+                <a href="#" onclick="openPaywall()" class="hover:text-slate-300 transition">Pricing</a>
+                <a href="#" class="hover:text-slate-300 transition">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-300 transition">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- PAYWALL MODAL -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="text-center space-y-3">
+                <div class="inline-flex bg-indigo-500/10 text-indigo-400 p-3 rounded-full border border-indigo-500/20 mb-2">
+                    <i class="fa-solid fa-crown text-3xl text-amber-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Upgrade to DataSanitizer Pro</h3>
+                <p class="text-xs text-slate-400">
+                    You've reached the limit of your free runs. Unlock unlimited transformations, larger file support, and advanced schema mapping.
+                </p>
+            </div>
+
+            <!-- Pricing Options -->
+            <div class="mt-6 space-y-3">
+                <a href="https://" target="_blank" class="block bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 p-4 rounded-xl text-left border border-indigo-400/20 transition shadow-lg">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-200">One-Time Pack</span>
+                            <h4 class="text-lg font-bold text-white">20 Runs Pack</h4>
+                        </div>
+                        <span class="text-xl font-extrabold text-white">$11</span>
+                    </div>
+                </a>
+                <a href="https://" target="_blank" class="block bg-slate-800 hover:bg-slate-750 p-4 rounded-xl text-left border border-slate-700 transition">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Subscription</span>
+                            <h4 class="text-lg font-bold text-white">Unlimited Pro</h4>
+                        </div>
+                        <span class="text-xl font-extrabold text-white">$9<span class="text-xs font-normal text-slate-400">/mo</span></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Promo Code Activation -->
+            <div class="mt-6 pt-6 border-t border-slate-800">
+                <label class="block text-xs font-medium text-slate-400 mb-2">Have an activation code?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="promo-code" placeholder="e.g. PRO20" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <button onclick="applyPromo()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
+                        Apply
+                    </button>
+                </div>
+                <p id="promo-error" class="text-[11px] text-rose-400 mt-1.5 hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-slate-800 text-slate-200 px-4 py-3 rounded-lg shadow-xl flex items-center space-x-2 text-xs">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">Action completed successfully!</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // State Management
+        let runsRemaining = 3;
+        let parsedData = []; // Array of objects
+        let detectedFormat = 'unknown';
+        let schemaKeys = [];
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load runs from localStorage
+            const storedRuns = localStorage.getItem('app_runs_remaining');
+            if (storedRuns !== null) {
+                runsRemaining = parseInt(storedRuns, 10);
+            } else {
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+            }
+            updateRunsBadge();
+        });
+
+        function updateRunsBadge() {
+            const badge = document.getElementById('runs-badge');
+            badge.textContent = runsRemaining;
+            if (runsRemaining <= 0) {
+                badge.className = "text-xs font-bold text-rose-400 bg-rose-950/50 px-2 py-0.5 rounded-full";
+            } else {
+                badge.className = "text-xs font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full";
+            }
+        }
+
+        // Toast Helper
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.textContent = msg;
+            const icon = toast.querySelector('i');
+            if (isError) {
+                icon.className = "fa-solid fa-circle-exclamation text-rose-400";
+            } else {
+                icon.className = "fa-solid fa-circle-check text-emerald-400";
+            }
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Paywall Modals
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim();
+            const errorEl = document.getElementById('promo-error');
+            if (code === 'PRO20') {
+                runsRemaining += 20;
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateRunsBadge();
+                errorEl.classList.add('hidden');
+                closePaywall();
+                showToast("Promo code applied! +20 Runs added.");
+            } else {
+                errorEl.textContent = "Invalid activation code. Try 'PRO20'.";
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Sample Data Loader
+        const samples = {
+            json: `[
+  {
+    "id": 101,
+    "name": "Alice Vance",
+    "email": "alice@vance.io",
+    "role": "QA Lead",
+    "active": true,
+    "notes": null
+  },
+  {
+    "id": 101,
+    "name": "Alice Vance",
+    "email": "alice@vance.io",
+    "role": "QA Lead",
+    "active": true
+  },
+  {
+    "id": 102,
+    "name": "Bob Smith ",
+    "email": "bob@smith.com",
+    "role": "Developer",
+    "active": false,
+    "notes": "On leave"
+  },
+  {
+    "id": 103,
+    "name": "Charlie Brown",
+    "email": "charlie@brown.org",
+    "role": "Product Manager",
+    "active": true
+  }
+]`,
+            csv: `id,name,email,role,active,notes
+101,Alice Vance,alice@vance.io,QA Lead,true,
+101,Alice Vance,alice@vance.io,QA Lead,true,
+102,Bob Smith ,bob@smith.com,Developer,false,On leave
+103,Charlie Brown,charlie@brown.org,Product Manager,true,`
+        };
+
+        function loadSample(type) {
+            document.getElementById('input-data').value = samples[type];
+            handleInputChanged();
+            analyzeSchema();
+            showToast(`Loaded messy ${type.toUpperCase()} sample data.`);
+        }
+
+        // Auto-detect format
+        function handleInputChanged() {
+            const input = document.getElementById('input-data').value.trim();
+            const badge = document.getElementById('detected-format');
+            
+            if (!input) {
+                badge.textContent = "Detecting format...";
+                detectedFormat = 'unknown';
+                return;
+            }
+
+            if (input.startsWith('[') || input.startsWith('{')) {
+                badge.textContent = "Format: JSON";
+                detectedFormat = 'json';
+            } else if (input.includes('\t')) {
+                badge.textContent = "Format: TSV";
+                detectedFormat = 'tsv';
+            } else if (input.includes(',')) {
+                badge.textContent = "Format: CSV";
+                detectedFormat = 'csv';
+            } else {
+                badge.textContent = "Format: Plain Text / Unknown";
+                detectedFormat = 'unknown';
+            }
+        }
+
+        // Robust JSON Repair & Parsing
+        function looseParseJSON(str) {
+            // Try standard parse first
+            try {
+                return JSON.parse(str);
+            } catch (e) {
+                // Attempt basic repairs for common malformations (trailing commas, unquoted keys)
+                let repaired = str
+                    .replace(/,\s*([}\]])/g, '$1') // remove trailing commas
+                    .replace(/([{,])\s*([a-zA-Z0-9_]+?)\s*:/g, '$1"$2":') // quote unquoted keys
+                    .replace(/'/g, '"'); // single quotes to double quotes
+                try {
+                    return JSON.parse(repaired);
+                } catch (err) {
+                    throw new Error("JSON parsing failed. Please check syntax.");
+                }
+            }
+        }
+
+        // Robust CSV/TSV Parser
+        function parseCSV(text, delimiter = ',') {
+            const lines = text.split(/\r?\n/);
+            if (lines.length === 0 || lines[0].trim() === '') return [];
+            
+            const headers = splitCSVLine(lines[0], delimiter).map(h => h.trim());
+            const result = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const values = splitCSVLine(line, delimiter);
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = values[index] !== undefined ? values[index].trim() : '';
+                });
+                result.push(obj);
+            }
+            return result;
+        }
+
+        function splitCSVLine(line, delimiter) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === delimiter && !inQuotes) {
+                    result.push(current.replace(/^"|"$/g, ''));
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.replace(/^"|"$/g, ''));
+            return result;
+        }
+
+        // Analyze Schema & Build Mapping UI
+        function analyzeSchema() {
+            const input = document.getElementById('input-data').value.trim();
+            if (!input) {
+                showToast("Please paste some data first.", true);
+                return;
+            }
+
+            try {
+                if (detectedFormat === 'json') {
+                    const parsed = looseParseJSON(input);
+                    parsedData = Array.isArray(parsed) ? parsed : [parsed];
+                } else if (detectedFormat === 'csv') {
+                    parsedData = parseCSV(input, ',');
+                } else if (detectedFormat === 'tsv') {
+                    parsedData = parseCSV(input, '\t');
+                } else {
+                    // Fallback try JSON then CSV
+                    try {
+                        const parsed = looseParseJSON(input);
+                        parsedData = Array.isArray(parsed) ? parsed : [parsed];
+                        detectedFormat = 'json';
+                    } catch (e) {
+                        parsedData = parseCSV(input, ',');
+                        detectedFormat = 'csv';
+                    }
+                }
+
+                if (parsedData.length === 0) {
+                    throw new Error("No valid records found.");
+                }
+
+                // Extract unique keys
+                const keysSet = new Set();
+                parsedData.forEach(obj => {
+                    Object.keys(obj).forEach(k => keysSet.add(k));
+                });
+                schemaKeys = Array.from(keysSet);
+
+                buildSchemaUI();
+                showToast(`Successfully analyzed ${parsedData.length} records.`);
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        }
+
+        function buildSchemaUI() {
+            const tbody = document.getElementById('schema-mapping-body');
+            const dedupSelect = document.getElementById('dedup-key');
+            const statusText = document.getElementById('schema-status');
+
+            tbody.innerHTML = '';
+            
+            // Reset & Populate Deduplication Dropdown
+            dedupSelect.innerHTML = '<option value="">-- No Deduplication --</option>';
+
+            schemaKeys.forEach(key => {
+                // Add to Dedup Dropdown
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = key;
+                dedupSelect.appendChild(opt);
+
+                // Add to Schema Mapping Table
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-800 hover:bg-slate-900/40 transition";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-mono text-slate-300">${key}</td>
+                    <td class="p-2.5">
+                        <input type="text" data-source="${key}" class="map-to-input bg-slate-900 border border-slate-700 rounded px-2 py-1 w-full text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500" value="${key}">
+                    </td>
+                    <td class="p-2.5">
+                        <select data-source="${key}" class="type-cast-select bg-slate-900 border border-slate-700 rounded px-2 py-1 w-full text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="string">String</option>
+                            <option value="number">Number</option>
+                            <option value="boolean">Boolean</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <input type="checkbox" data-source="${key}" class="keep-checkbox rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500" checked>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            statusText.textContent = `${schemaKeys.length} fields detected.`;
+        }
+
+        // Clear Input
+        function clearInput() {
+            document.getElementById('input-data').value = '';
+            document.getElementById('detected-format').textContent = 'Detecting format...';
+            document.getElementById('schema-mapping-body').innerHTML = `
+                <tr>
+                    <td colspan="4" class="p-8 text-center text-slate-500 italic">
+                        Paste data and click "Analyze & Load Schema" to configure fields.
+                    </td>
+                </tr>
+            `;
+            document.getElementById('dedup-key').innerHTML = '<option value="">-- No Deduplication --</option>';
+            document.getElementById('schema-status').textContent = 'No schema loaded. Paste data and analyze.';
+            parsedData = [];
+            schemaKeys = [];
+        }
+
+        // Execute Transformation
+        function executeTransformation() {
+            // Check Credits
+            if (runsRemaining <= 0) {
+                openPaywall();
+                return;
+            }
+
+            if (parsedData.length === 0) {
+                showToast("Please analyze data schema first.", true);
+                return;
+            }
+
+            // Decrement runs
+            runsRemaining--;
+            localStorage.setItem('app_runs_remaining', runsRemaining);
+            updateRunsBadge();
+
+            // Read Configuration
+            const dedupKey = document.getElementById('dedup-key').value;
+            const outputFormat = document.getElementById('output-format').value;
+            const stripNulls = document.getElementById('strip-nulls').checked;
+            const trimWhitespace = document.getElementById('trim-whitespace').checked;
+
+            // Read Schema Mapping
+            const mappings = {};
+            const typeCasts = {};
+            const fieldsToKeep = new Set();
+
+            document.querySelectorAll('.map-to-input').forEach(input => {
+                const src = input.getAttribute('data-source');
+                mappings[src] = input.value.trim() || src;
+            });
+
+            document.querySelectorAll('.type-cast-select').forEach(select => {
+                const src = select.getAttribute('data-source');
+                typeCasts[src] = select.value;
+            });
+
+            document.querySelectorAll('.keep-checkbox').forEach(checkbox => {
+                if (checkbox.checked) {
+                    fieldsToKeep.add(checkbox.getAttribute('data-source'));
+                }
+            });
+
+            // Process Data
+            let processed = [];
+            let dedupCount = 0;
+            const seenKeys = new Set();
+
+            parsedData.forEach(item => {
+                // 1. Deduplication
+                if (dedupKey) {
+                    const val = String(item[dedupKey] || '').trim();
+                    if (seenKeys.has(val)) {
+                        dedupCount++;
+                        return; // Skip duplicate
+                    }
+                    seenKeys.add(val);
+                }
+
+                // 2. Map, Cast, Clean
+                const newItem = {};
+                fieldsToKeep.forEach(srcKey => {
+                    let val = item[srcKey];
+
+                    // Trim Whitespace
+                    if (trimWhitespace && typeof val === 'string') {
+                        val = val.trim();
+                    }
+
+                    // Strip Nulls
+                    if (stripNulls && (val === null || val === undefined || val === '')) {
+                        return; // Skip this field
+                    }
+
+                    // Type Casting
+                    const targetType = typeCasts[srcKey];
+                    if (targetType === 'number') {
+                        val = Number(val);
+                        if (isNaN(val)) val = null;
+                    } else if (targetType === 'boolean') {
+                        val = String(val).toLowerCase() === 'true' || val === 1 || val === true;
+                    } else if (targetType === 'string') {
+                        val = String(val);
+                    }
+
+                    const targetKey = mappings[srcKey] || srcKey;
+                    newItem[targetKey] = val;
+                });
+
+                processed.push(newItem);
+            });
+
+            // Format Output
+            let outputStr = '';
+            if (outputFormat === 'json') {
+                outputStr = JSON.stringify(processed, null, 2);
+            } else {
+                const delimiter = outputFormat === 'tsv' ? '\t' : ',';
+                outputStr = convertToCSV(processed, delimiter);
+            }
+
+            // Display Output
+            document.getElementById('output-data').value = outputStr;
+
+            // Update Stats
+            document.getElementById('stats-badge').classList.remove('hidden');
+            document.getElementById('stat-processed').textContent = processed.length;
+            document.getElementById('stat-deduped').textContent = dedupCount;
+
+            showToast("Transformation complete!");
+        }
+
+        function convertToCSV(arr, delimiter) {
+            if (arr.length === 0) return '';
+            const headers = Object.keys(arr[0]);
+            const headerRow = headers.join(delimiter);
+            const rows = arr.map(obj => {
+                return headers.map(header => {
+                    let val = obj[header] === undefined || obj[header] === null ? '' : obj[header];
+                    val = String(val).replace(/"/g, '""');
+                    if (val.includes(delimiter) || val.includes('\n') || val.includes('"')) {
+                        val = `"${val}"`;
+                    }
+                    return val;
+                }).join(delimiter);
+            });
+            return [headerRow, ...rows].join('\n');
+        }
+
+        // Copy to Clipboard
+        function copyOutput() {
+            const output = document.getElementById('output-data');
+            if (!output.value) {
+                showToast("No output to copy.", true);
+                return;
+            }
+            output.select();
+            document.execCommand('copy');
+            showToast("Copied output to clipboard!");
+        }
+
+        // Download Output File
+        function downloadOutput() {
+            const output = document.getElementById('output-data').value;
+            if (!output) {
+                showToast("No output to download.", true);
+                return;
+            }
+            const format = document.getElementById('output-format').value;
+            const filename = `sanitized_data.${format === 'json' ? 'json' : format === 'tsv' ? 'tsv' : 'csv'}`;
+            const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Downloaded ${filename}`);
+        }
+    </script>
+</body>
+</html>
