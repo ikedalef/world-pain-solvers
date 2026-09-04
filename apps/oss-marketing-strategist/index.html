@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSS Marketing Strategy Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }\n    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="gradient-bg py-12 px-4">
+        <div class="max-w-4xl mx-auto text-center text-white">
+            <h1 class="text-4xl font-bold mb-4"><i class="fas fa-rocket mr-3"></i>OSS Marketing Strategy Builder</h1>
+            <p class="text-lg opacity-90">クローズドからオープンソースへ。あなたのプロダクトを世界に届けるための戦略を1分で構築します。</p>
+        </div>
+    </div>
+
+    <main class="max-w-4xl mx-auto -mt-10 px-4 pb-20">
+        <div class="card rounded-xl shadow-2xl p-8 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">プロダクト名</label>
+                    <input type="text" id="prodName" placeholder="例: SuperFastDB" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">解決する課題</label>
+                    <input type="text" id="problem" placeholder="例: データベースの遅延を解消" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">主なターゲット層</label>
+                    <select id="target" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="dev">個人開発者 / エンジニア</option>
+                        <option value="devops">DevOps / インフラエンジニア</option>
+                        <option value="data">データサイエンティスト</option>
+                        <option value="enterprise">エンタープライズ / CTO</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">現在のフェーズ</label>
+                    <select id="phase" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="alpha">アルファ版 (初期開発)</option>
+                        <option value="beta">ベータ版 (ユーザー獲得中)</option>
+                        <option value="mature">成熟期 (エコシステム拡大)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-8 text-center">
+                <button onclick="generateStrategy()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-full transition duration-300 transform hover:scale-105">
+                    戦略プランを生成する
+                </button>
+            </div>
+        </div>
+
+        <div id="resultArea" class="hidden space-y-6">
+            <div class="card rounded-xl shadow-xl p-8 border-t-4 border-indigo-500">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800" id="resTitle">Strategy Blueprint</h2>
+                    <button onclick="window.print()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                        <i class="fas fa-print mr-1"></i> PDFとして保存
+                    </button>
+                </div>
+
+                <div class="space-y-8">
+                    <section>
+                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-bullseye mr-2"></i>1. ポジショニング戦略</h3>
+                        <p id="resPositioning" class="text-gray-700 leading-relaxed"></p>
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-share-alt mr-2"></i>2. 推奨マーケティングチャネル</h3>
+                        <div id="resChannels" class="flex flex-wrap gap-2"></div>
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-pen-nib mr-2"></i>3. コンテンツ制作ロードマップ</h3>
+                        <ul id="resContent" class="list-disc list-inside text-gray-700 space-y-2"></ul>
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-bold text-indigo-600 mb-3"><i class="fas fa-users mr-2"></i>4. コミュニティ構築アクション</h3>
+                        <div id="resCommunity" class="bg-indigo-50 p-4 rounded-lg text-indigo-900 text-sm italic"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function generateStrategy() {
+            const name = document.getElementById('prodName').value || 'Your OSS Project';
+            const problem = document.getElementById('problem').value || 'the problem it solves';
+            const target = document.getElementById('target').value;
+            const phase = document.getElementById('phase').value;
+
+            document.getElementById('resTitle').innerText = `${name} 戦略ブループリント`;
+            
+            // 1. Positioning
+            let positioning = `"${name}"は、${problem}という課題を抱える層に対し、オープンソースの透明性と柔軟性を提供することで、既存のクローズドなソリューションに代わる信頼できる選択肢として位置づけます。`;
+            document.getElementById('resPositioning').innerText = positioning;
+
+            // 2. Channels
+            const channels = {
+                dev: ['GitHub', 'Hacker News', 'Reddit (r/programming)', 'Dev.to', 'X (Twitter)'],
+                devops: ['Medium', 'Stack Overflow', 'Cloud Native Community', 'LinkedIn', 'Tech Blogs'],
+                data: ['Towards Data Science', 'Kaggle', 'Substack', 'Twitter', 'Conferences'],
+                enterprise: ['LinkedIn', 'Whitepapers', 'Webinars', 'Case Studies', 'Direct Outreach']
+            };
+            const channelContainer = document.getElementById('resChannels');
+            channelContainer.innerHTML = '';
+            channels[target].forEach(c => {
+                const span = document.createElement('span');
+                span.className = 'bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium';
+                span.innerText = c;
+                channelContainer.appendChild(span);
+            });
+
+            // 3. Content
+            const content = {
+                alpha: ['Quick Start Guide (README)', 'Basic Architecture Diagram', 'Minimal Demo Repo'],
+                beta: ['Deep Dive Technical Blog', 'Comparison with Competitors', 'Video Tutorials', 'API Documentation'],
+                mature: ['Case Studies', 'Contributor Guide', 'Ecosystem Integration Guides', 'Security Audit Reports']
+            };
+            const contentList = document.getElementById('resContent');
+            contentList.innerHTML = '';
+            content[phase].forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item;
+                contentList.appendChild(li);
+            });
+
+            // 4. Community
+            const community = {
+                dev: 'GitHub Discussionsを立ち上げ、Issueへの迅速なレスポンスで「開発者に優しいプロジェクト」の印象を確立してください。',
+                devops: 'SlackやDiscordのコミュニティを構築し、運用上のトラブルシューティングを共有できる場を作ってください。',
+                data: 'Jupyter Notebookのテンプレートや、データセットを用いたサンプルコードを公開し、即座に試せる環境を提供してください。',
+                enterprise: '公式ドキュメントの信頼性を高め、エンタープライズ向けのサポート窓口やセキュリティポリシーを明文化してください。'
+            };
+            document.getElementById('resCommunity').innerText = community[target];
+
+            // Show result
+            const resultArea = document.getElementById('resultArea');
+            resultArea.classList.remove('hidden');
+            resultArea.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
