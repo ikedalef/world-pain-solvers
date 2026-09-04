@@ -1,13 +1,15 @@
 {
   "app_slug": "oss-marketing-strategist",
   "title": "OSS Marketing Strategy Builder",
-  "target_pain": "クローズドな製品からオープンソース（OSS）へ移行する際、どのようにターゲット層へリーチし、コミュニティを構築し、プロダクトを広めていくべきかというマーケティング戦略の立案に苦労している。",
+  "target_pain": "Navigating the transition from proprietary tools to open-source software, establishing developer community traction, and structuring release roadmaps.",
   "key_features": [
-    "ターゲットユーザー層に応じたチャネル選定",
-    "プロダクト特性に基づくコンテンツ戦略の自動生成",
-    "コミュニティ成長のためのアクションプラン策定",
-    "GitHub READMEやドキュメントの優先順位付け",
-    "ワンクリックでの戦略レポート出力"
+    "Target audience & channel discovery",
+    "Open-source narrative & content roadmap generation",
+    "Actionable developer community launch plan"
   ],
-  "category": "Marketing & Strategy"
+  "category": "Marketing & Strategy",
+  "pricing_options": [
+    "$11 One-Time (20 Runs)",
+    "$9/mo Unlimited Pro"
+  ]
 }
