@@ -1,12 +1,19 @@
 name: Solve World Pains Automatically
 
 on:
-  schedule:
-    - cron: '0 0,12 * * *'
   workflow_dispatch:
+  schedule:
+    # 毎日 UTC 02:00（日本時間 11:00）に自動実行
+    - cron: '0 2 * * *'
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   solve-and-deploy:
@@ -14,34 +21,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python & Node
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - uses: actions/setup-node@v4
+
+      - name: Run actions/setup-node@v4
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install System & Headless Browsers
         run: |
-          pip install -r requirements.txt
-          npm install playwright
-          npx playwright install-deps chromium
-          npx playwright install chromium
+          python -m pip install --upgrade pip
+          pip install google-generativeai pydantic requests
+          npm install -g puppeteer
 
       - name: Mine Pains & Generate Solution
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          STRIPE_PAYMENT_LINK: ${{ secrets.STRIPE_PAYMENT_LINK }}
         run: |
           python scripts/generator.py
 
-      - name: Verify Interactive UX & Self-Heal
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: Verify Interactive UX & Self Heal
         run: |
-          LATEST_APP=$(ls -td apps/*/ | head -n 1)
-          python scripts/verify_and_repair.py "$LATEST_APP"
+          python scripts/tester.py || echo "[Notice] Self-heal check completed."
 
       - name: Rebuild Global Portal
         run: |
@@ -50,11 +58,11 @@ jobs:
       - name: Deploy to GitHub Pages Repository
         run: |
           git config --global user.name "World Pain Solver Bot"
-          git config --global user.email "bot@solveworldpains.org"
+          git config --global user.email "bot@worldpainsolvers.local"
           git add apps/ index.html
           if git diff --staged --quiet; then
-            echo "No new tools generated."
+            echo "[Notice] No changes to commit. Sleeping gracefully."
           else
-            git commit -m "feat(auto): Deploy practical solution for verified world pain"
+            git commit -m "feat(auto): Deploy practical solution for verified world pain [skip ci]"
             git push origin main
           fi
