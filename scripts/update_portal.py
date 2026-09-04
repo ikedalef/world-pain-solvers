@@ -19,29 +19,68 @@ def build_portal():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Everyday Pain Solvers | 100% Free & In-Browser Tools</title>
+    <title>PainKillers Pro | High-Utility Privacy-First Web Tools</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-    <header class="border-b bg-white">
-        <div class="max-w-6xl mx-auto px-4 py-8">
-            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">100% Free & In-Browser</span>
-            <h1 class="text-3xl font-extrabold mt-3">Everyday Pain Solvers</h1>
-            <p class="text-slate-600 mt-2">Autonomous, privacy-first web tools generated to solve real problems reported by real people worldwide.</p>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="border-b border-slate-800 bg-slate-900/60 backdrop-blur">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></span>
+                <span class="font-black text-lg tracking-tight">PainKillers<span class="text-indigo-400">.pro</span></span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="text-xs bg-emerald-950/80 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full font-semibold">
+                    $11 (20 Runs) or $9/mo
+                </span>
+                <span class="text-xs bg-indigo-900/60 text-indigo-300 border border-indigo-700 px-3 py-1 rounded-full font-medium hidden sm:inline-block">
+                    100% Client-Side Privacy
+                </span>
+            </div>
         </div>
+    </nav>
+
+    <!-- Hero Header -->
+    <header class="max-w-6xl mx-auto px-4 pt-16 pb-12 text-center">
+        <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white max-w-3xl mx-auto leading-tight">
+            Stop wasting hours on repetitive manual workflows.
+        </h1>
+        <p class="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
+            Autonomous, privacy-first web tools designed to solve real operational bottlenecks. No servers. No data leaks. Instant execution.
+        </p>
     </header>
-    <main class="max-w-6xl mx-auto px-4 py-10">
+
+    <!-- Product Grid -->
+    <main class="max-w-6xl mx-auto px-4 pb-24">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {''.join([f'''
-            <div class="bg-white border rounded-xl p-6 flex flex-col justify-between hover:shadow-md transition">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 transition duration-200">
                 <div>
-                    <span class="text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-700 rounded">{app.get("category", "Tool")}</span>
-                    <h2 class="text-xl font-bold mt-3 text-slate-800">{app.get("title")}</h2>
-                    <p class="text-sm text-slate-600 mt-2 leading-relaxed">{app.get("target_pain")}</p>
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-slate-800 text-indigo-400 rounded-md border border-slate-700">
+                            {app.get("category", "Utility")}
+                        </span>
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">
+                                $11 (20 Runs)
+                            </span>
+                            <span class="text-[10px] text-slate-400 mt-1">
+                                or $9/mo Unlimited
+                            </span>
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-bold mt-4 text-white leading-snug">{app.get("title")}</h2>
+                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">{app.get("target_pain")}</p>
+                    
+                    <ul class="mt-4 space-y-1.5 text-xs text-slate-300">
+                        {''.join([f'<li class="flex items-center"><svg class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>{feat}</li>' for feat in app.get("key_features", [])[:3]])}
+                    </ul>
                 </div>
-                <div class="mt-6 pt-4 border-t">
-                    <a href="{app.get("url")}" class="inline-flex items-center justify-center w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-lg text-sm transition">
-                        Open Tool &rarr;
+
+                <div class="mt-8 pt-4 border-t border-slate-800">
+                    <a href="{app.get("url")}" class="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-sm transition duration-150">
+                        Launch Tool &rarr;
                     </a>
                 </div>
             </div>
@@ -53,7 +92,7 @@ def build_portal():
 """
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(portal_html)
-    print(f"[Portal] Updated index.html with {len(apps)} solved apps.")
+    print(f"[Portal] Updated index.html with {len(apps)} monetized applications.")
 
 if __name__ == "__main__":
     build_portal()
