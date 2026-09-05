@@ -1,0 +1,17 @@
+{
+  "app_slug": "universal-data-cleaner-converter",
+  "title": "Universal Data Cleaner, Deduplicator & Format Converter",
+  "target_pain": "Developers, data analysts, and researchers wasting hours manually cleaning messy CSVs, unformatted JSONs, raw logs, or scraped text lists into structured formats.",
+  "key_features": [
+    "Auto-detects input format (JSON, CSV, TSV, or Line-by-Line Text)",
+    "Advanced cleaning options: Trim whitespace, remove empty rows, and deduplicate records",
+    "Instant cross-format conversion (JSON to CSV, CSV to JSON, Text List to JSON Array)",
+    "Real-time search and column filtering",
+    "1-click Copy to Clipboard and instant CSV/JSON file download"
+  ],
+  "category": "Data Productivity Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
