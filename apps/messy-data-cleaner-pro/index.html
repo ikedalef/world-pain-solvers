@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messy CSV & JSON Data Cleaner Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              850: '#111827',
+              950: '#030712'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid text-white text-lg fa-broom"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-white leading-tight flex items-center gap-2">
+            DataCleaner <span class="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-semibold px-2 py-0.5 rounded-full">PRO</span>
+          </h1>
+          <p class="text-xs text-slate-400 hidden sm:block">100% Client-Side CSV & JSON Scrubbing Engine</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div id="creditBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="runsText" class="text-slate-300">Free Run: 1 left</span>
+        </div>
+        <button onclick="openPaywallModal()" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-lg shadow-indigo-600/25 transition duration-150 flex items-center space-x-1.5">
+          <i class="fa-solid fa-crown text-yellow-300"></i>
+          <span>Upgrade</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    
+    <!-- Quick Sample Loader Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+      <div class="flex items-center space-x-2 text-xs font-medium text-slate-400">
+        <i class="fa-solid fa-bolt text-amber-400"></i>
+        <span>Load Test Sample Data:</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="loadSample('messyCsv')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition">
+          <i class="fa-solid fa-file-csv text-emerald-400 mr-1.5"></i>Dirty Leads CSV
+        </button>
+        <button onclick="loadSample('messyJson')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition">
+          <i class="fa-solid fa-code text-blue-400 mr-1.5"></i>Broken JSON Feed
+        </button>
+        <button onclick="loadSample('dirtyList')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition">
+          <i class="fa-solid fa-list-check text-purple-400 mr-1.5"></i>Duplicate Email List
+        </button>
+        <button onclick="clearInput()" class="text-xs text-rose-400 hover:text-rose-300 px-2.5 py-1.5 rounded-lg hover:bg-rose-950/30 transition border border-transparent hover:border-rose-800/50">
+          <i class="fa-solid fa-trash-can mr-1"></i>Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid Layout for Inputs & Rules -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Raw Input Box (7 Cols) -->
+      <div class="lg:col-span-7 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="bg-slate-850 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-file-import text-indigo-400"></i>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Raw Input Data</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <label for="delimiterSelect" class="text-xs text-slate-400">Format:</label>
+            <select id="delimiterSelect" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2 py-1 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+              <option value="auto">Auto-Detect Format</option>
+              <option value="comma">CSV (Comma)</option>
+              <option value="tab">TSV (Tab)</option>
+              <option value="pipe">Pipe (|)</option>
+              <option value="json">JSON Array</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-4 flex-1 flex flex-col">
+          <textarea id="rawInput" rows="13" class="w-full flex-1 bg-slate-950 text-slate-200 font-mono text-xs p-3.5 rounded-lg border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none resize-y placeholder-slate-600" placeholder="Paste dirty CSV, TSV, tab-separated text, or raw JSON list here..."></textarea>
+        </div>
+      </div>
+
+      <!-- Cleaning Options & Controls (5 Cols) -->
+      <div class="lg:col-span-5 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="bg-slate-850 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-sliders text-indigo-400"></i>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Cleaning Rules</span>
+          </div>
+          <button onclick="resetRules()" class="text-xs text-slate-400 hover:text-slate-200 transition">Reset Defaults</button>
+        </div>
+        
+        <div class="p-4 space-y-4 text-xs flex-1 flex flex-col justify-between">
+          <div class="space-y-2.5">
+            <label class="flex items-center space-x-2.5 cursor-pointer p-1.5 rounded hover:bg-slate-800/50">
+              <input type="checkbox" id="ruleTrim" checked class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-700 bg-slate-950">
+              <span class="text-slate-200 font-medium">Trim Leading & Trailing Whitespace</span>
+            </label>
+            
+            <label class="flex items-center space-x-2.5 cursor-pointer p-1.5 rounded hover:bg-slate-800/50">
+              <input type="checkbox" id="ruleDedupe" checked class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-700 bg-slate-950">
+              <span class="text-slate-200 font-medium">Remove Duplicate Rows / Objects</span>
+            </label>
+
+            <label class="flex items-center space-x-2.5 cursor-pointer p-1.5 rounded hover:bg-slate-800/50">
+              <input type="checkbox" id="ruleStripHtml" checked class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-700 bg-slate-950">
+              <span class="text-slate-200 font-medium">Strip HTML / Script Tags</span>
+            </label>
+
+            <label class="flex items-center space-x-2.5 cursor-pointer p-1.5 rounded hover:bg-slate-800/50">
+              <input type="checkbox" id="ruleDropEmpty" checked class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-700 bg-slate-950">
+              <span class="text-slate-200 font-medium">Drop Blank / Completely Null Rows</span>
+            </label>
+
+            <label class="flex items-center space-x-2.5 cursor-pointer p-1.5 rounded hover:bg-slate-800/50">
+              <input type="checkbox" id="ruleLowerEmails" checked class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-700 bg-slate-950">
+              <span class="text-slate-200 font-medium">Normalize Email Columns (Lowercase)</span>
+            </label>
+          </div>
+
+          <!-- Regex Replace Box -->
+          <div class="border-t border-slate-800 pt-3 space-y-2">
+            <span class="text-xs font-semibold text-slate-300 block">Regex Find & Replace (Optional)</span>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="regexPattern" placeholder="Find (e.g. [^0-9a-zA-Z])" class="bg-slate-950 text-slate-200 px-2.5 py-1.5 rounded border border-slate-800 focus:border-indigo-500 focus:outline-none font-mono text-xs">
+              <input type="text" id="regexReplace" placeholder="Replace with..." class="bg-slate-950 text-slate-200 px-2.5 py-1.5 rounded border border-slate-800 focus:border-indigo-500 focus:outline-none font-mono text-xs">
+            </div>
+          </div>
+
+          <!-- Process CTA -->
+          <button id="processBtn" onclick="processData()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-150 flex items-center justify-center space-x-2 text-sm">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Clean & Transform Data</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="space-y-4 hidden">
+      
+      <!-- Metric Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+          <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg"><i class="fa-solid fa-list-ol text-lg"></i></div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Input Rows</div>
+            <div id="statInputRows" class="text-xl font-bold text-slate-100">0</div>
+          </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+          <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg"><i class="fa-solid fa-circle-check text-lg"></i></div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Clean Rows</div>
+            <div id="statOutputRows" class="text-xl font-bold text-slate-100">0</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+          <div class="p-3 bg-rose-500/10 text-rose-400 rounded-lg"><i class="fa-solid fa-filter-circle-xmark text-lg"></i></div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Dupes Removed</div>
+            <div id="statDupes" class="text-xl font-bold text-slate-100">0</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+          <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg"><i class="fa-solid fa-microchip text-lg"></i></div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Exec Time</div>
+            <div id="statExecTime" class="text-xl font-bold text-slate-100">0ms</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Display Box -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="bg-slate-850 px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-2">
+            <button id="tabTableBtn" onclick="switchTab('table')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition">
+              <i class="fa-solid fa-table mr-1.5"></i>Data Grid
+            </button>
+            <button id="tabCsvBtn" onclick="switchTab('csv')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 transition">
+              <i class="fa-solid fa-file-csv mr-1.5"></i>Clean CSV
+            </button>
+            <button id="tabJsonBtn" onclick="switchTab('json')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 transition">
+              <i class="fa-solid fa-code mr-1.5"></i>JSON Output
+            </button>
+          </div>
+
+          <!-- Download / Copy Actions -->
+          <div class="flex items-center space-x-2">
+            <button onclick="copyOutput()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5">
+              <i class="fa-regular fa-copy"></i>
+              <span id="copyBtnText">Copy Output</span>
+            </button>
+            <button onclick="downloadCleanData('csv')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1.5 rounded-lg shadow transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-download"></i>
+              <span>Export CSV</span>
+            </button>
+            <button onclick="downloadCleanData('json')" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1.5 rounded-lg shadow transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-file-code"></i>
+              <span>Export JSON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Output Tab Contents -->
+        <div class="p-4">
+          <!-- Table View -->
+          <div id="viewTable" class="overflow-x-auto max-h-96 rounded-lg border border-slate-800">
+            <table class="w-full text-left text-xs text-slate-300 font-mono">
+              <thead id="tableHead" class="bg-slate-850 text-slate-200 uppercase text-[11px] sticky top-0 border-b border-slate-800">
+              </thead>
+              <tbody id="tableBody" class="divide-y divide-slate-800/60 bg-slate-950">
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Raw Text View (CSV or JSON) -->
+          <div id="viewRaw" class="hidden">
+            <textarea id="rawOutputText" readonly rows="12" class="w-full bg-slate-950 text-emerald-400 font-mono text-xs p-3.5 rounded-lg border border-slate-800 focus:outline-none resize-y"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Paywall / Upgrade Modal -->
+  <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-6">
+      <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center space-y-2">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-1">
+          <i class="fa-solid fa-crown text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white">Upgrade to DataCleaner PRO</h3>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">You've reached your free execution limit. Upgrade now to unlock unlimited data cleaning, deduplication & exports.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Lifetime Pass -->
+        <div class="border-2 border-indigo-500 bg-indigo-950/20 rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute top-0 right-0 bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl">BEST VALUE</div>
+          <div>
+            <div class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Lifetime Early Bird</div>
+            <div class="text-2xl font-black text-white mt-1">$5 <span class="text-xs font-normal text-slate-400">/ one-time</span></div>
+            <ul class="mt-3 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Unlimited Runs</li>
+              <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Unlimited CSV & JSON</li>
+              <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Regex Engine Access</li>
+            </ul>
+          </div>
+          <a href="#" onclick="simulateUpgrade('PRO5')" class="mt-4 block text-center bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-3 rounded-lg text-xs transition shadow-md">
+            Get Lifetime Access
+          </a>
+        </div>
+
+        <!-- Pro Monthly -->
+        <div class="border border-slate-800 bg-slate-950 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pro Monthly</div>
+            <div class="text-2xl font-black text-white mt-1">$9 <span class="text-xs font-normal text-slate-400">/ month</span></div>
+            <ul class="mt-3 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Unlimited Runs</li>
+              <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Priority Support</li>
+              <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Cancel Anytime</li>
+            </ul>
+          </div>
+          <a href="#" onclick="simulateUpgrade('PRO20')" class="mt-4 block text-center bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 px-3 rounded-lg text-xs transition border border-slate-700">
+            Subscribe Pro
+          </a>
+        </div>
+      </div>
+
+      <!-- Promo Key Entry -->
+      <div class="border-t border-slate-800 pt-4">
+        <div class="text-xs text-slate-400 mb-2 font-medium text-center">Already have an access code / license key?</div>
+        <div class="flex gap-2">
+          <input type="text" id="promoCodeInput" placeholder="Enter code (e.g. PRO5 or PRO20)" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:border-indigo-500 focus:outline-none uppercase">
+          <button onclick="applyPromoCode()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-4 py-2 rounded-lg text-xs border border-slate-700 transition">
+            Unlock
+          </button>
+        </div>
+        <p id="promoMsg" class="text-[11px] text-center mt-1.5 hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div>© DataCleaner Pro. All transformations run client-side in your browser.</div>
+      <div class="flex space-x-4">
+        <a href="#" class="hover:text-slate-400 transition">Privacy Policy</a>
+        <a href="#" class="hover:text-slate-400 transition">Terms of Service</a>
+        <a href="#" class="hover:text-slate-400 transition">Support</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Sample Datasets
+    const SAMPLES = {
+      messyCsv: `First Name, Last Name , Email Address, Phone Number, Bio Tag, Status
+John, Smith , JOHN.SMITH@GMAIL.COM , +1 (555) 019-2831, "<p>Founder &amp; CEO</p>", Active
+John, Smith , JOHN.SMITH@GMAIL.COM , +1 (555) 019-2831, "<p>Founder &amp; CEO</p>", Active
+  Sarah , Connor, sarah.c@cyberdyne.io, 555-0192, "<b>Lead Engineer</b>", Pending
+  , , ,,,
+Michael , Scott, m.scott@dunder.com , (555) 321-9876, "Regional <i>Manager</i>", Active
+  Sarah , Connor, sarah.c@cyberdyne.io, 555-0192, "<b>Lead Engineer</b>", Pending`,
+      
+      messyJson: `[
+  { "id": 101, "name": " Alice Walker ", "email": "ALICE@STARTUP.CO", "role": "<b>CTO</b>", "notes": "  " },
+  { "id": 101, "name": " Alice Walker ", "email": "ALICE@STARTUP.CO", "role": "<b>CTO</b>", "notes": "  " },
+  { "id": 102, "name": "Bob Vance", "email": "bob@vancerefrigeration.com", "role": "<span>Owner</span>", "notes": "Vance Refrigeration" },
+  { "id": 103, "name": "", "email": "", "role": "", "notes": "" }
+]`,
+
+      dirtyList: `alex.dev@gmail.com
+alex.dev@gmail.com
+  MARKETING@COMPANY.COM 
+marketing@company.com
+DEV-TEAM@OUTLOOK.COM
+  
+alex.dev@gmail.com`
+    };
+
+    // State Management
+    let processedRows = [];
+    let processedHeaders = [];
+    let rawCsvOutput = "";
+    let rawJsonOutput = "";
+    let activeTab = "table";
+
+    // Initial Load & Credit System setup
+    document.addEventListener("DOMContentLoaded", () => {
+      initCredits();
+    });
+
+    function initCredits() {
+      let remaining = localStorage.getItem('app_runs_remaining');
+      if (remaining === null) {
+        remaining = '1';
+        localStorage.setItem('app_runs_remaining', '1');
+      }
+      updateCreditBadge(remaining);
+    }
+
+    function updateCreditBadge(val) {
+      const textEl = document.getElementById('runsText');
+      if (val === 'unlimited' || parseInt(val) >= 9999) {
+        textEl.textContent = "PRO Lifetime Unlimited";
+        textEl.classList.add('text-emerald-400', 'font-bold');
+      } else {
+        textEl.textContent = `Free Run: ${val} left`;
+      }
+    }
+
+    function getRemainingRuns() {
+      const val = localStorage.getItem('app_runs_remaining');
+      if (val === 'unlimited') return 999999;
+      return parseInt(val || '0', 10);
+    }
+
+    function decrementRuns() {
+      let val = localStorage.getItem('app_runs_remaining');
+      if (val === 'unlimited') return;
+      let num = parseInt(val || '0', 10);
+      if (num > 0) {
+        num--;
+        localStorage.setItem('app_runs_remaining', num.toString());
+        updateCreditBadge(num.toString());
+      }
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function simulateUpgrade(code) {
+      localStorage.setItem('app_runs_remaining', 'unlimited');
+      updateCreditBadge('unlimited');
+      closePaywallModal();
+      alert(`Success! Unlocked PRO Lifetime Access via coupon (${code}). Enjoy unlimited data processing!`);
+    }
+
+    function applyPromoCode() {
+      const input = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+      const msg = document.getElementById('promoMsg');
+      if (input === 'PRO5' || input === 'PRO20' || input === 'CLEANERPRO') {
+        simulateUpgrade(input);
+      } else {
+        msg.textContent = "Invalid access code. Use PRO5 or PRO20 for instant access.";
+        msg.className = "text-[11px] text-center mt-1.5 text-rose-400 block";
+      }
+    }
+
+    function loadSample(key) {
+      document.getElementById('rawInput').value = SAMPLES[key] || '';
+    }
+
+    function clearInput() {
+      document.getElementById('rawInput').value = '';
+      document.getElementById('resultsSection').classList.add('hidden');
+    }
+
+    function resetRules() {
+      document.getElementById('ruleTrim').checked = true;
+      document.getElementById('ruleDedupe').checked = true;
+      document.getElementById('ruleStripHtml').checked = true;
+      document.getElementById('ruleDropEmpty').checked = true;
+      document.getElementById('ruleLowerEmails').checked = true;
+      document.getElementById('regexPattern').value = '';
+      document.getElementById('regexReplace').value = '';
+    }
+
+    // Main Business Logic Engine
+    function processData() {
+      // Check Credit Runs
+      if (getRemainingRuns() <= 0) {
+        openPaywallModal();
+        return;
+      }
+
+      const rawText = document.getElementById('rawInput').value;
+      if (!rawText.trim()) {
+        alert('Please paste or load data into the input field first.');
+        return;
+      }
+
+      const startTime = performance.now();
+
+      // Parse Rules Options
+      const ruleTrim = document.getElementById('ruleTrim').checked;
+      const ruleDedupe = document.getElementById('ruleDedupe').checked;
+      const ruleStripHtml = document.getElementById('ruleStripHtml').checked;
+      const ruleDropEmpty = document.getElementById('ruleDropEmpty').checked;
+      const ruleLowerEmails = document.getElementById('ruleLowerEmails').checked;
+      const regPattern = document.getElementById('regexPattern').value;
+      const regReplace = document.getElementById('regexReplace').value;
+
+      let customRegex = null;
+      if (regPattern) {
+        try {
+          customRegex = new RegExp(regPattern, 'g');
+        } catch(e) {
+          alert('Invalid Regular Expression in Find field');
+          return;
+        }
+      }
+
+      let parsedHeaders = [];
+      let rows = [];
+      let inputRowCount = 0;
+
+      // Auto-Detect or Selected Delimiter
+      const formatChoice = document.getElementById('delimiterSelect').value;
+      let isJsonMode = false;
+
+      if (formatChoice === 'json' || (formatChoice === 'auto' && rawText.trim().startsWith('['))) {
+        try {
+          const parsed = JSON.parse(rawText);
+          if (Array.isArray(parsed)) {
+            isJsonMode = true;
+            inputRowCount = parsed.length;
+            if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null) {
+              parsedHeaders = Object.keys(parsed[0]);
+              rows = parsed.map(obj => parsedHeaders.map(h => obj[h] !== undefined ? String(obj[h]) : ''));
+            } else {
+              parsedHeaders = ['Value'];
+              rows = parsed.map(item => [String(item)]);
+            }
+          }
+        } catch(e) {
+          if (formatChoice === 'json') {
+            alert('Failed to parse JSON. Please verify JSON syntax.');
+            return;
+          }
+        }
+      }
+
+      if (!isJsonMode) {
+        // Delimiter detection
+        let delim = ',';
+        if (formatChoice === 'tab') delim = '\t';
+        else if (formatChoice === 'pipe') delim = '|';
+        else if (formatChoice === 'comma') delim = ',';
+        else {
+          if (rawText.includes('\t')) delim = '\t';
+          else if (rawText.includes('|')) delim = '|';
+        }
+
+        const rawLines = rawText.split(/\r?\n/);
+        inputRowCount = rawLines.length;
+
+        const parsedLines = rawLines.map(line => parseDelimitedLine(line, delim));
+        
+        if (parsedLines.length > 0) {
+          parsedHeaders = parsedLines[0].map((col, idx) => col.trim() || `Column_${idx + 1}`);
+          rows = parsedLines.slice(1);
+        }
+      }
+
+      // Process Transformation Matrix
+      let cleanedRows = [];
+      let seenRows = new Set();
+      let dupeCount = 0;
+
+      for (let r = 0; r < rows.length; r++) {
+        let row = rows[r];
+        let isAllEmpty = true;
+        let processedRow = [];
+
+        for (let c = 0; c < row.length; c++) {
+          let val = row[c] || '';
+
+          if (ruleTrim) {
+            val = val.trim();
+          }
+
+          if (ruleStripHtml) {
+            val = val.replace(/<[^>]*>?/gm, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+          }
+
+          if (ruleLowerEmails && (val.includes('@') || (parsedHeaders[c] && parsedHeaders[c].toLowerCase().includes('email')))) {
+            val = val.toLowerCase();
+          }
+
+          if (customRegex) {
+            val = val.replace(customRegex, regReplace);
+          }
+
+          if (val.trim() !== '') {
+            isAllEmpty = false;
+          }
+
+          processedRow.push(val);
+        }
+
+        if (ruleDropEmpty && isAllEmpty) {
+          continue;
+        }
+
+        const rowFingerprint = JSON.stringify(processedRow);
+        if (ruleDedupe && seenRows.has(rowFingerprint)) {
+          dupeCount++;
+          continue;
+        }
+
+        seenRows.add(rowFingerprint);
+        cleanedRows.push(processedRow);
+      }
+
+      const endTime = performance.now();
+      const duration = Math.round(endTime - startTime);
+
+      // Store Processed Results
+      processedHeaders = parsedHeaders;
+      processedRows = cleanedRows;
+
+      // Generate CSV and JSON Representations
+      rawCsvOutput = generateCsvString(processedHeaders, processedRows);
+      rawJsonOutput = generateJsonString(processedHeaders, processedRows);
+
+      // Render UI Output
+      renderMetrics(inputRowCount, processedRows.length, dupeCount, duration);
+      renderTable(processedHeaders, processedRows);
+      document.getElementById('rawOutputText').value = activeTab === 'json' ? rawJsonOutput : rawCsvOutput;
+      
+      document.getElementById('resultsSection').classList.remove('hidden');
+      document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+
+      // Decrement Usage Limit
+      decrementRuns();
+    }
+
+    // Line parser handling quotes and delimiters
+    function parseDelimitedLine(line, delim) {
+      let res = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        let char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === delim && !inQuotes) {
+          res.push(cur);
+          cur = '';
+        } else {
+          cur += char;
+        }
+      }
+      res.push(cur);
+      return res;
+    }
+
+    function generateCsvString(headers, rows) {
+      const escapeCsvCell = (str) => {
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+      let lines = [];
+      if (headers.length) lines.push(headers.map(escapeCsvCell).join(','));
+      rows.forEach(r => lines.push(r.map(escapeCsvCell).join(',')));
+      return lines.join('\n');
+    }
+
+    function generateJsonString(headers, rows) {
+      const objects = rows.map(row => {
+        let obj = {};
+        headers.forEach((h, idx) => {
+          obj[h] = row[idx] !== undefined ? row[idx] : '';
+        });
+        return obj;
+      });
+      return JSON.stringify(objects, null, 2);
+    }
+
+    function renderMetrics(inputCount, outputCount, dupesCount, durationMs) {
+      document.getElementById('statInputRows').textContent = inputCount;
+      document.getElementById('statOutputRows').textContent = outputCount;
+      document.getElementById('statDupes').textContent = dupesCount;
+      document.getElementById('statExecTime').textContent = `${durationMs}ms`;
+    }
+
+    function renderTable(headers, rows) {
+      const headEl = document.getElementById('tableHead');
+      const bodyEl = document.getElementById('tableBody');
+
+      let headHtml = '<tr>' + headers.map(h => `<th class="px-3 py-2 border-b border-slate-800">${escapeHtml(h)}</th>`).join('') + '</tr>';
+      headEl.innerHTML = headHtml;
+
+      if (rows.length === 0) {
+        bodyEl.innerHTML = '<tr><td colspan="' + headers.length + '" class="px-3 py-4 text-center text-slate-500">No records outputted</td></tr>';
+        return;
+      }
+
+      let bodyHtml = rows.slice(0, 100).map(r => {
+        return '<tr class="hover:bg-slate-900/60">' + r.map(c => `<td class="px-3 py-2 truncate max-w-xs">${escapeHtml(c)}</td>`).join('') + '</tr>';
+      }).join('');
+      
+      if (rows.length > 100) {
+        bodyHtml += `<tr><td colspan="${headers.length}" class="px-3 py-2 text-center text-slate-500 bg-slate-900/40">Showing preview of first 100 rows (${rows.length} total)</td></tr>`;
+      }
+
+      bodyEl.innerHTML = bodyHtml;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      const tableBtn = document.getElementById('tabTableBtn');
+      const csvBtn = document.getElementById('tabCsvBtn');
+      const jsonBtn = document.getElementById('tabJsonBtn');
+      
+      const viewTable = document.getElementById('viewTable');
+      const viewRaw = document.getElementById('viewRaw');
+      const rawText = document.getElementById('rawOutputText');
+
+      // Reset styles
+      [tableBtn, csvBtn, jsonBtn].forEach(b => {
+        b.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 transition";
+      });
+
+      if (tab === 'table') {
+        tableBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+        viewTable.classList.remove('hidden');
+        viewRaw.classList.add('hidden');
+      } else if (tab === 'csv') {
+        csvBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+        viewTable.classList.add('hidden');
+        viewRaw.classList.remove('hidden');
+        rawText.value = rawCsvOutput;
+      } else if (tab === 'json') {
+        jsonBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+        viewTable.classList.add('hidden');
+        viewRaw.classList.remove('hidden');
+        rawText.value = rawJsonOutput;
+      }
+    }
+
+    function downloadCleanData(format) {
+      const content = format === 'json' ? rawJsonOutput : rawCsvOutput;
+      const filename = `cleaned_data_${Date.now()}.${format}`;
+      const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function copyOutput() {
+      const content = activeTab === 'json' ? rawJsonOutput : rawCsvOutput;
+      navigator.clipboard.writeText(content).then(() => {
+        const btnText = document.getElementById('copyBtnText');
+        btnText.textContent = "Copied!";
+        setTimeout(() => { btnText.textContent = "Copy Output"; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

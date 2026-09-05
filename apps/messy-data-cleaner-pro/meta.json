@@ -1,0 +1,18 @@
+{
+  "app_slug": "messy-data-cleaner-pro",
+  "title": "Messy CSV & JSON Data Cleaner, Deduplicator & Transformer",
+  "target_pain": "Founders, marketers, and developers waste hours cleaning messy CSVs, stripping duplicates, fixing broken format encodings, and prepping dirty data exports before importing into CRMs, databases, or AI tools.",
+  "key_features": [
+    "Auto-detects CSV, TSV, Pipe-delimited, and JSON format inputs",
+    "Instant Deduplication by primary keys or full record comparison",
+    "Regex Find & Replace engine with live batch preview",
+    "HTML Tag Stripping, Whitespace Trimming & Smart Email/Phone sanitization",
+    "1-Click Export to Clean CSV, Formatted JSON, or Clipboard",
+    "Real-time processing stats (Rows cleaned, Duplicates purged, Bytes saved)"
+  ],
+  "category": "Data Tools / Productivity",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
