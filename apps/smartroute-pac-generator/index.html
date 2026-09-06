@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartRoute: PAC & VPN Routing Rules Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#0b0f19'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-route text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">SmartRoute</span>
+                    <span class="text-xs block text-slate-400">PAC & Route Table Builder</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full flex items-center space-x-2 text-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-slate-300 font-medium">Free Runs Left:</span>
+                    <span id="runs-badge" class="bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full text-xs font-bold">1</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-lg shadow-indigo-500/10">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
+        
+        <!-- Left Column: Inputs -->
+        <div class="w-full lg:w-5/12 flex flex-col space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-400"></i>
+                    1. Route Configuration
+                </h2>
+                
+                <!-- Proxy Server Settings -->
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Proxy Type</label>
+                        <select id="proxy-type" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="SOCKS5">SOCKS5 Proxy</option>
+                            <option value="SOCKS">SOCKS4 Proxy</option>
+                            <option value="PROXY">HTTP Proxy</option>
+                            <option value="HTTPS">HTTPS Proxy</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Proxy Host / IP</label>
+                            <input type="text" id="proxy-host" value="127.0.0.1" placeholder="e.g. 10.0.0.1" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Port</label>
+                            <input type="number" id="proxy-port" value="1080" placeholder="1080" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Fallback Rule (If no match)</label>
+                        <select id="proxy-fallback" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="DIRECT">DIRECT (No Proxy)</option>
+                            <option value="PROXY-FALLBACK">Use Secondary Proxy (HTTP 127.0.0.1:8080)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Target Format -->
+                <div class="mb-6">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Output Format</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setFormat('pac')" id="btn-format-pac" class="format-btn py-2 px-3 rounded-lg border text-sm font-medium transition flex items-center justify-center gap-2 bg-indigo-600/20 border-indigo-500 text-indigo-300">
+                            <i class="fa-solid fa-file-code"></i> PAC File
+                        </button>
+                        <button onclick="setFormat('route')" id="btn-format-route" class="format-btn py-2 px-3 rounded-lg border text-sm font-medium transition flex items-center justify-center gap-2 bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600">
+                            <i class="fa-solid fa-terminal"></i> Route Script
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Route Script OS Selector (Hidden by default) -->
+                <div id="os-selector-container" class="hidden mb-6">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Target OS</label>
+                    <select id="route-os" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="macos">macOS (Shell Script)</option>
+                        <option value="linux">Linux (Shell Script)</option>
+                        <option value="windows">Windows (Batch Script)</option>
+                    </select>
+                    <div class="mt-2">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Gateway IP (For Route Scripts)</label>
+                        <input type="text" id="gateway-ip" value="192.168.1.1" placeholder="e.g. 192.168.1.1" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Input -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list text-indigo-400"></i>
+                        2. Target Domains & IPs
+                    </h2>
+                    <button onclick="loadExample()" class="text-xs text-indigo-400 hover:text-indigo-300 underline transition">
+                        Load Example Rules
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400 mb-3">
+                    Enter domains, wildcards, IPs, or CIDR blocks (one per line).
+                </p>
+                <textarea id="rules-input" class="w-full flex-1 min-h-[200px] bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 font-mono text-sm focus:outline-none focus:border-indigo-500" placeholder="*.netflix.com&#10;internal.company.com&#10;10.0.0.0/8&#10;192.168.1.100"></textarea>
+                
+                <button onclick="generateRules()" class="w-full mt-4 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-gears"></i> Generate Routing Rules
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: Outputs -->
+        <div class="w-full lg:w-7/12 flex flex-col">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col h-full">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-code text-cyan-400"></i>
+                            Generated Output
+                        </h2>
+                        <p class="text-xs text-slate-400">100% valid, production-ready configuration</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                        <button onclick="downloadOutput()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-download"></i> Download
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Display Area -->
+                <div class="relative flex-1 min-h-[400px] bg-slate-950 rounded-lg border border-slate-800 overflow-hidden flex flex-col">
+                    <div class="bg-slate-900/80 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <span id="output-filename">proxy.pac</span>
+                        <span id="output-stats">0 rules parsed</span>
+                    </div>
+                    <textarea id="output-code" readonly class="w-full flex-1 bg-slate-950 p-4 text-slate-300 font-mono text-xs sm:text-sm focus:outline-none resize-none overflow-y-auto" placeholder="Your generated PAC file or routing script will appear here..."></textarea>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 m-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-900/50 text-indigo-400 mb-3">
+                    <i class="fa-solid fa-crown text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Upgrade to SmartRoute Pro</h3>
+                <p class="text-sm text-slate-400 mt-1">You have used your 1 free generation. Unlock unlimited access instantly.</p>
+            </div>
+
+            <div class="space-y-3 mb-6">
+                <div class="border border-indigo-500/30 bg-indigo-950/20 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-semibold text-indigo-400 uppercase tracking-wider">Early Bird Special</span>
+                        <span class="text-lg font-bold text-white">Lifetime Access</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-2xl font-extrabold text-white">$5</span>
+                        <span class="block text-xs text-slate-400">one-time</span>
+                    </div>
+                </div>
+                <div class="border border-slate-800 bg-slate-950/50 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Pro Plan</span>
+                        <span class="text-lg font-bold text-white">Monthly Unlimited</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-2xl font-extrabold text-white">$9</span>
+                        <span class="block text-xs text-slate-400">/ month</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo Code Input -->
+            <div class="mb-6">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Have a Promo Code?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="promo-code" placeholder="Enter PRO5 or PRO20" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+                    <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold px-4 py-2 rounded-lg transition">
+                        Apply
+                    </button>
+                </div>
+                <p id="promo-error" class="text-xs text-red-400 mt-1 hidden">Invalid promo code. Try PRO5 or PRO20.</p>
+            </div>
+
+            <div class="space-y-2">
+                <a href="#" onclick="alert('Redirecting to secure checkout...')" class="block w-full text-center bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-indigo-500/20">
+                    Get Lifetime Access Now
+                </a>
+                <p class="text-center text-[10px] text-slate-500">Secure payment processing. 100% satisfaction guaranteed.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 border border-slate-800 text-slate-200 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">Copied to clipboard!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>&copy; SmartRoute. All processing is done locally in your browser. No data is ever sent to our servers.</p>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-slate-400 transition">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-400 transition">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // State Management
+        let currentFormat = 'pac';
+        let runsRemaining = 1;
+
+        // Initialize remaining runs from LocalStorage
+        if (localStorage.getItem('app_runs_remaining') !== null) {
+            runsRemaining = parseInt(localStorage.getItem('app_runs_remaining'), 10);
+        } else {
+            localStorage.setItem('app_runs_remaining', 1);
+        }
+        updateRunsBadge();
+
+        // Set Output Format
+        function setFormat(format) {
+            currentFormat = format;
+            
+            // Update UI buttons
+            const btnPac = document.getElementById('btn-format-pac');
+            const btnRoute = document.getElementById('btn-format-route');
+            const osContainer = document.getElementById('os-selector-container');
+            const filename = document.getElementById('output-filename');
+
+            if (format === 'pac') {
+                btnPac.className = "format-btn py-2 px-3 rounded-lg border text-sm font-medium transition flex items-center justify-center gap-2 bg-indigo-600/20 border-indigo-500 text-indigo-300";
+                btnRoute.className = "format-btn py-2 px-3 rounded-lg border text-sm font-medium transition flex items-center justify-center gap-2 bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600";
+                osContainer.classList.add('hidden');
+                filename.textContent = 'proxy.pac';
+            } else {
+                btnRoute.className = "format-btn py-2 px-3 rounded-lg border text-sm font-medium transition flex items-center justify-center gap-2 bg-indigo-600/20 border-indigo-500 text-indigo-300";
+                btnPac.className = "format-btn py-2 px-3 rounded-lg border text-sm font-medium transition flex items-center justify-center gap-2 bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600";
+                osContainer.classList.remove('hidden');
+                updateRouteFilename();
+            }
+        }
+
+        // Update Route Filename based on OS selection
+        document.getElementById('route-os').addEventListener('change', updateRouteFilename);
+        function updateRouteFilename() {
+            if (currentFormat !== 'route') return;
+            const os = document.getElementById('route-os').value;
+            const filename = document.getElementById('output-filename');
+            if (os === 'windows') {
+                filename.textContent = 'add_routes.bat';
+            } else {
+                filename.textContent = 'add_routes.sh';
+            }
+        }
+
+        // Load Example Rules
+        function loadExample() {
+            const example = `# Streaming Services
+*.netflix.com
+*.hulu.com
+
+# Corporate Subnets
+10.0.0.0/8
+172.16.0.0/12
+192.168.100.50
+
+# Specific Domains
+internal.company.com
+*.dev.local`;
+            document.getElementById('rules-input').value = example;
+            showToast("Example rules loaded!");
+        }
+
+        // Helper: Parse CIDR to IP and Mask
+        function parseCIDR(cidr) {
+            const parts = cidr.split('/');
+            const ip = parts[0];
+            const bits = parseInt(parts[1], 10);
+            
+            let mask = [];
+            let remainingBits = bits;
+            for (let i = 0; i < 4; i++) {
+                let n = Math.min(remainingBits, 8);
+                mask.push(256 - Math.pow(2, 8 - n));
+                remainingBits -= n;
+            }
+            return [ip, mask.join('.')];
+        }
+
+        // Helper: Check if string is valid IP
+        function isIP(str) {
+            const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+            return ipPattern.test(str);
+        }
+
+        // Helper: Check if string is valid CIDR
+        function isCIDR(str) {
+            const cidrPattern = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
+            return cidrPattern.test(str);
+        }
+
+        // Core Logic: Generate Rules
+        function generateRules() {
+            // Check Paywall / Credits
+            if (runsRemaining <= 0) {
+                openPaywall();
+                return;
+            }
+
+            const rulesText = document.getElementById('rules-input').value;
+            const proxyType = document.getElementById('proxy-type').value;
+            const proxyHost = document.getElementById('proxy-host').value || '127.0.0.1';
+            const proxyPort = document.getElementById('proxy-port').value || '1080';
+            const fallback = document.getElementById('proxy-fallback').value;
+
+            const lines = rulesText.split('\n');
+            let parsedRules = [];
+            let statsCount = 0;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('#') || line.startsWith('//')) return;
+                parsedRules.push(line);
+                statsCount++;
+            });
+
+            if (parsedRules.length === 0) {
+                alert('Please enter at least one valid domain, IP, or CIDR rule.');
+                return;
+            }
+
+            let output = '';
+            const proxyString = `${proxyType} ${proxyHost}:${proxyPort}`;
+            const fallbackString = fallback === 'DIRECT' ? 'DIRECT' : 'PROXY 127.0.0.1:8080';
+
+            if (currentFormat === 'pac') {
+                // Generate PAC File
+                let conditions = [];
+                parsedRules.forEach(rule => {
+                    if (isCIDR(rule)) {
+                        const [ip, mask] = parseCIDR(rule);
+                        conditions.push(`isInNet(host, "${ip}", "${mask}")`);
+                    } else if (isIP(rule)) {
+                        conditions.push(`isInNet(host, "${rule}", "255.255.255.255")`);
+                    } else {
+                        // Domain rule
+                        if (rule.startsWith('*.')) {
+                            const domain = rule.substring(2);
+                            conditions.push(`dnsDomainIs(host, "${domain}") || shExpMatch(host, "*.${domain}")`);
+                        } else {
+                            conditions.push(`localHostOrDomainIs(host, "${rule}") || dnsDomainIs(host, "${rule}")`);
+                        }
+                    }
+                });
+
+                const condStr = conditions.map(c => `    if (${c}) {
+        return "${proxyString}";
+    }`).join('\n\n');
+
+                output = `/**
+ * Generated by SmartRoute PAC Builder
+ * Date: ${new Date().toISOString()}
+ */
+
+function FindProxyForURL(url, host) {
+    // Bypass proxy for local/private hosts
+    if (isPlainHostName(host) || 
+        shExpMatch(host, "*.local") || 
+        isInNet(dnsResolve(host), "10.0.0.0", "255.0.0.0") || 
+        isInNet(dnsResolve(host), "172.16.0.0", "255.240.0.0") || 
+        isInNet(dnsResolve(host), "192.168.0.0", "255.255.0.0") || 
+        isInNet(dnsResolve(host), "127.0.0.0", "255.0.0.0")) {
+        return "DIRECT";
+    }
+
+    // Custom Routing Rules
+${condStr}
+
+    // Default Fallback
+    return "${fallbackString}";
+}`;
+
+            } else {
+                // Generate Route Script
+                const os = document.getElementById('route-os').value;
+                const gateway = document.getElementById('gateway-ip').value || '192.168.1.1';
+                
+                let commands = [];
+                if (os === 'windows') {
+                    commands.push('@echo off');
+                    commands.push(`:: SmartRoute Windows Routing Script`);
+                    commands.push(`:: Gateway: ${gateway}\n`);
+                } else {
+                    commands.push('#!/bin/bash');
+                    commands.push(`# SmartRoute Routing Script`);
+                    commands.push(`# Gateway: ${gateway}\n`);
+                }
+
+                parsedRules.forEach(rule => {
+                    if (isCIDR(rule)) {
+                        const [ip, mask] = parseCIDR(rule);
+                        if (os === 'windows') {
+                            commands.push(`route add ${ip} mask ${mask} ${gateway}`);
+                        } else if (os === 'macos') {
+                            commands.push(`sudo route -n add -net ${rule} ${gateway}`);
+                        } else {
+                            commands.push(`sudo ip route add ${rule} via ${gateway}`);
+                        }
+                    } else if (isIP(rule)) {
+                        if (os === 'windows') {
+                            commands.push(`route add ${rule} mask 255.255.255.255 ${gateway}`);
+                        } else if (os === 'macos') {
+                            commands.push(`sudo route -n add -host ${rule} ${gateway}`);
+                        } else {
+                            commands.push(`sudo ip route add ${rule} via ${gateway}`);
+                        }
+                    } else {
+                        // Domain warning for route tables
+                        commands.push(`:: Warning: Domain routing (${rule}) is not natively supported in IP route tables. Use PAC format instead.`);
+                    }
+                });
+
+                output = commands.join('\n');
+            }
+
+            // Set Output
+            document.getElementById('output-code').value = output;
+            document.getElementById('output-stats').textContent = `${statsCount} rule(s) parsed successfully`;
+
+            // Decrement runs if not unlimited
+            if (runsRemaining > 0 && runsRemaining < 99999) {
+                runsRemaining--;
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateRunsBadge();
+            }
+
+            showToast("Rules generated successfully!");
+        }
+
+        // Copy Output to Clipboard
+        function copyOutput() {
+            const code = document.getElementById('output-code').value;
+            if (!code) {
+                alert('No generated code to copy.');
+                return;
+            }
+            navigator.clipboard.writeText(code).then(() => {
+                showToast("Copied to clipboard!");
+            });
+        }
+
+        // Download Output File
+        function downloadOutput() {
+            const code = document.getElementById('output-code').value;
+            if (!code) {
+                alert('No generated code to download.');
+                return;
+            }
+            const filename = document.getElementById('output-filename').textContent;
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`Downloaded ${filename}`);
+        }
+
+        // Paywall & Promo Logic
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const errorEl = document.getElementById('promo-error');
+            
+            if (code === 'PRO5' || code === 'PRO20') {
+                runsRemaining = 999999;
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateRunsBadge();
+                closePaywall();
+                showToast("Lifetime Pro Access Unlocked!");
+                errorEl.classList.add('hidden');
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function updateRunsBadge() {
+            const badge = document.getElementById('runs-badge');
+            if (runsRemaining > 9999) {
+                badge.textContent = 'Unlimited';
+                badge.className = "bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full text-xs font-bold";
+            } else {
+                badge.textContent = runsRemaining;
+                if (runsRemaining === 0) {
+                    badge.className = "bg-red-900/60 text-red-300 px-2 py-0.5 rounded-full text-xs font-bold";
+                } else {
+                    badge.className = "bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded-full text-xs font-bold";
+                }
+            }
+        }
+
+        // Toast Notification Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

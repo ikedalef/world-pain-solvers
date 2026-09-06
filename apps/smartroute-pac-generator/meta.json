@@ -1,0 +1,17 @@
+{
+  "app_slug": "smartroute-pac-generator",
+  "title": "SmartRoute: PAC & VPN Routing Rules Generator",
+  "target_pain": "Manually writing complex Proxy Auto-Config (PAC) files or routing tables for selective VPN/proxy routing is tedious, error-prone, and hard to debug.",
+  "key_features": [
+    "Instant PAC (Proxy Auto-Config) generation",
+    "CIDR & Wildcard domain parsing",
+    "Cross-platform Route Scripts (macOS, Linux, Windows)",
+    "1-click copy & file download",
+    "100% client-side secure processing"
+  ],
+  "category": "DevOps & Networking Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
