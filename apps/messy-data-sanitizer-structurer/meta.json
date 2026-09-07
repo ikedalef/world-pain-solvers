@@ -1,0 +1,17 @@
+{
+  "app_slug": "messy-data-sanitizer-structurer",
+  "title": "CleanSlate: Messy Data Sanitizer & JSON/CSV Structurer",
+  "target_pain": "Manually cleaning messy scraped data, fixing broken JSON/CSV, removing duplicates, and filtering out corrupted or placeholder rows.",
+  "key_features": [
+    "Auto-detects input format (JSON, CSV, TSV, or raw lines)",
+    "Advanced deduplication with custom key matching",
+    "Deep sanitization: strips HTML, normalizes whitespace, fixes broken quotes",
+    "Anomalous/Fake data detector (flags placeholders, invalid emails, empty fields)",
+    "Instant export to perfectly formatted JSON or CSV"
+  ],
+  "category": "Developer Tools / Data Operations",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

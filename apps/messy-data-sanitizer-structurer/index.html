@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanSlate - Messy Data Sanitizer & Structurer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-indigo-500 to-violet-500 p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-wand-magic-sparkles text-white text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">CleanSlate</span>
+                    <span class="text-xs block text-slate-400 font-medium">Data Sanitizer & Structurer</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full flex items-center space-x-2 text-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-slate-300 font-medium">Free Runs Left:</span>
+                    <span id="runs-badge" class="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full text-xs font-bold">1</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all duration-200 flex items-center space-x-2">
+                    <i class="fa-solid fa-crown text-amber-400"></i>
+                    <span>Upgrade to Pro</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        
+        <!-- Hero / Pain Intro -->
+        <div class="bg-gradient-to-r from-slate-900 to-slate-900/40 border border-slate-800 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div class="space-y-2 max-w-2xl">
+                <h1 class="text-2xl md:text-3xl font-bold text-white">Stop wrestling with messy, duplicate, or corrupted data.</h1>
+                <p class="text-slate-400 text-sm md:text-base">
+                    Paste raw CSV, TSV, JSON, or unformatted text. CleanSlate instantly strips HTML, normalizes whitespace, removes duplicates, flags fake/placeholder records, and outputs pristine structured data.
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="loadSample('json')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5">
+                    <i class="fa-brands fa-js text-yellow-500"></i>
+                    <span>Load Messy JSON Sample</span>
+                </button>
+                <button onclick="loadSample('csv')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-file-csv text-emerald-500"></i>
+                    <span>Load Messy CSV Sample</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Column: Input & Config -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+                            <i class="fa-solid fa-file-import text-indigo-400"></i>
+                            <span>1. Paste Raw Messy Data</span>
+                        </label>
+                        <span id="input-stats" class="text-xs text-slate-500">0 characters</span>
+                    </div>
+                    <textarea 
+                        id="input-data" 
+                        class="w-full h-80 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition resize-y"
+                        placeholder="Paste your messy JSON array, CSV rows, or raw text lines here..." 
+                        oninput="updateInputStats()"
+                    ></textarea>
+                </div>
+
+                <!-- Configuration Options -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-sliders text-indigo-400"></i>
+                        <span>2. Cleaning & Transformation Rules</span>
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <!-- Deduplication -->
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-dedup" checked class="mt-1 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-950">
+                            <div>
+                                <span class="text-xs font-semibold text-slate-200 group-hover:text-white transition">Deduplicate Records</span>
+                                <p class="text-[11px] text-slate-400">Remove exact duplicates or matching key rows automatically.</p>
+                            </div>
+                        </label>
+
+                        <!-- Strip HTML -->
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-strip-html" checked class="mt-1 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-950">
+                            <div>
+                                <span class="text-xs font-semibold text-slate-200 group-hover:text-white transition">Strip HTML Tags</span>
+                                <p class="text-[11px] text-slate-400">Remove tags like &lt;b&gt;, &lt;div&gt;, etc., leaving clean text.</p>
+                            </div>
+                        </label>
+
+                        <!-- Normalize Whitespace -->
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-normalize-space" checked class="mt-1 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-950">
+                            <div>
+                                <span class="text-xs font-semibold text-slate-200 group-hover:text-white transition">Normalize Whitespace</span>
+                                <p class="text-[11px] text-slate-400">Trim edges, convert tabs/newlines to single spaces inside fields.</p>
+                            </div>
+                        </label>
+
+                        <!-- Flag Anomalies / Fake Data -->
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-flag-anomalies" checked class="mt-1 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-950">
+                            <div>
+                                <span class="text-xs font-semibold text-slate-200 group-hover:text-white transition">Flag Anomalies & Placeholders</span>
+                                <p class="text-[11px] text-slate-400">Detect and flag rows with 'test', 'placeholder', empty values, or invalid emails.</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row gap-3">
+                        <div class="flex-1">
+                            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Output Format</label>
+                            <select id="output-format" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                <option value="json">Structured JSON Array</option>
+                                <option value="csv">Clean CSV (Comma Separated)</option>
+                                <option value="tsv">Clean TSV (Tab Separated)</option>
+                            </select>
+                        </div>
+                        <button 
+                            onclick="processData()" 
+                            class="sm:w-auto w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white px-6 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/20 transition flex items-center justify-center space-x-2 self-end h-[38px]"
+                        >
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>Sanitize & Structure</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Output & Analytics -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Real-time Stats -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                        <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Rows Processed</span>
+                        <span id="stat-processed" class="text-xl font-bold text-white mt-1 block">0</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                        <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Duplicates Removed</span>
+                        <span id="stat-duplicates" class="text-xl font-bold text-emerald-400 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                        <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Anomalies Flagged</span>
+                        <span id="stat-anomalies" class="text-xl font-bold text-amber-400 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                        <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Data Reduction</span>
+                        <span id="stat-reduction" class="text-xl font-bold text-indigo-400 mt-1 block">0%</span>
+                    </div>
+                </div>
+
+                <!-- Output Area -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+                            <i class="fa-solid fa-square-poll-horizontal text-indigo-400"></i>
+                            <span>3. Cleaned Output</span>
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>Copy</span>
+                            </button>
+                            <button onclick="downloadOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1">
+                                <i class="fa-solid fa-download"></i>
+                                <span>Download</span>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea 
+                        id="output-data" 
+                        readonly
+                        class="w-full h-[340px] bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-emerald-400 focus:outline-none transition resize-y"
+                        placeholder="Your clean, structured output will appear here..."
+                    ></textarea>
+                </div>
+
+                <!-- Anomalies Log -->
+                <div id="anomalies-container" class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3 hidden">
+                    <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Anomalies & Placeholders Detected</span>
+                    </h4>
+                    <div id="anomalies-list" class="space-y-2 max-h-40 overflow-y-auto text-xs text-slate-300 font-mono">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-slate-500">&copy; 2026 CleanSlate. 100% Client-Side Data Processing. Your data never leaves your browser.</p>
+            <div class="flex space-x-6 text-xs text-slate-400">
+                <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition">Terms of Service</a>
+                <a href="#" class="hover:text-white transition">Contact Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 md:p-8 relative shadow-2xl shadow-indigo-500/10 animate-in fade-in zoom-in-95 duration-200">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-4">
+                <div class="mx-auto bg-gradient-to-tr from-indigo-500 to-violet-500 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-crown text-white text-3xl"></i>
+                </div>
+                
+                <div class="space-y-2">
+                    <h3 class="text-xl font-bold text-white">Upgrade to CleanSlate Pro</h3>
+                    <p class="text-xs text-slate-400 px-4">
+                        You've used your free run. Unlock unlimited high-speed data cleaning, advanced deduplication, and custom validation rules.
+                    </p>
+                </div>
+
+                <!-- Pricing Options -->
+                <div class="space-y-3 pt-4">
+                    <a href="#" class="block bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white p-4 rounded-xl text-left transition shadow-lg shadow-indigo-500/20">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-sm block">Lifetime Access (Early Bird)</span>
+                                <span class="text-[11px] text-indigo-200">One-time payment, forever yours</span>
+                            </div>
+                            <span class="text-lg font-extrabold">$5</span>
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="block bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white p-4 rounded-xl text-left transition">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-sm block">Pro Unlimited</span>
+                                <span class="text-[11px] text-slate-400">Best for power users & teams</span>
+                            </div>
+                            <span class="text-lg font-extrabold">$9<span class="text-xs font-normal text-slate-400">/mo</span></span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Promo Code Section -->
+                <div class="pt-6 border-t border-slate-800 space-y-2">
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Have a Promo Code?</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="promo-code" placeholder="e.g. PRO5" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <button onclick="applyPromo()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                            Apply
+                        </button>
+                    </div>
+                    <p id="promo-error" class="text-[11px] text-red-400 hidden">Invalid promo code. Try PRO5 or PRO20.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-800 text-slate-100 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message" class="text-xs font-medium">Success!</span>
+    </div>
+
+    <!-- Real Business Logic Script -->
+    <script>
+        // Initialize remaining runs
+        let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining'));
+        if (isNaN(runsRemaining)) {
+            runsRemaining = 1; // Default 1 free run
+            localStorage.setItem('app_runs_remaining', runsRemaining);
+        }
+        updateRunsBadge();
+
+        function updateRunsBadge() {
+            const badge = document.getElementById('runs-badge');
+            if (runsRemaining > 1000) {
+                badge.innerText = 'Unlimited';
+                badge.className = 'bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full text-xs font-bold';
+            } else {
+                badge.innerText = runsRemaining;
+                if (runsRemaining === 0) {
+                    badge.className = 'bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full text-xs font-bold';
+                } else {
+                    badge.className = 'bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full text-xs font-bold';
+                }
+            }
+        }
+
+        function updateInputStats() {
+            const input = document.getElementById('input-data').value;
+            document.getElementById('input-stats').innerText = `${input.length} characters`;
+        }
+
+        // Sample Data
+        const samples = {
+            json: `[
+  {
+    "id": 1,
+    "name": "<b>John Doe</b>",
+    "email": "john@example.com",
+    "status": "active",
+    "notes": "   Needs follow-up   "
+  },
+  {
+    "id": 2,
+    "name": "Jane Smith",
+    "email": "invalid-email-address",
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": 1,
+    "name": "<b>John Doe</b>",
+    "email": "john@example.com",
+    "status": "active",
+    "notes": "   Needs follow-up   "
+  },
+  {
+    "id": 3,
+    "name": "Placeholder User",
+    "email": "test@test.com",
+    "status": "",
+    "notes": "This is a placeholder account"
+  }
+]`,
+            csv: `id,name,email,status,notes
+1,<b>John Doe</b>,john@example.com,active,"   Needs follow-up   "
+2,Jane Smith,invalid-email-address,pending,""
+1,<b>John Doe</b>,john@example.com,active,"   Needs follow-up   "
+3,Placeholder User,test@test.com,,"This is a placeholder account"` 
+        };
+
+        function loadSample(type) {
+            document.getElementById('input-data').value = samples[type];
+            updateInputStats();
+            showToast('Sample data loaded successfully!', 'fa-circle-check', 'text-emerald-400');
+        }
+
+        // Main Processing Logic
+        function processData() {
+            if (runsRemaining <= 0) {
+                openPaywall();
+                return;
+            }
+
+            const rawInput = document.getElementById('input-data').value.trim();
+            if (!rawInput) {
+                showToast('Please enter some data to process.', 'fa-circle-exclamation', 'text-amber-400');
+                return;
+            }
+
+            // Decrement runs if not unlimited
+            if (runsRemaining < 1000) {
+                runsRemaining--;
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateRunsBadge();
+            }
+
+            // Parse Input
+            let parsedData = [];
+            let isJson = false;
+
+            try {
+                // Try parsing as JSON
+                if (rawInput.startsWith('[') || rawInput.startsWith('{')) {
+                    const parsed = JSON.parse(rawInput);
+                    parsedData = Array.isArray(parsed) ? parsed : [parsed];
+                    isJson = true;
+                } else {
+                    // Parse as CSV/TSV
+                    parsedData = parseCSV(rawInput);
+                }
+            } catch (e) {
+                // Fallback to line-by-line parsing
+                parsedData = rawInput.split('\n').map((line, index) => ({ row: index + 1, content: line }));
+            }
+
+            // Options
+            const optDedup = document.getElementById('opt-dedup').checked;
+            const optStripHtml = document.getElementById('opt-strip-html').checked;
+            const optNormalizeSpace = document.getElementById('opt-normalize-space').checked;
+            const optFlagAnomalies = document.getElementById('opt-flag-anomalies').checked;
+            const outputFormat = document.getElementById('output-format').value;
+
+            let cleanedData = [];
+            let duplicatesCount = 0;
+            let anomalies = [];
+            let seen = new Set();
+
+            parsedData.forEach((row, index) => {
+                let cleanRow = { ...row };
+                let isDuplicate = false;
+
+                // 1. Sanitization (HTML & Whitespace)
+                for (let key in cleanRow) {
+                    if (typeof cleanRow[key] === 'string') {
+                        let val = cleanRow[key];
+                        
+                        if (optStripHtml) {
+                            val = val.replace(/<\/?[^>]+(>|$)/g, "");
+                        }
+                        if (optNormalizeSpace) {
+                            val = val.replace(/\s+/g, " ").trim();
+                        }
+                        cleanRow[key] = val;
+                    }
+                }
+
+                // 2. Deduplication
+                if (optDedup) {
+                    const stringified = JSON.stringify(cleanRow);
+                    if (seen.has(stringified)) {
+                        duplicatesCount++;
+                        isDuplicate = true;
+                    } else {
+                        seen.add(stringified);
+                    }
+                }
+
+                // 3. Anomaly Detection
+                if (!isDuplicate) {
+                    if (optFlagAnomalies) {
+                        let rowAnomalies = [];
+                        for (let key in cleanRow) {
+                            const val = String(cleanRow[key]).toLowerCase();
+                            if (val === '' || val === 'null' || val === 'undefined') {
+                                rowAnomalies.push(`Empty field [${key}]`);
+                            } else if (val.includes('placeholder') || val.includes('test user') || val === 'test') {
+                                rowAnomalies.push(`Placeholder value in [${key}]`);
+                            } else if (key.toLowerCase().includes('email') && !validateEmail(val)) {
+                                rowAnomalies.push(`Invalid email format in [${key}]`);
+                            }
+                        }
+                        if (rowAnomalies.length > 0) {
+                            anomalies.push({
+                                row: index + 1,
+                                issues: rowAnomalies
+                            });
+                        }
+                    }
+                    cleanedData.push(cleanRow);
+                }
+            });
+
+            // Format Output
+            let finalOutput = '';
+            if (outputFormat === 'json') {
+                finalOutput = JSON.stringify(cleanedData, null, 2);
+            } else if (outputFormat === 'csv') {
+                finalOutput = convertToCSV(cleanedData, ',');
+            } else if (outputFormat === 'tsv') {
+                finalOutput = convertToCSV(cleanedData, '\t');
+            }
+
+            // Update UI
+            document.getElementById('output-data').value = finalOutput;
+            
+            // Stats
+            document.getElementById('stat-processed').innerText = parsedData.length;
+            document.getElementById('stat-duplicates').innerText = duplicatesCount;
+            document.getElementById('stat-anomalies').innerText = anomalies.length;
+            
+            const reduction = parsedData.length > 0 ? Math.round((duplicatesCount / parsedData.length) * 100) : 0;
+            document.getElementById('stat-reduction').innerText = `${reduction}%`;
+
+            // Anomalies Log UI
+            const anomaliesContainer = document.getElementById('anomalies-container');
+            const anomaliesList = document.getElementById('anomalies-list');
+            if (anomalies.length > 0 && optFlagAnomalies) {
+                anomaliesContainer.classList.remove('hidden');
+                anomaliesList.innerHTML = anomalies.map(a => `
+                    <div class="bg-slate-950/50 p-2 rounded border border-amber-500/20 flex items-start space-x-2">
+                        <span class="text-amber-400 font-bold">Row ${a.row}:</span>
+                        <span class="text-slate-300">${a.issues.join(', ')}</span>
+                    </div>
+                `).join('');
+            } else {
+                anomaliesContainer.classList.add('hidden');
+            }
+
+            showToast('Data sanitized & structured successfully!', 'fa-circle-check', 'text-emerald-400');
+        }
+
+        // Helper: Parse CSV
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return [];
+            
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+            const result = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const currentLine = lines[i].split(',');
+                if (currentLine.length === headers.length) {
+                    const obj = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        obj[headers[j]] = currentLine[j].trim().replace(/^["']|["']$/g, '');
+                    }
+                    result.push(obj);
+                }
+            }
+            return result;
+        }
+
+        // Helper: Convert to CSV
+        function convertToCSV(objArray, separator) {
+            if (objArray.length === 0) return '';
+            const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
+            const headers = Object.keys(array[0]);
+            let str = headers.join(separator) + '\r\n';
+
+            for (let i = 0; i < array.length; i++) {
+                let line = '';
+                for (let index in headers) {
+                    if (line !== '') line += separator;
+                    let val = array[i][headers[index]];
+                    if (typeof val === 'string' && val.includes(separator)) {
+                        val = `"${val}"`;
+                    }
+                    line += val;
+                }
+                str += line + '\r\n';
+            }
+            return str;
+        }
+
+        // Helper: Email Validation
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // Copy & Download Utilities
+        function copyOutput() {
+            const output = document.getElementById('output-data');
+            if (!output.value) {
+                showToast('Nothing to copy!', 'fa-circle-exclamation', 'text-amber-400');
+                return;
+            }
+            output.select();
+            document.execCommand('copy');
+            showToast('Copied to clipboard!', 'fa-circle-check', 'text-emerald-400');
+        }
+
+        function downloadOutput() {
+            const output = document.getElementById('output-data').value;
+            if (!output) {
+                showToast('Nothing to download!', 'fa-circle-exclamation', 'text-amber-400');
+                return;
+            }
+            const format = document.getElementById('output-format').value;
+            const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `cleanslate_export.${format}`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Download started!', 'fa-circle-check', 'text-emerald-400');
+        }
+
+        // Paywall & Promo Logic
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const errorEl = document.getElementById('promo-error');
+            
+            if (code === 'PRO5' || code === 'PRO20') {
+                runsRemaining = 999999; // Unlimited
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateRunsBadge();
+                closePaywall();
+                errorEl.classList.add('hidden');
+                showToast('Lifetime Pro Access Unlocked!', 'fa-crown', 'text-amber-400');
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, icon, colorClass) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMsg = document.getElementById('toast-message');
+
+            toastIcon.className = `fa-solid ${icon} ${colorClass}`;
+            toastMsg.innerText = message;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
