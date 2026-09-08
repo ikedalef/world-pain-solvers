@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Log & Trace Normalizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="min-h-screen font-sans">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">LogNormalizer Pro</h1>
+                <p class="text-slate-400 text-sm">Turn messy agent traces into structured data.</p>
+            </div>
+            <div id="credit-badge" class="px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold">
+                Free Runs: <span id="runs-count">1</span> left
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Input Section -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-end">
+                    <label class="text-sm font-medium text-slate-300">Paste Raw Logs, JSON, or CSV</label>
+                    <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-white transition">Clear</button>
+                </div>
+                <textarea id="input-data" class="w-full h-96 p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Paste messy logs here...&#10;Example:&#10;2023-10-01 12:00:01 [ERROR] Agent failed to connect&#10;{&quot;level&quot;: &quot;info&quot;, &quot;msg&quot;: &quot;Retrying...&quot;}"></textarea>
+                <button onclick="processLogs()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform active:scale-95 shadow-lg shadow-blue-900/20">
+                    Normalize & Structure Data
+                </button>
+            </div>
+
+            <!-- Output Section -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-end">
+                    <label class="text-sm font-medium text-slate-300">Structured Output</label>
+                    <div class="flex gap-2">
+                        <button onclick="copyOutput()" class="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 transition">Copy</button>
+                        <button onclick="downloadOutput()" class="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 transition">Download .json</button>
+                    </div>
+                </div>
+                <div id="output-container" class="w-full h-96 p-4 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-sm overflow-auto">
+                    <pre id="output-display">// Results will appear here...</pre>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1 p-3 rounded-lg bg-slate-900 border border-slate-800">
+                        <p class="text-[10px] uppercase text-slate-500 font-bold">Lines Processed</p>
+                        <p id="stat-lines" class="text-xl font-bold">0</p>
+                    </div>
+                    <div class="flex-1 p-3 rounded-lg bg-slate-900 border border-slate-800">
+                        <p class="text-[10px] uppercase text-slate-500 font-bold">Unique Events</p>
+                        <p id="stat-unique" class="text-xl font-bold">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
+            <h2 class="text-2xl font-bold mb-2 text-white">Free Limit Reached</h2>
+            <p class="text-slate-400 mb-6">You've used your free run. Upgrade to Pro for unlimited high-speed log normalization.</p>
+            
+            <div class="space-y-3 mb-6">
+                <a href="https://buy.stripe.com/test_6oE7v07v0" class="block w-full py-3 bg-blue-600 hover:bg-blue-500 text-center text-white font-bold rounded-lg transition">Get Lifetime Access - $5</a>
+                <a href="https://buy.stripe.com/test_6oE7v07v0" class="block w-full py-3 bg-slate-800 hover:bg-slate-700 text-center text-white font-bold rounded-lg transition">Pro Monthly - $9/mo</a>
+            </div>
+
+            <div class="relative mb-4">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
+                <div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-900 px-2 text-slate-500">Or enter promo code</span></div>
+            </div>
+
+            <div class="flex gap-2">
+                <input id="promo-code" type="text" placeholder="PRO5" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <button onclick="applyPromo()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg transition">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let runs = parseInt(localStorage.getItem('app_runs_remaining') || '1');
+        const isPro = localStorage.getItem('app_is_pro') === 'true';
+        
+        function updateUI() {
+            document.getElementById('runs-count').innerText = isPro ? '∞' : runs;
+            if (isPro) document.getElementById('credit-badge').classList.add('text-emerald-400', 'border-emerald-900');
+        }
+
+        function clearInput() {
+            document.getElementById('input-data').value = '';
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            if (code === 'PRO5' || code === 'PRO20') {
+                localStorage.setItem('app_is_pro', 'true');
+                location.reload();
+            } else {
+                alert('Invalid code');
+            }
+        }
+
+        function processLogs() {
+            if (!isPro && runs <= 0) {
+                document.getElementById('paywall-modal').classList.remove('hidden');
+                return;
+            }
+
+            const input = document.getElementById('input-data').value.trim();
+            if (!input) return;
+
+            const lines = input.split(/\r?\n/);
+            let results = [];
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                let entry = { timestamp: null, level: 'INFO', message: line, raw: line };
+
+                // Try JSON parsing
+                try {
+                    const parsed = JSON.parse(line);
+                    entry.timestamp = parsed.timestamp || parsed.time || parsed.ts || null;
+                    entry.level = (parsed.level || parsed.severity || 'INFO').toUpperCase();
+                    entry.message = parsed.message || parsed.msg || line;
+                    entry.data = parsed;
+                } catch (e) {
+                    // Try Regex extraction for common log formats
+                    const tsMatch = line.match(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2})/);
+                    if (tsMatch) entry.timestamp = tsMatch[1];
+
+                    const levelMatch = line.match(/\[(ERROR|WARN|INFO|DEBUG|FATAL)\]/i);
+                    if (levelMatch) entry.level = levelMatch[1].toUpperCase();
+
+                    entry.message = line.replace(/\[.*?\]/g, '').replace(/\d{4}-\d{2}-\d{2}.*?\d{2}:\d{2}:\d{2}/, '').trim();
+                }
+                results.push(entry);
+            });
+
+            // Deduplication logic
+            const uniqueResults = Array.from(new Set(results.map(r => JSON.stringify({l: r.level, m: r.message}))))
+                .map(str => {
+                    const parsed = JSON.parse(str);
+                    return results.find(r => r.level === parsed.l && r.message === parsed.m);
+                });
+
+            // Update Stats
+            document.getElementById('stat-lines').innerText = lines.length;
+            document.getElementById('stat-unique').innerText = uniqueResults.length;
+
+            // Display
+            document.getElementById('output-display').innerText = JSON.stringify(uniqueResults, null, 2);
+
+            // Decrement credits
+            if (!isPro) {
+                runs--;
+                localStorage.setItem('app_runs_remaining', runs);
+                updateUI();
+            }
+        }
+
+        function copyOutput() {
+            const text = document.getElementById('output-display').innerText;
+            navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+        }
+
+        function downloadOutput() {
+            const text = document.getElementById('output-display').innerText;
+            const blob = new Blob([text], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `normalized_logs_${Date.now()}.json`;
+            a.click();
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

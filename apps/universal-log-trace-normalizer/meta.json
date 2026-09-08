@@ -1,0 +1,16 @@
+{
+  "app_slug": "universal-log-trace-normalizer",
+  "title": "Universal Log & Trace Normalizer",
+  "target_pain": "Developers and AI engineers waste hours manually parsing messy, multi-line agent logs and system exceptions to find root causes.",
+  "key_features": [
+    "Auto-detects JSON, CSV, and Raw Text formats",
+    "Regex-powered Exception & Timestamp extraction",
+    "Smart Deduplication of repetitive log bursts",
+    "Instant Export to Clean JSON or CSV"
+  ],
+  "category": "Developer Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access)",
+    "$9/mo Pro Unlimited"
+  ]
+}
