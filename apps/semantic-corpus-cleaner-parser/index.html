@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Corpus Cleaner & Text Structure Parser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white">Semantic Corpus Cleaner</h1>
+                    <p class="text-xs text-slate-400">Linguistic Structure & NLP Parser</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="credit-badge" class="bg-slate-800 border border-slate-700 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="credit-text" class="text-slate-300">Free Runs Left: 1</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-md shadow-indigo-500/10">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Input & Controls (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-400">1. Input Messy Corpus</h2>
+                    <button onclick="loadSample()" class="text-xs text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500 px-2.5 py-1 rounded transition">
+                        Load Sample Data
+                    </button>
+                </div>
+                
+                <p class="text-xs text-slate-400 mb-3">
+                    Paste raw text, scraped HTML, forum posts, or mixed prose. The parser will clean tags, segment sentences, extract keywords, and calculate readability.
+                </p>
+
+                <textarea id="raw-input" class="w-full h-80 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none mono" placeholder="Paste your messy text or HTML here..."></textarea>
+                
+                <div class="mt-4 space-y-3">
+                    <label class="block text-xs font-semibold text-slate-400">Cleaning Options</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center space-x-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+                            <input type="checkbox" id="opt-strip-html" checked class="rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-slate-700">
+                            <span class="text-xs text-slate-300">Strip HTML Tags</span>
+                        </label>
+                        <label class="flex items-center space-x-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+                            <input type="checkbox" id="opt-decode-entities" checked class="rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-slate-700">
+                            <span class="text-xs text-slate-300">Decode Entities</span>
+                        </label>
+                        <label class="flex items-center space-x-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+                            <input type="checkbox" id="opt-remove-extra-spaces" checked class="rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-slate-700">
+                            <span class="text-xs text-slate-300">Normalize Spaces</span>
+                        </label>
+                        <label class="flex items-center space-x-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+                            <input type="checkbox" id="opt-filter-stopwords" checked class="rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-slate-700">
+                            <span class="text-xs text-slate-300">Filter Stopwords</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="processCorpus()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <span>Clean & Parse Corpus</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Right Column: Results & Analytics (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            <!-- Analytics Dashboard -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 font-medium">Words Count</p>
+                    <p id="stat-words" class="text-2xl font-bold text-white mt-1">0</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 font-medium">Sentences</p>
+                    <p id="stat-sentences" class="text-2xl font-bold text-white mt-1">0</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 font-medium">Readability Score</p>
+                    <p id="stat-readability" class="text-2xl font-bold text-indigo-400 mt-1">0.0</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 font-medium">Complexity</p>
+                    <p id="stat-complexity" class="text-sm font-bold text-emerald-400 mt-2 uppercase tracking-wider">N/A</p>
+                </div>
+            </div>
+
+            <!-- Output Tabs & Actions -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-grow flex flex-col">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 mb-4 gap-4">
+                    <div class="flex space-x-2 bg-slate-950 p-1 rounded-lg border border-slate-800 self-start">
+                        <button onclick="switchTab('json')" id="tab-btn-json" class="px-3 py-1.5 rounded-md text-xs font-semibold transition bg-indigo-600 text-white">Structured JSON</button>
+                        <button onclick="switchTab('csv')" id="tab-btn-csv" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-slate-400 hover:text-white">CSV Table</button>
+                        <button onclick="switchTab('text')" id="tab-btn-text" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-slate-400 hover:text-white">Clean Text</button>
+                        <button onclick="switchTab('keywords')" id="tab-btn-keywords" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-slate-400 hover:text-white">Keywords</button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copyToClipboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                            </svg>
+                            <span>Copy</span>
+                        </button>
+                        <button onclick="downloadResult()" class="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span>Download</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="flex-grow relative min-h-[300px]">
+                    <!-- JSON Tab -->
+                    <div id="tab-json" class="tab-content absolute inset-0">
+                        <textarea id="output-json" readonly class="w-full h-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-emerald-400 focus:outline-none resize-none mono" placeholder="Structured JSON output will appear here..."></textarea>
+                    </div>
+                    
+                    <!-- CSV Tab -->
+                    <div id="tab-csv" class="tab-content absolute inset-0 hidden">
+                        <textarea id="output-csv" readonly class="w-full h-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 focus:outline-none resize-none mono" placeholder="CSV output will appear here..."></textarea>
+                    </div>
+
+                    <!-- Clean Text Tab -->
+                    <div id="tab-text" class="tab-content absolute inset-0 hidden">
+                        <textarea id="output-text" readonly class="w-full h-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 focus:outline-none resize-none" placeholder="Cleaned plain text will appear here..."></textarea>
+                    </div>
+
+                    <!-- Keywords Tab -->
+                    <div id="tab-keywords" class="tab-content absolute inset-0 hidden overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <div class="space-y-2" id="keywords-list">
+                            <p class="text-xs text-slate-500 italic">Process a corpus to extract semantic keywords...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl"></div>
+            <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-600/10 rounded-full blur-3xl"></div>
+
+            <div class="text-center relative z-10">
+                <div class="mx-auto w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-extrabold text-white mb-2">Unlock Unlimited Access</h3>
+                <p class="text-sm text-slate-400 mb-6">You have used your 1 free run. Upgrade now to process unlimited corpora with our high-performance semantic engine.</p>
+                
+                <!-- Pricing Options -->
+                <div class="space-y-3 mb-6">
+                    <a href="#" class="block bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white p-4 rounded-xl font-bold text-sm transition shadow-lg shadow-indigo-500/20">
+                        Buy Lifetime Access - $5
+                    </a>
+                    <a href="#" class="block bg-slate-800 hover:bg-slate-700 text-slate-200 p-4 rounded-xl font-bold text-sm transition border border-slate-700">
+                        Pro Monthly Subscription - $9/mo
+                    </a>
+                </div>
+
+                <!-- Promo Code Input -->
+                <div class="border-t border-slate-800 pt-6">
+                    <p class="text-xs text-slate-400 mb-3">Have a promo code? Enter it below to unlock instantly.</p>
+                    <div class="flex space-x-2">
+                        <input type="text" id="promo-code" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-grow uppercase" placeholder="PRO5 or PRO20">
+                        <button onclick="applyPromo()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
+                            Apply
+                        </button>
+                    </div>
+                    <p id="promo-error" class="text-xs text-red-400 mt-2 hidden">Invalid promo code. Please try again.</p>
+                </div>
+
+                <button onclick="closePaywall()" class="mt-6 text-xs text-slate-500 hover:text-slate-400 transition underline">
+                    Close & return
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-slate-500">&copy; 2026 Semantic Corpus Cleaner. All rights reserved. 100% Client-Side Processing.</p>
+            <div class="flex space-x-4 text-xs text-slate-500">
+                <a href="#" class="hover:text-slate-300">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-300">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Core Application Logic -->
+    <script>
+        // State Management
+        let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining') ?? '1');
+        let isUnlocked = localStorage.getItem('app_unlocked') === 'true';
+        let currentTab = 'json';
+        let lastResult = null;
+
+        // Stopwords list for keyword extraction
+        const stopwords = new Set([
+            'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", "you'd",
+            'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers',
+            'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which',
+            'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been',
+            'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if',
+            'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between',
+            'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out',
+            'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why',
+            'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
+            'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't",
+            'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', 
+            "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 
+            'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 
+            'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't",
+            'ask', 'hn', 'why', 'is', 'the', 'to', 'and', 'of', 'in', 'but', 'yet', 'its', 'let\'s', 'why', 'is', 'focusing'
+        ]);
+
+        // Initialize UI
+        updateCreditBadge();
+
+        function updateCreditBadge() {
+            const badge = document.getElementById('credit-badge');
+            const text = document.getElementById('credit-text');
+            if (isUnlocked) {
+                text.innerText = "Unlimited Access";
+                badge.classList.remove('border-slate-700');
+                badge.classList.add('border-emerald-500/30', 'bg-emerald-950/20');
+            } else {
+                text.innerText = `Free Runs Left: ${runsRemaining}`;
+            }
+        }
+
+        function loadSample() {
+            const sample = `[\n  {\n    "source": "HackerNews Ask HN",\n    "title": "Ask HN: [Old-School] Un-Canny Semantic Structures",\n    "context": "I hypothesized that AI primed with linguistic prose would embody the practitioners of said lingua.<p>The Biblical Hebrew corpus is but a drop in the bucket compared to modern datasets, yet its semantic density is unmatched. Let's analyze the structural patterns!"\n  },\n  {\n    "source": "HackerNews Ask HN",\n    "title": "Why is HN focusing a lot on human drama and not AI solving ME problem?",\n    "context": "Title length restricted.<p>Why is HN focusing so much on the human drama of OpenAI and Anthropic and not the fact that AI just solved a millennium problem?"\n  }\n]`;
+            document.getElementById('raw-input').value = sample;
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+
+            // Update tab button styles
+            const tabs = ['json', 'csv', 'text', 'keywords'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (t === tab) {
+                    btn.className = "px-3 py-1.5 rounded-md text-xs font-semibold transition bg-indigo-600 text-white";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-md text-xs font-semibold transition text-slate-400 hover:text-white";
+                }
+            });
+        }
+
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            if (code === 'PRO5' || code === 'PRO20') {
+                isUnlocked = true;
+                localStorage.setItem('app_unlocked', 'true');
+                updateCreditBadge();
+                closePaywall();
+                document.getElementById('promo-error').classList.add('hidden');
+            } else {
+                document.getElementById('promo-error').classList.remove('hidden');
+            }
+        }
+
+        // Main Processing Engine
+        function processCorpus() {
+            if (!isUnlocked && runsRemaining <= 0) {
+                openPaywall();
+                return;
+            }
+
+            const rawInput = document.getElementById('raw-input').value.trim();
+            if (!rawInput) {
+                alert('Please enter some text to clean and parse.');
+                return;
+            }
+
+            // Decrement runs if not unlocked
+            if (!isUnlocked) {
+                runsRemaining--;
+                localStorage.setItem('app_runs_remaining', runsRemaining.toString());
+                updateCreditBadge();
+            }
+
+            // 1. Clean HTML & Entities
+            let cleanedText = rawInput;
+            if (document.getElementById('opt-strip-html').checked) {
+                cleanedText = cleanedText.replace(/<[^>]*>/g, ' ');
+            }
+            if (document.getElementById('opt-decode-entities').checked) {
+                const txt = document.createElement("textarea");
+                txt.innerHTML = cleanedText;
+                cleanedText = txt.value;
+            }
+            if (document.getElementById('opt-remove-extra-spaces').checked) {
+                cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+            }
+
+            // 2. Sentence Segmentation
+            const sentences = cleanedText
+                .split(/(?<=[.!?])\s+/)
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+
+            // 3. Word Tokenization & Stopwords Filtering
+            const words = cleanedText
+                .toLowerCase()
+                .replace(/[^a-zA-Z0-9\s]/g, '')
+                .split(/\s+/)
+                .filter(w => w.length > 0);
+
+            const filteredWords = document.getElementById('opt-filter-stopwords').checked
+                ? words.filter(w => !stopwords.has(w))
+                : words;
+
+            // 4. Keyword Frequency Extraction
+            const wordFreq = {};
+            filteredWords.forEach(w => {
+                if (w.length > 2) {
+                    wordFreq[w] = (wordFreq[w] || 0) + 1;
+                }
+            });
+            const sortedKeywords = Object.entries(wordFreq)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15);
+
+            // 5. Readability & Complexity Metrics (Flesch Reading Ease approximation)
+            const totalWords = words.length;
+            const totalSentences = sentences.length || 1;
+            
+            // Syllable count approximation
+            let totalSyllables = 0;
+            words.forEach(w => {
+                let count = w.replace(/[^aeiouy]/g, '').length;
+                if (count === 0) count = 1;
+                totalSyllables += count;
+            });
+
+            // Flesch Reading Ease Formula
+            const score = 206.835 - 1.015 * (totalWords / totalSentences) - 84.6 * (totalSyllables / totalWords);
+            const readabilityScore = Math.max(0, Math.min(100, Math.round(score * 10) / 10));
+
+            let complexity = 'Medium';
+            if (readabilityScore > 80) complexity = 'Very Easy';
+            else if (readabilityScore > 60) complexity = 'Easy';
+            else if (readabilityScore > 40) complexity = 'Medium';
+            else if (readabilityScore > 20) complexity = 'Difficult';
+            else complexity = 'Academic / Dense';
+
+            // Update Stats Dashboard
+            document.getElementById('stat-words').innerText = totalWords;
+            document.getElementById('stat-sentences').innerText = totalSentences;
+            document.getElementById('stat-readability').innerText = readabilityScore;
+            document.getElementById('stat-complexity').innerText = complexity;
+
+            // Generate Structured JSON
+            const structuredJSON = {
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    word_count: totalWords,
+                    sentence_count: totalSentences,
+                    readability_score: readabilityScore,
+                    complexity_level: complexity
+                },
+                keywords: sortedKeywords.map(([word, count]) => ({ word, count })),
+                sentences: sentences.map((s, idx) => ({
+                    index: idx + 1,
+                    text: s,
+                    word_count: s.split(/\s+/).length
+                }))
+            };
+
+            // Generate CSV
+            let csvContent = "Sentence Index,Word Count,Sentence Text\n";
+            sentences.forEach((s, idx) => {
+                const escapedSentence = s.replace(/"/g, '""');
+                csvContent += `${idx + 1},${s.split(/\s+/).length},"${escapedSentence}"\n`;
+            });
+
+            // Update Tab Outputs
+            document.getElementById('output-json').value = JSON.stringify(structuredJSON, null, 2);
+            document.getElementById('output-csv').value = csvContent;
+            document.getElementById('output-text').value = cleanedText;
+
+            // Render Keywords Tab
+            const keywordsContainer = document.getElementById('keywords-list');
+            keywordsContainer.innerHTML = '';
+            sortedKeywords.forEach(([word, count]) => {
+                const percentage = Math.min(100, Math.round((count / filteredWords.length) * 100));
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-800";
+                row.innerHTML = `\n                    <div class="flex items-center space-x-3">\n                        <span class="text-xs font-bold text-indigo-400 mono">${word}</span>\n                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">${count} occurrences</span>\n                    </div>\n                    <div class="w-32 bg-slate-950 rounded-full h-2 overflow-hidden">\n                        <div class="bg-indigo-500 h-full" style="width: ${percentage}%"></div>\n                    </div>\n                `;
+                keywordsContainer.appendChild(row);
+            });
+
+            // Save last result for download/copy
+            lastResult = {
+                json: JSON.stringify(structuredJSON, null, 2),
+                csv: csvContent,
+                text: cleanedText,
+                keywords: JSON.stringify(sortedKeywords, null, 2)
+            };
+        }
+
+        // Utility Functions
+        function copyToClipboard() {
+            if (!lastResult) {
+                alert('Please process some text first.');
+                return;
+            }
+            const content = lastResult[currentTab];
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Copied to clipboard successfully!');
+            }).catch(err => {
+                alert('Failed to copy text: ' + err);
+            });
+        }
+
+        function downloadResult() {
+            if (!lastResult) {
+                alert('Please process some text first.');
+                return;
+            }
+            const content = lastResult[currentTab];
+            const extension = currentTab === 'json' ? 'json' : currentTab === 'csv' ? 'csv' : 'txt';
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `semantic-export-${Date.now()}.${extension}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

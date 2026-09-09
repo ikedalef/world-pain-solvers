@@ -1,0 +1,17 @@
+{
+  "app_slug": "semantic-corpus-cleaner-parser",
+  "title": "Semantic Corpus Cleaner & Text Structure Parser",
+  "target_pain": "Cleaning messy scraped text, forum posts, and HTML-polluted prose into structured, tokenized, and analyzed linguistic datasets for AI training or semantic research.",
+  "key_features": [
+    "HTML Tag Stripping & Entity Decoding",
+    "Sentence Segmentation & Word Tokenization",
+    "Stopword Filtering & Keyword Extraction",
+    "Flesch-Kincaid Readability & Complexity Metrics",
+    "Instant Export to Structured JSON, CSV, or Markdown"
+  ],
+  "category": "Data Productivity & NLP Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
