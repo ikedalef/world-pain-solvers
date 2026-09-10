@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B Lead Data Cleaner & LinkedIn CSV Normalizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#0b0f19',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/30">
+                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-400 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        LeadCleanse <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium border border-emerald-500/30">v2.4</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">B2B Lead & LinkedIn Data Normalizer</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-semibold text-slate-300" id="credit-badge">Free Runs Left: 1</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-lg shadow-emerald-950/50 transition-all duration-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-crown"></i> Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Panel: Input & Configuration (5 Cols) -->
+        <div class="lg:col-span-5 flex flex-col space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-file-import text-emerald-400"></i> 1. Input Messy Data
+                    </h2>
+                    <button onclick="loadSampleData()" class="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors">
+                        <i class="fa-solid fa-database"></i> Load Sample Messy Data
+                    </button>
+                </div>
+                
+                <p class="text-xs text-slate-400 mb-3">
+                    Paste raw CSV, TSV, or unstructured text containing names, emails, and LinkedIn URLs.
+                </p>
+
+                <textarea id="raw-input" class="w-full h-64 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="First Name, Last Name, Email, LinkedIn Profile&#10;JOHN, SMITH, john.smith@google.com, https://linkedin.com/in/johnsmith/?miniProfileUrn=...&#10;dr. jane doe, PhD, JANE.DOE@YAHOO.CO.UK, https://linkedin.com/in/janedoe&#10;alice green, , alice@green.co, "></textarea>
+            </div>
+
+            <!-- Configuration Options -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-sliders text-emerald-400"></i> 2. Cleaning Rules
+                </h2>
+
+                <div class="space-y-4">
+                    <!-- Delimiter -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5">Input Format / Delimiter</label>
+                        <select id="delimiter-select" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+                            <option value="auto">Auto-Detect (Recommended)</option>
+                            <option value=",">Comma Separated (,)</option>
+                            <option value="\t">Tab Separated (TSV)</option>
+                            <option value=";">Semicolon Separated (;)</option>
+                        </select>
+                    </div>
+
+                    <!-- Checkboxes -->
+                    <div class="space-y-3 pt-2">
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-normalize-names" checked class="mt-0.5 rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0">
+                            <div>
+                                <span class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">Normalize Names</span>
+                                <p class="text-[10px] text-slate-500">Fixes capitalization (e.g. "JOHN" to "John"), removes emojis, academic suffixes (PhD, MD, etc.).</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-clean-linkedin" checked class="mt-0.5 rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0">
+                            <div>
+                                <span class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">Clean LinkedIn URLs</span>
+                                <p class="text-[10px] text-slate-500">Strips tracking parameters, miniProfileUrns, and normalizes to standard https://linkedin.com/in/username format.</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-dedupe" checked class="mt-0.5 rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0">
+                            <div>
+                                <span class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">Deduplicate Records</span>
+                                <p class="text-[10px] text-slate-500">Removes duplicate rows based on email address (case-insensitive).</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="opt-extract-domain" checked class="mt-0.5 rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0">
+                            <div>
+                                <span class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">Extract Company Domain</span>
+                                <p class="text-[10px] text-slate-500">Automatically extracts clean company domain from email addresses into a separate column.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="processData()" class="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3 px-4 rounded-lg shadow-lg shadow-emerald-950/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-gears"></i> Clean & Normalize Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Output & Stats (7 Cols) -->
+        <div class="lg:col-span-7 flex flex-col space-y-6">
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Processed</span>
+                    <span id="stat-processed" class="text-xl font-bold text-slate-200">0</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Cleaned Names</span>
+                    <span id="stat-cleaned-names" class="text-xl font-bold text-emerald-400">0</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Deduplicated</span>
+                    <span id="stat-deduped" class="text-xl font-bold text-amber-400">0</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Valid Emails</span>
+                    <span id="stat-valid-emails" class="text-xl font-bold text-teal-400">0</span>
+                </div>
+            </div>
+
+            <!-- Output Preview -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex-grow flex flex-col">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i> 3. Cleaned Output Preview
+                    </h2>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copyToClipboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-1.5 rounded border border-slate-700 flex items-center gap-1.5 transition-colors">
+                            <i class="fa-solid fa-copy"></i> Copy
+                        </button>
+                        <button onclick="downloadCSV()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-medium px-3 py-1.5 rounded border border-emerald-500/30 flex items-center gap-1.5 transition-colors">
+                            <i class="fa-solid fa-download"></i> Download CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Preview -->
+                <div class="border border-slate-800 rounded-lg overflow-hidden flex-grow bg-slate-950 min-h-[300px] flex flex-col">
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="min-w-full divide-y divide-slate-800 text-xs text-left" id="output-table">
+                            <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold">First Name</th>
+                                    <th class="px-4 py-3 font-semibold">Last Name</th>
+                                    <th class="px-4 py-3 font-semibold">Email</th>
+                                    <th class="px-4 py-3 font-semibold">Domain</th>
+                                    <th class="px-4 py-3 font-semibold">LinkedIn URL</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 text-slate-300" id="output-table-body">
+                                <tr>
+                                    <td colspan="5" class="px-4 py-12 text-center text-slate-500">
+                                        <i class="fa-solid fa-table-list text-3xl mb-2 block opacity-40"></i>
+                                        No data processed yet. Paste messy data and click "Clean & Normalize".
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden">
+            <!-- Decorative background glow -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl"></div>
+
+            <div class="text-center relative z-10">
+                <div class="mx-auto w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/30 mb-4">
+                    <i class="fa-solid fa-crown text-emerald-400 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Upgrade to LeadCleanse Pro</h3>
+                <p class="text-xs text-slate-400 mb-6">
+                    You've used your 1 free run. Unlock unlimited cleaning, advanced LinkedIn normalization, and direct CRM exports.
+                </p>
+
+                <!-- Pricing Options -->
+                <div class="space-y-3 mb-6">
+                    <a href="#" onclick="simulatePurchase('lifetime')" class="block bg-slate-950 hover:bg-slate-800 border border-emerald-500/30 hover:border-emerald-500/60 rounded-xl p-4 text-left transition-all group">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">Early Bird Offer</span>
+                                <span class="text-sm font-semibold text-slate-200">$5 One-Time (Lifetime Access)</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-emerald-400 transition-colors"></i>
+                        </div>
+                    </a>
+                    <a href="#" onclick="simulatePurchase('monthly')" class="block bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl p-4 text-left transition-all group">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Pro Subscription</span>
+                                <span class="text-sm font-semibold text-slate-200">$9/month (Pro Unlimited)</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-slate-300 transition-colors"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Promo Code Section -->
+                <div class="border-t border-slate-800 pt-4">
+                    <label class="block text-xs text-slate-400 mb-2 text-left font-medium">Have a promo code?</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="promo-code" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 flex-grow uppercase" placeholder="e.g. PRO5">
+                        <button onclick="applyPromoCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-700 transition-colors">
+                            Apply
+                        </button>
+                    </div>
+                    <p id="promo-error" class="text-[10px] text-red-400 mt-1.5 text-left hidden">Invalid promo code. Try "PRO5" or "PRO20".</p>
+                </div>
+
+                <button onclick="closePaywall()" class="mt-6 text-xs text-slate-500 hover:text-slate-400 transition-colors">
+                    Close & return to editor
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stripe Mock Checkout Modal -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-brands fa-stripe text-indigo-400 text-3xl"></i>
+                    <span class="text-xs text-slate-400 font-semibold">Secure Checkout</span>
+                </div>
+                <button onclick="closeCheckout()" class="text-slate-500 hover:text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Email Address</label>
+                    <input type="email" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300" value="user@example.com" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Card Details</label>
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 flex items-center justify-between">
+                        <span class="text-xs text-slate-300 font-mono">•••• •••• •••• 4242</span>
+                        <span class="text-xs text-slate-500">12/28</span>
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button onclick="completeMockPurchase()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-lock"></i> Pay <span id="checkout-price">$5.00</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-900/30 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-slate-500">&copy; 2026 LeadCleanse. 100% client-side processing. Your data never leaves your browser.</p>
+            <div class="flex space-x-6 text-xs text-slate-500">
+                <a href="#" class="hover:text-slate-400">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-400">Terms of Service</a>
+                <a href="#" class="hover:text-slate-400">Contact Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Core Logic Script -->
+    <script>
+        // Credit & Paywall Architecture
+        let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining'));
+        if (isNaN(runsRemaining)) {
+            runsRemaining = 1;
+            localStorage.setItem('app_runs_remaining', runsRemaining);
+        }
+        let isUnlocked = localStorage.getItem('app_unlocked') === 'true';
+
+        function updateCreditBadge() {
+            const badge = document.getElementById('credit-badge');
+            if (isUnlocked) {
+                badge.innerHTML = '<i class="fa-solid fa-crown text-emerald-400"></i> Pro Unlimited';
+                badge.classList.add('border-emerald-500/50', 'bg-emerald-500/10');
+            } else {
+                badge.innerText = `Free Runs Left: ${runsRemaining}`;
+            }
+        }
+        updateCreditBadge();
+
+        function openPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromoCode() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const errorEl = document.getElementById('promo-error');
+            if (code === 'PRO5' || code === 'PRO20') {
+                isUnlocked = true;
+                localStorage.setItem('app_unlocked', 'true');
+                updateCreditBadge();
+                closePaywall();
+                alert('Success! Lifetime Pro Access Unlocked.');
+                errorEl.classList.add('hidden');
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function simulatePurchase(type) {
+            const price = type === 'lifetime' ? '$5.00' : '$9.00';
+            document.getElementById('checkout-price').innerText = price;
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function closeCheckout() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        function completeMockPurchase() {
+            isUnlocked = true;
+            localStorage.setItem('app_unlocked', 'true');
+            updateCreditBadge();
+            closeCheckout();
+            closePaywall();
+            alert('Payment Successful! Welcome to LeadCleanse Pro.');
+        }
+
+        // Sample Data
+        const sampleMessyData = `First Name,Last Name,Email Address,LinkedIn Profile
+"JOHN 🚀","SMITH","john.smith@google.com","https://www.linkedin.com/in/johnsmith/?miniProfileUrn=urn%3Ali%3Afs_miniProfile%3AMDAwMDAs"
+"dr. jane doe, PhD","","JANE.DOE@YAHOO.CO.UK","https://linkedin.com/in/janedoe"
+"alice green","","alice@green.co",""
+"JOHN","SMITH","john.smith@google.com","https://www.linkedin.com/in/johnsmith/"
+"Bob","Builder","bob@builder.com","https://www.linkedin.com/in/bob-builder-12345/"
+"invalid-record","","not-an-email",""`;
+
+        function loadSampleData() {
+            document.getElementById('raw-input').value = sampleMessyData;
+        }
+
+        // CSV Parser
+        function parseCSV(text, delimiter) {
+            let lines = [];
+            let row = [""];
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                let c = text[i];
+                let next = text[i+1];
+                if (c === '"') {
+                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
+                    else { inQuotes = !inQuotes; } 
+                } else if (c === delimiter && !inQuotes) {
+                    row.push('');
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && next === '\n') { i++; }
+                    lines.push(row);
+                    row = [''];
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || row[0] !== '') {
+                lines.push(row);
+            }
+            return lines;
+        }
+
+        function detectDelimiter(text) {
+            const delimiters = [',', '\t', ';'];
+            let bestDelim = ',';
+            let maxCols = 0;
+            delimiters.forEach(delim => {
+                const lines = text.split('\n').slice(0, 5);
+                let totalCols = 0;
+                lines.forEach(line => {
+                    totalCols += line.split(delim).length;
+                });
+                if (totalCols > maxCols) {
+                    maxCols = totalCols;
+                    bestDelim = delim;
+                }
+            });
+            return bestDelim;
+        }
+
+        // Normalization Helpers
+        function cleanName(name) {
+            if (!name) return '';
+            // Remove emojis
+            let cleaned = name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '');
+            // Remove academic/professional suffixes
+            cleaned = cleaned.replace(/,\s*(PhD|PHD|MD|M\.D\.|Ph\.D\.|MBA|M\.B\.A\.|Jr\.?|Sr\.?)/gi, '');
+            // Remove prefixes
+            cleaned = cleaned.replace(/^(dr\.?|mr\.?|ms\.?|mrs\.?)\s+/gi, '');
+            // Trim and capitalize
+            cleaned = cleaned.trim();
+            return cleaned.split(/\s+/).map(word => {
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }).join(' ');
+        }
+
+        function cleanLinkedIn(url) {
+            if (!url) return '';
+            let cleaned = url.trim();
+            // Ensure protocol
+            if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+                cleaned = 'https://' + cleaned;
+            }
+            try {
+                const parsedUrl = new URL(cleaned);
+                // Strip query params
+                parsedUrl.search = '';
+                // Ensure standard domain
+                if (parsedUrl.hostname.includes('linkedin.com')) {
+                    parsedUrl.hostname = 'www.linkedin.com';
+                }
+                return parsedUrl.toString();
+            } catch (e) {
+                return url; // Return original if parsing fails
+            }
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s*^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\s*$;
+            return re.test(String(email).toLowerCase().trim());
+        }
+
+        function extractDomain(email) {
+            if (!email || !email.includes('@')) return '';
+            return email.split('@')[1].toLowerCase().trim();
+        }
+
+        // Global state for processed data
+        let processedRecords = [];
+
+        // Main Processing Logic
+        function processData() {
+            // Check Credits
+            if (!isUnlocked) {
+                if (runsRemaining <= 0) {
+                    openPaywall();
+                    return;
+                }
+                runsRemaining--;
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateCreditBadge();
+            }
+
+            const rawInput = document.getElementById('raw-input').value.trim();
+            if (!rawInput) {
+                alert('Please paste some data first.');
+                return;
+            }
+
+            let delimiter = document.getElementById('delimiter-select').value;
+            if (delimiter === 'auto') {
+                delimiter = detectDelimiter(rawInput);
+            }
+
+            const parsed = parseCSV(rawInput, delimiter);
+            if (parsed.length === 0) {
+                alert('Could not parse any records.');
+                return;
+            }
+
+            // Detect Headers
+            let headers = parsed[0].map(h => h.trim().toLowerCase());
+            let dataRows = parsed.slice(1);
+
+            // If first row doesn't look like header, treat all as data
+            const looksLikeHeader = headers.some(h => h.includes('name') || h.includes('email') || h.includes('linkedin') || h.includes('profile'));
+            if (!looksLikeHeader) {
+                headers = ['first name', 'last name', 'email', 'linkedin url'];
+                dataRows = parsed;
+            }
+
+            // Map column indices
+            const emailIdx = headers.findIndex(h => h.includes('email') || h.includes('mail'));
+            const firstNameIdx = headers.findIndex(h => h.includes('first') || h.includes('fname') || (h.includes('name') && !h.includes('last')));
+            const lastNameIdx = headers.findIndex(h => h.includes('last') || h.includes('lname'));
+            const linkedinIdx = headers.findIndex(h => h.includes('linkedin') || h.includes('profile') || h.includes('url'));
+
+            // Options
+            const optNormalizeNames = document.getElementById('opt-normalize-names').checked;
+            const optCleanLinkedin = document.getElementById('opt-clean-linkedin').checked;
+            const optDedupe = document.getElementById('opt-dedupe').checked;
+            const optExtractDomain = document.getElementById('opt-extract-domain').checked;
+
+            let cleanedRows = [];
+            let seenEmails = new Set();
+            let stats = {
+                processed: 0,
+                cleanedNames: 0,
+                deduped: 0,
+                validEmails: 0
+            };
+
+            dataRows.forEach(row => {
+                if (row.length === 0 || (row.length === 1 && row[0] === '')) return;
+                stats.processed++;
+
+                let email = emailIdx !== -1 ? (row[emailIdx] || '').trim() : '';
+                let firstName = firstNameIdx !== -1 ? (row[firstNameIdx] || '').trim() : '';
+                let lastName = lastNameIdx !== -1 ? (row[lastNameIdx] || '').trim() : '';
+                let linkedin = linkedinIdx !== -1 ? (row[linkedinIdx] || '').trim() : '';
+
+                // If single name column detected
+                if (firstNameIdx !== -1 && lastNameIdx === -1) {
+                    const parts = firstName.split(/\s+/);
+                    if (parts.length > 1) {
+                        firstName = parts[0];
+                        lastName = parts.slice(1).join(' ');
+                    }
+                }
+
+                // Validate Email
+                const isValidEmail = validateEmail(email);
+                if (isValidEmail) {
+                    stats.validEmails++;
+                }
+
+                // Deduplicate
+                if (optDedupe && email) {
+                    const lowerEmail = email.toLowerCase();
+                    if (seenEmails.has(lowerEmail)) {
+                        stats.deduped++;
+                        return; // Skip duplicate
+                    }
+                    seenEmails.add(lowerEmail);
+                }
+
+                // Clean Names
+                let cleanFirst = firstName;
+                let cleanLast = lastName;
+                if (optNormalizeNames) {
+                    cleanFirst = cleanName(firstName);
+                    cleanLast = cleanName(lastName);
+                    if (cleanFirst !== firstName || cleanLast !== lastName) {
+                        stats.cleanedNames++;
+                    }
+                }
+
+                // Clean LinkedIn
+                let cleanLI = linkedin;
+                if (optCleanLinkedin && linkedin) {
+                    cleanLI = cleanLinkedIn(linkedin);
+                }
+
+                // Extract Domain
+                let domain = '';
+                if (optExtractDomain && email) {
+                    domain = extractDomain(email);
+                }
+
+                cleanedRows.push({
+                    firstName: cleanFirst,
+                    lastName: cleanLast,
+                    email: email,
+                    domain: domain,
+                    linkedin: cleanLI
+                });
+            });
+
+            processedRecords = cleanedRows;
+
+            // Update Stats
+            document.getElementById('stat-processed').innerText = stats.processed;
+            document.getElementById('stat-cleaned-names').innerText = stats.cleanedNames;
+            document.getElementById('stat-deduped').innerText = stats.deduped;
+            document.getElementById('stat-valid-emails').innerText = stats.validEmails;
+
+            // Render Table
+            renderTable(cleanedRows);
+        }
+
+        function renderTable(rows) {
+            const tbody = document.getElementById('output-table-body');
+            tbody.innerHTML = '';
+
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-500">No valid records found.</td></tr>`;
+                return;
+            }
+
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-900/50 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-medium text-slate-200">${escapeHtml(row.firstName)}</td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(row.lastName)}</td>
+                    <td class="px-4 py-3 text-slate-300 font-mono">${escapeHtml(row.email)}</td>
+                    <td class="px-4 py-3 text-slate-400 font-mono">${escapeHtml(row.domain)}</td>
+                    <td class="px-4 py-3 text-emerald-400 truncate max-w-[150px]" title="${escapeHtml(row.linkedin)}">
+                        ${row.linkedin ? `<a href="${escapeHtml(row.linkedin)}" target="_blank" class="hover:underline"><i class="fa-brands fa-linkedin mr-1"></i> Profile</a>` : '-'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Export Utilities
+        function generateCSVString() {
+            if (processedRecords.length === 0) return '';
+            const headers = ['First Name', 'Last Name', 'Email', 'Domain', 'LinkedIn URL'];
+            const rows = processedRecords.map(r => [
+                `"${(r.firstName || '').replace(/"/g, '""')}"`,
+                `"${(r.lastName || '').replace(/"/g, '""')}"`,
+                `"${(r.email || '').replace(/"/g, '""')}"`,
+                `"${(r.domain || '').replace(/"/g, '""')}"`,
+                `"${(r.linkedin || '').replace(/"/g, '""')}"`
+            ]);
+            return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        }
+
+        function copyToClipboard() {
+            const csv = generateCSVString();
+            if (!csv) {
+                alert('No data to copy. Please process some data first.');
+                return;
+            }
+            navigator.clipboard.writeText(csv).then(() => {
+                alert('Cleaned CSV copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+
+        function downloadCSV() {
+            const csv = generateCSVString();
+            if (!csv) {
+                alert('No data to download. Please process some data first.');
+                return;
+            }
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "leadcleanse_export.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

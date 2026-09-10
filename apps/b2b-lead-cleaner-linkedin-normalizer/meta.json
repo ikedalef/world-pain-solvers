@@ -1,0 +1,17 @@
+{
+  "app_slug": "b2b-lead-cleaner-linkedin-normalizer",
+  "title": "B2B Lead Data Cleaner & LinkedIn CSV Normalizer",
+  "target_pain": "Messy B2B lead lists, unformatted LinkedIn exports, mixed-up email/name columns, and duplicate records that break CRM imports.",
+  "key_features": [
+    "Auto-detects CSV/TSV columns",
+    "Extracts & validates business emails",
+    "Normalizes messy names & LinkedIn URLs",
+    "Deduplicates records instantly",
+    "Exports clean CRM-ready CSV/JSON"
+  ],
+  "category": "Data Productivity",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
