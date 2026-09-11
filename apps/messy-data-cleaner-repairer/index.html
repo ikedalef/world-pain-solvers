@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SqueakyClean - The Ultimate Messy Data & JSON Repair Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight text-white">Squeaky<span class="text-indigo-400">Clean</span></span>
+                    <span class="block text-xs text-slate-400">Data & JSON Repair Engine</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <span id="credit-badge" class="bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-inner">
+                    Free Runs Left: 1
+                </span>
+                <button onclick="showPaywall()" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all duration-200">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <!-- Intro Banner -->
+        <div class="mb-8 text-center max-w-3xl mx-auto">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
+                Clean, Repair & Format Messy Data Instantly
+            </h1>
+            <p class="text-slate-400 text-base sm:text-lg">
+                Paste broken JSON, messy CSVs, or raw unstructured text logs. SqueakyClean repairs syntax, standardizes schemas, and extracts structured tables 100% client-side.
+            </p>
+        </div>
+
+        <!-- Tool Tabs -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl mb-8">
+            <div class="flex border-b border-slate-800 bg-slate-950/40 p-2 gap-2">
+                <button onclick="switchTab('json')" id="tab-json" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    Broken JSON Fixer
+                </button>
+                <button onclick="switchTab('csv')" id="tab-csv" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    CSV/TSV Deduplicator
+                </button>
+                <button onclick="switchTab('regex')" id="tab-regex" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Regex Data Extractor
+                </button>
+            </div>
+
+            <!-- Workspace Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-px bg-slate-800">
+                <!-- Input Panel -->
+                <div class="p-6 bg-slate-900 flex flex-col space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold text-slate-300 tracking-wide uppercase">Input Data</label>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="loadSample()" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                                ⚡ Load Sample Data
+                            </button>
+                            <span class="text-slate-600">|</span>
+                            <button onclick="clearInput()" class="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative flex-grow">
+                        <textarea id="input-area" class="w-full h-96 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm mono-font text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="Paste your messy data here..."></textarea>
+                    </div>
+
+                    <!-- Dynamic Options Panel based on active tab -->
+                    <div id="options-json" class="space-y-3 bg-slate-950/50 p-4 rounded-xl border border-slate-800/60">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">JSON Repair Options</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="flex items-center space-x-2.5 text-sm text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="opt-json-quotes" checked class="rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                                <span>Fix single quotes & unquoted keys</span>
+                            </label>
+                            <label class="flex items-center space-x-2.5 text-sm text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="opt-json-commas" checked class="rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                                <span>Strip trailing commas</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="options-csv" class="hidden space-y-3 bg-slate-950/50 p-4 rounded-xl border border-slate-800/60">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">CSV Clean Options</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Delimiter</label>
+                                <select id="opt-csv-delimiter" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500">
+                                    <option value="auto">Auto-Detect</option>
+                                    <option value=",">Comma (,)</option>
+                                    <option value="\t">Tab (\t)</option>
+                                    <option value=";">Semicolon (;)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Deduplicate By</label>
+                                <select id="opt-csv-dedup" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500">
+                                    <option value="all">Entire Row</option>
+                                    <option value="first">First Column</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer pb-2">
+                                    <input type="checkbox" id="opt-csv-trim" checked class="rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                                    <span>Trim Whitespace</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="options-regex" class="hidden space-y-3 bg-slate-950/50 p-4 rounded-xl border border-slate-800/60">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Extraction Pattern</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Preset Patterns</label>
+                                <select id="opt-regex-preset" onchange="applyRegexPreset()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500">
+                                    <option value="email">Emails</option>
+                                    <option value="url">URLs / Links</option>
+                                    <option value="ip">IP Addresses</option>
+                                    <option value="custom">Custom Regex Pattern</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Custom Regex</label>
+                                <input type="text" id="opt-regex-custom" disabled value="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50" placeholder="e.g. \d+">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="processData()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-500/20 transition-all duration-200 flex items-center justify-center space-x-2">
+                        <span>Process & Clean Data</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Output Panel -->
+                <div class="p-6 bg-slate-900 flex flex-col space-y-4 border-t lg:border-t-0 lg:border-l border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold text-slate-300 tracking-wide uppercase">Cleaned Output</label>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="copyToClipboard()" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                                Copy
+                            </button>
+                            <span class="text-slate-600">|</span>
+                            <button onclick="downloadOutput()" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative flex-grow">
+                        <textarea id="output-area" readonly class="w-full h-96 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm mono-font text-emerald-400 focus:outline-none resize-none" placeholder="Cleaned output will appear here..."></textarea>
+                    </div>
+
+                    <!-- Stats & Export Format -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800/60">
+                        <div class="text-xs text-slate-400">
+                            <span id="stats-label">Status:</span> <span id="stats-value" class="text-slate-200 font-semibold">Ready</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-slate-400">Export Format:</span>
+                            <select id="opt-export-format" class="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500">
+                                <option value="raw">Same as Input</option>
+                                <option value="json">JSON Array</option>
+                                <option value="csv">CSV Table</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pain Point Target Context -->
+        <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 sm:p-8">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Why SqueakyClean?
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-400">
+                <div>
+                    <p class="mb-3">
+                        In an era where human skills are rapidly digitized and integrated into AI models, the friction of dealing with raw, messy, and unstructured data remains a massive bottleneck. Developers and creators waste hours formatting, cleaning, and repairing syntax errors.
+                    </p>
+                    <p>
+                        SqueakyClean is built to eliminate this friction entirely. By running 100% locally in your browser, your sensitive API logs, customer CSVs, and database exports never touch an external server.
+                    </p>
+                </div>
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/60 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">Security & Privacy</span>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            All operations are executed in-browser via JavaScript. No data is uploaded to any server. Perfect for enterprise logs, PII data, and proprietary codebases.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-xs text-slate-500">Early Bird Lifetime Access</span>
+                        <span class="text-xs font-bold text-emerald-400">$5 One-Time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="mb-2">&copy; 2024 SqueakyClean. All rights reserved.</p>
+            <p>Designed for developers, data scientists, and creators who value clean data.</p>
+        </div>
+    </footer>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative mx-4">
+            <button onclick="hidePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="text-center mb-6">
+                <div class="inline-flex bg-indigo-950 text-indigo-400 p-3 rounded-full mb-4 border border-indigo-800/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-extrabold text-white mb-2">Upgrade to Pro</h3>
+                <p class="text-slate-400 text-sm">
+                    You've reached the limit of your free runs. Unlock unlimited lifetime access to process files of any size instantly.
+                </p>
+            </div>
+
+            <!-- Pricing Options -->
+            <div class="space-y-3 mb-6">
+                <a href="#" class="block bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white p-4 rounded-xl text-center font-bold shadow-lg shadow-indigo-500/20 transition-all duration-200">
+                    <span class="block text-lg">$5 One-Time</span>
+                    <span class="text-xs font-normal text-indigo-100">Lifetime Access (Early Bird Offer)</span>
+                </a>
+                <a href="#" class="block bg-slate-800 hover:bg-slate-750 text-slate-200 p-4 rounded-xl text-center font-bold border border-slate-700 transition-all duration-200">
+                    <span class="block text-lg">$9/month</span>
+                    <span class="text-xs font-normal text-slate-400">Pro Unlimited Subscription</span>
+                </a>
+            </div>
+
+            <!-- Promo Code Bypass -->
+            <div class="border-t border-slate-800 pt-4">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Have a Promo Code?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="promo-code" class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Enter PRO5 or PRO20">
+                    <button onclick="applyPromo()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-800 text-slate-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <span class="text-emerald-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </span>
+        <span id="toast-message" class="text-sm font-medium">Copied to clipboard!</span>
+    </div>
+
+    <!-- Core Logic Script -->
+    <script>
+        let activeTab = 'json';
+
+        // Sample Data Sets
+        const samples = {
+            json: `{
+  'source': 'HackerNews Ask HN',
+  'title': 'Why make digitized forms of human skill at all?',
+  'context': 'Why do people still make digitized forms of their skills when digitized forms are doomed to be replicated by AI?',
+  'tags': ['AI', 'Philosophy', 'SaaS'],
+  'metrics': {
+    'upvotes': 42,
+    'comments': 18,
+  },
+}`,
+            csv: `Source,Title,Context,Upvotes
+HackerNews Ask HN,Why make digitized forms of human skill at all?,Why do people still make digitized forms of their skills...,42
+HackerNews Ask HN,Why make digitized forms of human skill at all?,Why do people still make digitized forms of their skills...,42
+HackerNews Ask HN,Ask HN: What Can We Do?,I am sharing this out of existential concern for all of our futures...,105
+ , , , `,
+            regex: `Contact us at support@squeakyclean.io or sales@squeakyclean.io.
+For security issues, reach out to security@squeakyclean.io.
+Visit our documentation at https://squeakyclean.io/docs or check our status at https://status.squeakyclean.io`
+        };
+
+        // Initialize Credits
+        function initCredits() {
+            let remaining = localStorage.getItem('app_runs_remaining');
+            if (remaining === null) {
+                remaining = 1;
+                localStorage.setItem('app_runs_remaining', remaining);
+            }
+            remaining = parseInt(remaining, 10);
+            if (remaining > 10000) {
+                document.getElementById('credit-badge').innerText = `Pro Unlimited`;
+            } else {
+                document.getElementById('credit-badge').innerText = `Free Runs Left: ${remaining}`;
+            }
+        }
+
+        function checkCredits() {
+            let remaining = localStorage.getItem('app_runs_remaining');
+            remaining = parseInt(remaining, 10);
+            if (remaining <= 0) {
+                showPaywall();
+                return false;
+            }
+            return true;
+        }
+
+        function decrementCredits() {
+            let remaining = parseInt(localStorage.getItem('app_runs_remaining'), 10);
+            if (remaining > 0 && remaining < 10000) {
+                remaining--;
+                localStorage.setItem('app_runs_remaining', remaining);
+                document.getElementById('credit-badge').innerText = `Free Runs Left: ${remaining}`;
+            }
+        }
+
+        // Tab Switcher
+        function switchTab(tab) {
+            activeTab = tab;
+            
+            // Reset tab styles
+            ['json', 'csv', 'regex'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const opt = document.getElementById(`options-${t}`);
+                if (t === tab) {
+                    btn.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md";
+                    opt.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50";
+                    opt.classList.add('hidden');
+                }
+            });
+
+            // Load corresponding sample
+            loadSample();
+        }
+
+        function loadSample() {
+            document.getElementById('input-area').value = samples[activeTab];
+        }
+
+        function clearInput() {
+            document.getElementById('input-area').value = '';
+            document.getElementById('output-area').value = '';
+        }
+
+        // Regex presets
+        function applyRegexPreset() {
+            const preset = document.getElementById('opt-regex-preset').value;
+            const customInput = document.getElementById('opt-regex-custom');
+            if (preset === 'email') {
+                customInput.value = "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}";
+                customInput.disabled = true;
+            } else if (preset === 'url') {
+                customInput.value = "https?://[^\\s\"']+";
+                customInput.disabled = true;
+            } else if (preset === 'ip') {
+                customInput.value = "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b";
+                customInput.disabled = true;
+            } else {
+                customInput.disabled = false;
+                customInput.value = "";
+                customInput.focus();
+            }
+        }
+
+        // Main Processing Logic
+        function processData() {
+            if (!checkCredits()) return;
+
+            const input = document.getElementById('input-area').value.trim();
+            if (!input) {
+                alert('Please enter some data to process.');
+                return;
+            }
+
+            let result = '';
+            let stats = '';
+
+            try {
+                if (activeTab === 'json') {
+                    result = processJSON(input);
+                    stats = 'JSON Repaired & Formatted Successfully';
+                } else if (activeTab === 'csv') {
+                    result = processCSV(input);
+                    stats = 'CSV Cleaned & Deduplicated';
+                } else if (activeTab === 'regex') {
+                    result = processRegex(input);
+                    stats = 'Regex Matches Extracted';
+                }
+
+                // Apply export formatting if requested
+                const exportFormat = document.getElementById('opt-export-format').value;
+                if (exportFormat === 'json' && activeTab !== 'json') {
+                    result = convertToJSONFormat(result);
+                } else if (exportFormat === 'csv' && activeTab !== 'csv') {
+                    result = convertToCSVFormat(result);
+                }
+
+                document.getElementById('output-area').value = result;
+                document.getElementById('stats-value').innerText = stats;
+                document.getElementById('stats-value').className = "text-emerald-400 font-semibold";
+                
+                decrementCredits();
+                showToast('Data processed successfully!');
+            } catch (err) {
+                document.getElementById('output-area').value = `Error: ${err.message}`;
+                document.getElementById('stats-value').innerText = 'Processing Failed';
+                document.getElementById('stats-value').className = "text-rose-400 font-semibold";
+            }
+        }
+
+        // JSON Repair Engine
+        function processJSON(raw) {
+            let clean = raw.trim();
+
+            if (document.getElementById('opt-json-quotes').checked) {
+                // Replace single quotes with double quotes around keys and string values
+                clean = clean.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g, '"$1"');
+                // Add quotes to unquoted keys
+                clean = clean.replace(/([{,])\s*([a-zA-Z0-9_$]+)\s*:/g, '$1"$2":');
+            }
+
+            if (document.getElementById('opt-json-commas').checked) {
+                // Strip trailing commas before closing braces/brackets
+                clean = clean.replace(/,\s*([\}\]])/g, '$1');
+            }
+
+            // Attempt parsing to validate
+            const parsed = JSON.parse(clean);
+            return JSON.stringify(parsed, null, 2);
+        }
+
+        // CSV Cleaner & Deduplicator
+        function processCSV(raw) {
+            const delimiterOpt = document.getElementById('opt-csv-delimiter').value;
+            const dedupOpt = document.getElementById('opt-csv-dedup').value;
+            const trimOpt = document.getElementById('opt-csv-trim').checked;
+
+            // Auto-detect delimiter
+            let delimiter = ',';
+            if (delimiterOpt === 'auto') {
+                const commaCount = (raw.match(/,/g) || []).length;
+                const tabCount = (raw.match(/\t/g) || []).length;
+                const semiCount = (raw.match(/;/g) || []).length;
+                if (tabCount > commaCount && tabCount > semiCount) delimiter = '\t';
+                else if (semiCount > commaCount && semiCount > tabCount) delimiter = ';';
+            } else {
+                delimiter = delimiterOpt === '\t' ? '	' : delimiterOpt;
+            }
+
+            // Parse lines
+            const lines = raw.split(/\r?\n/);
+            let rows = lines.map(line => {
+                let parts = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    let char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === delimiter && !inQuotes) {
+                        parts.push(trimOpt ? current.trim() : current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                parts.push(trimOpt ? current.trim() : current);
+                return parts;
+            });
+
+            // Filter out completely empty rows
+            rows = rows.filter(row => row.some(cell => cell !== ''));
+
+            // Deduplicate
+            const seen = new Set();
+            const uniqueRows = [];
+            rows.forEach(row => {
+                let key = '';
+                if (dedupOpt === 'first') {
+                    key = row[0] || '';
+                } else {
+                    key = row.join('|||');
+                }
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueRows.push(row);
+                }
+            });
+
+            // Reconstruct CSV
+            return uniqueRows.map(row => 
+                row.map(cell => {
+                    if (cell.includes(delimiter) || cell.includes('"') || cell.includes('\n')) {
+                        return `"${cell.replace(/"/g, '""')}"`;
+                    }
+                    return cell;
+                }).join(delimiter)
+            ).join('\n');
+        }
+
+        // Regex Extractor
+        function processRegex(raw) {
+            const patternStr = document.getElementById('opt-regex-custom').value;
+            if (!patternStr) throw new Error('Regex pattern cannot be empty');
+            
+            const regex = new RegExp(patternStr, 'g');
+            const matches = raw.match(regex) || [];
+            
+            if (matches.length === 0) {
+                return 'No matches found.';
+            }
+
+            // Return unique matches as a clean list
+            const uniqueMatches = [...new Set(matches)];
+            return uniqueMatches.join('\n');
+        }
+
+        // Format Converters
+        function convertToJSONFormat(text) {
+            const lines = text.split('\n').filter(l => l.trim() !== '');
+            return JSON.stringify(lines, null, 2);
+        }
+
+        function convertToCSVFormat(text) {
+            const lines = text.split('\n').filter(l => l.trim() !== '');
+            return 'Value\n' + lines.map(l => `"${l.replace(/"/g, '""')}"`).join('\n');
+        }
+
+        // Utility: Copy to Clipboard
+        function copyToClipboard() {
+            const output = document.getElementById('output-area');
+            if (!output.value) return;
+            output.select();
+            document.execCommand('copy');
+            showToast('Copied to clipboard!');
+        }
+
+        // Utility: Download File
+        function downloadOutput() {
+            const output = document.getElementById('output-area').value;
+            if (!output) return;
+            
+            let filename = 'cleaned_data.txt';
+            if (activeTab === 'json') filename = 'cleaned_data.json';
+            else if (activeTab === 'csv') filename = 'cleaned_data.csv';
+
+            const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Download started!');
+        }
+
+        // Toast System
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Paywall Modal Handlers
+        function showPaywall() {
+            document.getElementById('paywall-modal').classList.remove('hidden');
+        }
+
+        function hidePaywall() {
+            document.getElementById('paywall-modal').classList.add('hidden');
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim();
+            if (code === 'PRO5' || code === 'PRO20') {
+                localStorage.setItem('app_runs_remaining', 999999);
+                document.getElementById('credit-badge').innerText = `Pro Unlimited`;
+                hidePaywall();
+                showToast('Success! Lifetime Pro Access Unlocked.');
+            } else {
+                alert('Invalid promo code. Try PRO5 or PRO20!');
+            }
+        }
+
+        // On Load
+        window.onload = () => {
+            initCredits();
+            loadSample();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "app_slug": "messy-data-cleaner-repairer",
+  "title": "SqueakyClean: The Ultimate Messy Data & JSON Repair Tool",
+  "target_pain": "Developers, data analysts, and creators waste hours manually fixing broken JSON, cleaning duplicate CSV rows, and extracting structured data from messy text logs.",
+  "key_features": [
+    "Auto-repair broken JSON (fixes trailing commas, missing quotes, single quotes)",
+    "Smart CSV/TSV deduplicator, delimiter standardizer, and whitespace trimmer",
+    "Regex-powered structured data extractor (emails, URLs, custom patterns)",
+    "Instant export to clean JSON, CSV, or Markdown",
+    "100% client-side processing for maximum data privacy"
+  ],
+  "category": "Developer & Data Utilities",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
