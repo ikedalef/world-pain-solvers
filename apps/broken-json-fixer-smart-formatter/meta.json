@@ -1,0 +1,18 @@
+{
+  "app_slug": "broken-json-fixer-smart-formatter",
+  "title": "The Ultimate Broken JSON Fixer & Smart Formatter",
+  "target_pain": "Developers, data analysts, and LLM users constantly deal with malformed, truncated, or messy JSON containing single quotes, trailing commas, unquoted keys, smart quotes, or missing closing brackets. Manually fixing these syntax errors is tedious and time-consuming.",
+  "key_features": [
+    "Auto-repair unquoted keys and single-quoted keys/values",
+    "Fix curly/smart quotes and strip JS-style comments",
+    "Auto-balance and close missing brackets/braces from truncated LLM outputs",
+    "Remove trailing commas before closing braces/brackets",
+    "One-click Copy, Download, Minify, and Beautify options",
+    "Instant validation status with detailed error reporting"
+  ],
+  "category": "Developer Utilities",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

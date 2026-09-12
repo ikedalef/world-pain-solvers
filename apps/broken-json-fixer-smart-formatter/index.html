@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ultimate Broken JSON Fixer & Smart Formatter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#0b0f19',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-indigo-500 to-violet-500 p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xl text-white"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">JSON Fixer Pro</span>
+                    <span class="hidden sm:inline-block ml-2 px-2 py-0.5 text-xs font-semibold bg-slate-800 text-slate-400 rounded-full border border-slate-700">v1.2.0</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Credit Badge -->
+                <div id="credit-badge" class="flex items-center space-x-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-slate-300 font-medium" id="credit-text">Free Runs Left: 1</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all duration-200 flex items-center space-x-2">
+                    <i class="fa-solid fa-crown text-amber-400"></i>
+                    <span>Upgrade to Pro</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col space-y-6">
+        
+        <!-- Hero / Intro -->
+        <div class="text-center max-w-3xl mx-auto space-y-3">
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                Fix Broken JSON Instantly
+            </h1>
+            <p class="text-slate-400 text-sm sm:text-base">
+                Paste messy JS objects, truncated LLM outputs, single-quoted strings, or unquoted keys. Our smart engine repairs syntax errors and formats it perfectly in real-time.
+            </p>
+        </div>
+
+        <!-- Quick Examples -->
+        <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2 text-slate-400 text-sm">
+                <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                <span>Try a messy example:</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="loadExample('truncated')" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors">
+                    ⚡ Truncated LLM Output
+                </button>
+                <button onclick="loadExample('js-object')" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors">
+                    📝 Messy JS Object
+                </button>
+                <button onclick="loadExample('smart-quotes')" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors">
+                    💬 Smart Quotes & Comments
+                </button>
+            </div>
+        </div>
+
+        <!-- Editor Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
+            
+            <!-- Input Panel -->
+            <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span class="text-sm font-semibold text-slate-300">Raw / Broken Input</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="clearInput()" class="text-slate-400 hover:text-white p-1.5 rounded hover:bg-slate-800 transition-colors text-xs flex items-center space-x-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span class="hidden sm:inline">Clear</span>
+                        </button>
+                        <button onclick="pasteFromClipboard()" class="text-slate-400 hover:text-white p-1.5 rounded hover:bg-slate-800 transition-colors text-xs flex items-center space-x-1">
+                            <i class="fa-solid fa-clipboard-paste"></i>
+                            <span class="hidden sm:inline">Paste</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative flex-1 min-h-[350px] lg:min-h-[450px] flex flex-col">
+                    <textarea id="json-input" class="w-full flex-1 p-4 bg-slate-950 text-slate-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none border-0" placeholder="Paste your broken JSON, JS object, or truncated LLM output here..."></textarea>
+                </div>
+                <div class="bg-slate-900/90 border-t border-slate-800 px-4 py-3 flex items-center justify-between text-xs text-slate-400">
+                    <span id="input-stats">0 characters | 0 lines</span>
+                    <button onclick="processJson()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all shadow-lg shadow-indigo-600/20">
+                        <span>Fix & Format</span>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <span class="text-sm font-semibold text-slate-300">Repaired & Validated JSON</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="toggleFormat('beautify')" id="btn-beautify" class="px-2.5 py-1 rounded bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-medium transition-colors">
+                            Beautify
+                        </button>
+                        <button onclick="toggleFormat('minify')" id="btn-minify" class="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 text-xs font-medium transition-colors">
+                            Minify
+                        </button>
+                    </div>
+                </div>
+                <div class="relative flex-1 min-h-[350px] lg:min-h-[450px] flex flex-col">
+                    <!-- Status Banner -->
+                    <div id="status-banner" class="hidden px-4 py-2 text-xs font-medium flex items-center space-x-2 border-b border-slate-800"></div>
+                    <textarea id="json-output" readonly class="w-full flex-1 p-4 bg-slate-950 text-emerald-400 font-mono text-sm focus:outline-none resize-none border-0" placeholder="Clean, valid JSON will appear here..."></textarea>
+                </div>
+                <div class="bg-slate-900/90 border-t border-slate-800 px-4 py-3 flex items-center justify-between text-xs text-slate-400">
+                    <span id="output-stats">0 characters | 0 lines</span>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg font-semibold flex items-center space-x-1.5 transition-colors">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Copy</span>
+                        </button>
+                        <button onclick="downloadOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg font-semibold flex items-center space-x-1.5 transition-colors">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Features Section -->
+        <section class="py-8 border-t border-slate-800/80">
+            <h2 class="text-xl font-bold text-white mb-6 text-center">What makes our Smart Engine different?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-900/40 border border-slate-800/60 p-5 rounded-xl space-y-2">
+                    <div class="text-indigo-400 text-lg"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3 class="font-semibold text-slate-200">Truncation Recovery</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">If an LLM cuts off mid-response, our engine automatically calculates and appends the correct closing brackets and braces to make it valid.</p>
+                </div>
+                <div class="bg-slate-900/40 border border-slate-800/60 p-5 rounded-xl space-y-2">
+                    <div class="text-indigo-400 text-lg"><i class="fa-solid fa-wand-magic"></i></div>
+                    <h3 class="font-semibold text-slate-200">JS Object Conversion</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Easily convert standard JavaScript objects (with unquoted keys, single quotes, and trailing commas) into strict, compliant JSON.</p>
+                </div>
+                <div class="bg-slate-900/40 border border-slate-800/60 p-5 rounded-xl space-y-2">
+                    <div class="text-indigo-400 text-lg"><i class="fa-solid fa-code-compare"></i></div>
+                    <h3 class="font-semibold text-slate-200">Smart Quote Sanitization</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Automatically replaces curly/smart quotes from rich text editors and strips out single-line or multi-line comments.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all scale-95 duration-300">
+            
+            <!-- Modal Header -->
+            <div class="relative bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-center text-white">
+                <button onclick="closePaywall()" class="absolute top-4 right-4 text-white/80 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="mx-auto bg-white/10 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-crown text-2xl text-amber-300"></i>
+                </div>
+                <h3 class="text-2xl font-bold">Upgrade to JSON Fixer Pro</h3>
+                <p class="text-indigo-100 text-xs mt-1">You've used your free run. Unlock unlimited high-performance JSON repairs.</p>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-6">
+                <!-- Pricing Options -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Option 1 -->
+                    <div class="border-2 border-indigo-500 bg-indigo-500/5 rounded-xl p-4 flex flex-col justify-between relative">
+                        <span class="absolute -top-2.5 left-4 bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Best Value</span>
+                        <div>
+                            <h4 class="font-bold text-slate-200 text-sm">Lifetime Access</h4>
+                            <p class="text-xs text-slate-400 mt-1">Pay once, use forever</p>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-2xl font-extrabold text-white">$5</span>
+                            <span class="text-xs text-slate-400">one-time</span>
+                        </div>
+                        <a href="#" class="mt-4 block text-center bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded-lg transition-colors">
+                            Get Lifetime
+                        </a>
+                    </div>
+
+                    <!-- Option 2 -->
+                    <div class="border border-slate-800 bg-slate-950/50 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-200 text-sm">Pro Monthly</h4>
+                            <p class="text-xs text-slate-400 mt-1">For power developers</p>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-2xl font-extrabold text-white">$9</span>
+                            <span class="text-xs text-slate-400">/ month</span>
+                        </div>
+                        <a href="#" class="mt-4 block text-center bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2 rounded-lg transition-colors">
+                            Subscribe
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Promo Code Section -->
+                <div class="border-t border-slate-800 pt-4">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Have a Promo Code?</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="promo-input" placeholder="Enter PRO5 or PRO20" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono uppercase">
+                        <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                            Apply
+                        </button>
+                    </div>
+                    <p id="promo-error" class="text-xs text-red-400 mt-1.5 hidden"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-slate-800 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3">
+        <span id="toast-icon" class="text-emerald-400"><i class="fa-solid fa-circle-check"></i></span>
+        <span id="toast-message" class="text-sm text-slate-200 font-medium">Copied to clipboard!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; 2024 JSON Fixer Pro. All rights reserved. 100% Client-Side Processing.</p>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-slate-300">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-300">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Core Logic -->
+    <script>
+        // Initialize Credit System
+        let runsRemaining = localStorage.getItem('app_runs_remaining');
+        let isPro = localStorage.getItem('json_fixer_pro_unlocked') === 'true';
+
+        if (runsRemaining === null) {
+            runsRemaining = 1;
+            localStorage.setItem('app_runs_remaining', runsRemaining);
+        }
+
+        updateCreditUI();
+
+        // Track current format mode
+        let currentFormatMode = 'beautify'; // 'beautify' or 'minify'
+
+        // Textarea elements
+        const inputArea = document.getElementById('json-input');
+        const outputArea = document.getElementById('json-output');
+        const inputStats = document.getElementById('input-stats');
+        const outputStats = document.getElementById('output-stats');
+        const statusBanner = document.getElementById('status-banner');
+
+        // Update stats on input
+        inputArea.addEventListener('input', () => {
+            updateStats(inputArea, inputStats);
+        });
+
+        function updateStats(textarea, statsEl) {
+            const text = textarea.value;
+            const chars = text.length;
+            const lines = text ? text.split('\n').length : 0;
+            statsEl.textContent = `${chars.toLocaleString()} character${chars !== 1 ? 's' : ''} | ${lines.toLocaleString()} line${lines !== 1 ? 's' : ''}`;
+        }
+
+        // Load Examples
+        const examples = {
+            truncated: `{
+  "status": "success",
+  "data": {
+    "user": {
+      "id": 1042,
+      "name": "Alex Rivera",
+      "roles": ["admin", "developer"],
+      "metadata": {
+        "last_login": "2024-10-24T14:32:00Z",
+        "ip_address": "192.168.1.45"
+      `,
+            'js-object': `{
+  name: 'Sarah Connor',
+  active: true,
+  hobbies: ['survival', 'tactics',],
+  details: {
+    age: 44,
+    location: 'Unknown'
+  },
+}`,
+            'smart-quotes': `// This is a messy JSON with comments and smart quotes
+{
+  “title”: “The Terminator”,
+  “year”: 1984,
+  /* Multi-line comment here */
+  “cast”: [
+    “Arnold Schwarzenegger”,
+    “Linda Hamilton”
+  ]
+}`
+        };
+
+        function loadExample(key) {
+            inputArea.value = examples[key];
+            updateStats(inputArea, inputStats);
+            showToast('Example loaded successfully!', 'info');
+        }
+
+        function clearInput() {
+            inputArea.value = '';
+            updateStats(inputArea, inputStats);
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                inputArea.value = text;
+                updateStats(inputArea, inputStats);
+                showToast('Pasted from clipboard!', 'success');
+            } catch (err) {
+                showToast('Failed to read clipboard. Please paste manually.', 'error');
+            }
+        }
+
+        // Smart JSON Repair Engine
+        function repairJson(str) {
+            let output = str.trim();
+
+            // 1. Strip markdown code blocks if present
+            if (output.startsWith("```")) {
+                output = output.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "");
+            }
+            output = output.trim();
+
+            // 2. Replace smart/curly quotes
+            output = output.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"');
+            output = output.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'");
+
+            // 3. Remove JS-style comments (single line and multi-line)
+            output = output.replace(/\/\*[\s\S]*?\*\//g, "");
+            output = output.replace(/\/\/.*/g, "");
+
+            // 4. Fix unquoted keys or single-quoted keys
+            // Replace single quotes with double quotes for keys
+            output = output.replace(/([{, ]\s*)'([^'\s]+)'(\s*:)/g, '$1"$2"$3');
+            // Replace unquoted keys
+            output = output.replace(/([{, ]\s*)([a-zA-Z_][a-zA-Z0-9_-]*)(\s*:)/g, '$1"$2"$3');
+
+            // 5. Fix single quoted values
+            output = output.replace(/(:\s*)'([^']*)'(\s*[,}])/g, '$1"$2"$3');
+
+            // 6. Remove trailing commas before closing braces/brackets
+            output = output.replace(/,\s*([\]}])/g, '$1');
+
+            // 7. Balance brackets/braces (for truncated JSON)
+            let stack = [];
+            for (let i = 0; i < output.length; i++) {
+                if (output[i] === '{' || output[i] === '[') {
+                    stack.push(output[i]);
+                } else if (output[i] === '}') {
+                    if (stack[stack.length - 1] === '{') stack.pop();
+                } else if (output[i] === ']') {
+                    if (stack[stack.length - 1] === '[') stack.pop();
+                } 
+            }
+
+            // Append missing closing characters in reverse order of the stack
+            while (stack.length > 0) {
+                let last = stack.pop();
+                if (last === '{') output += '}';
+                if (last === '[') output += ']';
+            }
+
+            return output;
+        }
+
+        // Main Process Function
+        function processJson() {
+            // Check Credits
+            if (!isPro && parseInt(runsRemaining) <= 0) {
+                openPaywall();
+                return;
+            }
+
+            const rawInput = inputArea.value.trim();
+            if (!rawInput) {
+                showToast('Please enter some JSON to fix.', 'error');
+                return;
+            }
+
+            // Decrement run if not Pro
+            if (!isPro) {
+                runsRemaining = Math.max(0, parseInt(runsRemaining) - 1);
+                localStorage.setItem('app_runs_remaining', runsRemaining);
+                updateCreditUI();
+            }
+
+            try {
+                // Run repair engine
+                const repaired = repairJson(rawInput);
+                
+                // Parse to validate
+                const parsed = JSON.parse(repaired);
+                
+                // Format output
+                if (currentFormatMode === 'beautify') {
+                    outputArea.value = JSON.stringify(parsed, null, 2);
+                } else {
+                    outputArea.value = JSON.stringify(parsed);
+                }
+
+                // Update status banner
+                statusBanner.className = "px-4 py-2 text-xs font-medium flex items-center space-x-2 border-b border-slate-800 bg-emerald-500/10 text-emerald-400";
+                statusBanner.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Successfully repaired and validated!</span>`;
+                statusBanner.classList.remove('hidden');
+                
+                outputArea.className = "w-full flex-1 p-4 bg-slate-950 text-emerald-400 font-mono text-sm focus:outline-none resize-none border-0";
+                
+                updateStats(outputArea, outputStats);
+                showToast('JSON Repaired Successfully!', 'success');
+            } catch (err) {
+                // If parsing still fails, show raw repaired output with error banner
+                outputArea.value = repairJson(rawInput);
+                statusBanner.className = "px-4 py-2 text-xs font-medium flex items-center space-x-2 border-b border-slate-800 bg-amber-500/10 text-amber-400";
+                statusBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Partially repaired, but still contains syntax errors: ${err.message}</span>`;
+                statusBanner.classList.remove('hidden');
+                
+                outputArea.className = "w-full flex-1 p-4 bg-slate-950 text-amber-400 font-mono text-sm focus:outline-none resize-none border-0";
+                
+                updateStats(outputArea, outputStats);
+                showToast('Partial repair completed with warnings.', 'info');
+            }
+        }
+
+        // Format Toggles
+        function toggleFormat(mode) {
+            currentFormatMode = mode;
+            const btnBeautify = document.getElementById('btn-beautify');
+            const btnMinify = document.getElementById('btn-minify');
+
+            if (mode === 'beautify') {
+                btnBeautify.className = "px-2.5 py-1 rounded bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-medium transition-colors";
+                btnMinify.className = "px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 text-xs font-medium transition-colors";
+            } else {
+                btnMinify.className = "px-2.5 py-1 rounded bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-medium transition-colors";
+                btnBeautify.className = "px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 text-xs font-medium transition-colors";
+            }
+
+            // Re-process if there is output
+            if (outputArea.value) {
+                try {
+                    const parsed = JSON.parse(outputArea.value);
+                    if (mode === 'beautify') {
+                        outputArea.value = JSON.stringify(parsed, null, 2);
+                    } else {
+                        outputArea.value = JSON.stringify(parsed);
+                    }
+                    updateStats(outputArea, outputStats);
+                } catch (e) {
+                    // If output is not valid JSON, do nothing
+                }
+            }
+        }
+
+        // Copy Output
+        function copyOutput() {
+            if (!outputArea.value) {
+                showToast('Nothing to copy!', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(outputArea.value);
+            showToast('Copied to clipboard!', 'success');
+        }
+
+        // Download Output
+        function downloadOutput() {
+            if (!outputArea.value) {
+                showToast('Nothing to download!', 'error');
+                return;
+            }
+            const blob = new Blob([outputArea.value], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'repaired_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Download started!', 'success');
+        }
+
+        // Credit & Paywall UI Updates
+        function updateCreditUI() {
+            const creditText = document.getElementById('credit-text');
+            const badge = document.getElementById('credit-badge');
+            if (isPro) {
+                creditText.textContent = "PRO Lifetime Active";
+                badge.className = "flex items-center space-x-2 bg-indigo-950/80 border border-indigo-500/30 px-3 py-1.5 rounded-full text-sm";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-indigo-400 animate-pulse";
+            } else {
+                creditText.textContent = `Free Runs Left: ${runsRemaining}`;
+                if (parseInt(runsRemaining) === 0) {
+                    badge.querySelector('span').className = "w-2 h-2 rounded-full bg-red-500";
+                }
+            }
+        }
+
+        function openPaywall() {
+            const modal = document.getElementById('paywall-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closePaywall() {
+            const modal = document.getElementById('paywall-modal');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function applyPromo() {
+            const promoInput = document.getElementById('promo-input').value.trim().toUpperCase();
+            const promoError = document.getElementById('promo-error');
+
+            if (promoInput === 'PRO5' || promoInput === 'PRO20') {
+                isPro = true;
+                localStorage.setItem('json_fixer_pro_unlocked', 'true');
+                updateCreditUI();
+                closePaywall();
+                showToast('PRO Unlocked! Enjoy unlimited access.', 'success');
+            } else {
+                promoError.textContent = "Invalid promo code. Try PRO5 or PRO20.";
+                promoError.classList.remove('hidden');
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+
+            if (type === 'success') {
+                toastIcon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+            } else if (type === 'error') {
+                toastIcon.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-400"></i>`;
+            } else {
+                toastIcon.innerHTML = `<i class="fa-solid fa-circle-info text-indigo-400"></i>`;
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
