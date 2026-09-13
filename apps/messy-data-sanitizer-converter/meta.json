@@ -1,0 +1,18 @@
+{
+  "app_slug": "messy-data-sanitizer-converter",
+  "title": "The Ultimate Messy Data Sanitizer & Multi-Format Converter",
+  "target_pain": "Manually cleaning messy CSV, TSV, or JSON data (removing duplicates, trimming whitespace, fixing casing, filtering empty rows) and converting between formats is tedious, error-prone, and repetitive.",
+  "key_features": [
+    "Auto-detects CSV, TSV, and JSON input formats",
+    "Trims whitespace, removes duplicates, and filters empty rows instantly",
+    "Find & Replace with regular expression support",
+    "Case conversion (UPPER, lower, Title Case) for specific columns or all data",
+    "Exports to clean JSON, CSV, TSV, or Markdown tables",
+    "100% client-side processing for maximum data privacy"
+  ],
+  "category": "Data Utility",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
