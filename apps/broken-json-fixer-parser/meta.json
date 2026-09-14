@@ -1,0 +1,19 @@
+{
+  "app_slug": "broken-json-fixer-parser",
+  "title": "Smart JSON Fixer, Formatter & Schema Validator",
+  "target_pain": "Developers, prompt engineers, and data analysts frequently get broken JSON from LLMs, APIs, or messy logs containing trailing commas, single quotes, unquoted keys, markdown wrappers, or missing closing brackets.",
+  "key_features": [
+    "Strip Markdown code block wrappers automatically",
+    "Fix trailing commas, single quotes, and unquoted keys",
+    "Auto-balance and close missing brackets/braces",
+    "Convert smart/curly quotes to standard double quotes",
+    "Beautify (2-space/4-space indent) or Minify output",
+    "Real-time syntax validation and error highlighting",
+    "One-click copy to clipboard and instant file download"
+  ],
+  "category": "Developer Utilities",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

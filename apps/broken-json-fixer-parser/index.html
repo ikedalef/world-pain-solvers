@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart JSON Fixer, Formatter & Schema Validator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #020617;
+        }
+        /* Custom scrollbar for code areas */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="text-slate-100 font-sans min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        JSON Fixer & Formatter
+                        <span class="text-xs font-normal bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20">v1.2</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Instantly repair broken LLM outputs, trailing commas, and missing brackets</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Credit Badge -->
+                <div id="credit-badge" class="flex items-center space-x-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-slate-300 font-medium">Free Runs Left:</span>
+                    <span id="runs-count" class="text-white font-bold">1</span>
+                </div>
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all shadow-lg shadow-indigo-500/20">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <!-- Alert Banner -->
+        <div class="mb-6 bg-indigo-950/40 border border-indigo-800/60 rounded-xl p-4 flex items-start space-x-3">
+            <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="text-sm text-indigo-200">
+                <span class="font-semibold text-white">100% Client-Side Processing:</span> Your data never leaves your browser. Perfect for sensitive logs, API payloads, and proprietary LLM outputs.
+            </div>
+        </div>
+
+        <!-- Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Input Panel -->
+            <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="px-4 py-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Input (Messy / Broken JSON)</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-500">Load Example:</span>
+                        <select id="example-select" onchange="loadExample()" class="bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded px-2 py-1 focus:outline-none focus:border-indigo-500">
+                            <option value="">-- Select --</option>
+                            <option value="llm">LLM Markdown & Trailing Commas</option>
+                            <option value="quotes">Single Quotes & Unquoted Keys</option>
+                            <option value="truncated">Truncated (Missing Brackets)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="relative flex-grow min-h-[400px] lg:min-h-[500px] flex flex-col">
+                    <textarea id="json-input" placeholder="Paste your messy, broken, or raw JSON here...&#10;&#10;Example:&#10;```json&#10;{&#10;  name: 'John Doe',&#10;  'age': 30,&#10;  "skills": ["JS", "Python",],&#10;"truncated": [1, 2&#10;"""" class="w-full flex-grow p-4 bg-slate-950 text-slate-300 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none border-0"></textarea>
+                </div>
+
+                <div class="p-4 bg-slate-900/80 border-t border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+                    <button onclick="clearInput()" class="text-xs text-slate-400 hover:text-white transition-colors px-3 py-2 rounded bg-slate-800 hover:bg-slate-700">
+                        Clear Input
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <select id="indent-select" class="bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded px-3 py-2 focus:outline-none focus:border-indigo-500">
+                            <option value="2">2 Spaces Indent</option>
+                            <option value="4">4 Spaces Indent</option>
+                            <option value="minify">Minified</option>
+                        </select>
+                        <button onclick="processJSON()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center space-x-2">
+                            <span>Fix & Format</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="px-4 py-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Output (Repaired & Validated)</span>
+                        <span id="status-badge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
+                    </div>
+                    <div class="text-xs text-slate-400" id="stats-display">
+                        Size: - | Reduction: -
+                    </div>
+                </div>
+                
+                <div class="relative flex-grow min-h-[400px] lg:min-h-[500px] flex flex-col bg-slate-950">
+                    <pre id="json-output" class="w-full flex-grow p-4 text-emerald-400 font-mono text-sm overflow-auto whitespace-pre-wrap select-all" placeholder="Repaired JSON will appear here...">// Repaired JSON will appear here...</pre>
+                    
+                    <!-- Error Log Overlay -->
+                    <div id="error-log-container" class="hidden p-4 bg-rose-950/30 border-t border-rose-900/50 text-rose-300 font-mono text-xs">
+                        <div class="font-bold text-rose-400 mb-1">Repair Warning / Error:</div>
+                        <div id="error-log-text"></div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between">
+                    <div class="text-xs text-slate-500" id="repair-actions-taken">
+                        No actions taken yet.
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded transition-colors flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                            </svg>
+                            <span id="copy-btn-text">Copy</span>
+                        </button>
+                        <button onclick="downloadOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded transition-colors flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span>Download</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Features / Explainer Section -->
+        <section class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 border-t border-slate-800 pt-12">
+            <div class="bg-slate-900/40 p-6 rounded-xl border border-slate-800/80">
+                <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-base font-semibold text-white mb-2">Smart Repair Heuristics</h3>
+                <p class="text-sm text-slate-400 leading-relaxed">
+                    Our engine automatically strips markdown wrappers, balances unclosed brackets, converts single quotes, fixes unquoted keys, and removes trailing commas instantly.
+                </p>
+            </div>
+            <div class="bg-slate-900/40 p-6 rounded-xl border border-slate-800/80">
+                <div class="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-base font-semibold text-white mb-2">Strict Privacy & Security</h3>
+                <p class="text-sm text-slate-400 leading-relaxed">
+                    Zero server-side logs. All parsing, fixing, and formatting happen locally inside your browser sandbox. Your sensitive data remains completely private.
+                </p>
+            </div>
+            <div class="bg-slate-900/40 p-6 rounded-xl border border-slate-800/80">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-base font-semibold text-white mb-2">Built for LLM Workflows</h3>
+                <p class="text-sm text-slate-400 leading-relaxed">
+                    Perfect for developers building AI agents. Easily clean up messy outputs from GPT-4, Claude, or local Llama models that fail standard JSON.parse calls.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all scale-95 opacity-0 duration-300" id="paywall-content">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 text-center relative">
+                <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                <div class="mx-auto w-12 h-12 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-white">Upgrade to Pro</h3>
+                <p class="text-sm text-slate-400 mt-1">You've used your free run. Unlock unlimited repairs and advanced formatting.</p>
+            </div>
+
+            <!-- Pricing Options -->
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Lifetime Option -->
+                    <div class="border-2 border-indigo-500 bg-indigo-950/20 rounded-xl p-4 flex flex-col justify-between relative">
+                        <span class="absolute -top-2.5 right-3 bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Best Value</span>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Lifetime Access</h4>
+                            <p class="text-xs text-slate-400 mt-1">Pay once, use forever</p>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-2xl font-extrabold text-white">$5</span>
+                            <span class="text-xs text-slate-400">one-time</span>
+                        </div>
+                        <a href="#" class="mt-4 block text-center bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors">
+                            Get Lifetime
+                        </a>
+                    </div>
+
+                    <!-- Monthly Option -->
+                    <div class="border border-slate-800 bg-slate-950/40 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Pro Monthly</h4>
+                            <p class="text-xs text-slate-400 mt-1">Unlimited access & updates</p>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-2xl font-extrabold text-white">$9</span>
+                            <span class="text-xs text-slate-400">/ month</span>
+                        </div>
+                        <a href="#" class="mt-4 block text-center bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors">
+                            Subscribe Now
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Promo Code Section -->
+                <div class="border-t border-slate-800 pt-4 mt-4">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Have a Promo Code?</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="promo-code" placeholder="Enter PRO5 or PRO20" class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono">
+                        <button onclick="applyPromo()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+                            Apply
+                        </button>
+                    </div>
+                    <p id="promo-error" class="text-xs text-rose-400 mt-1.5 hidden">Invalid promo code. Try PRO5 or PRO20.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-slate-500">&copy; 2026 Smart JSON Fixer. All rights reserved. 100% local execution.</p>
+            <div class="flex space-x-6 text-xs text-slate-400">
+                <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                <a href="#" class="hover:text-white transition-colors">Contact Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-slate-800 text-slate-100 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2">
+        <span id="toast-icon" class="text-emerald-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </span>
+        <span id="toast-message" class="text-sm font-medium">Copied to clipboard!</span>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        // Credit System Setup
+        const STORAGE_KEY = 'app_runs_remaining';
+        let runsRemaining = localStorage.getItem(STORAGE_KEY);
+
+        if (runsRemaining === null) {
+            runsRemaining = 1; // 1 Free Run default
+            localStorage.setItem(STORAGE_KEY, runsRemaining);
+        } else {
+            runsRemaining = parseInt(runsRemaining, 10);
+        }
+
+        function updateCreditBadge() {
+            const badge = document.getElementById('credit-badge');
+            const countSpan = document.getElementById('runs-count');
+            if (runsRemaining > 10000) {
+                countSpan.textContent = 'PRO Unlimited';
+                badge.classList.remove('border-slate-700');
+                badge.classList.add('border-emerald-500/30', 'bg-emerald-950/20');
+            } else {
+                countSpan.textContent = runsRemaining;
+            }
+        }
+
+        // Initialize badge on load
+        updateCreditBadge();
+
+        // Example Data
+        const examples = {
+            llm: "```json\n{\n  \"status\": \"success\",\n  \"data\": {\n    \"id\": 1024,\n    \"tags\": [\"ai\", \"developer\", \"json\",],\n    \"meta\": {\n      \"model\": \"gpt-4o\",\n    }\n  }\n}\n```",
+            quotes: "{\n  name: 'Alex Rivera',\n  'role': 'Lead Architect',\n  \"active\": true,\n  skills: [\n    'TypeScript',\n    'Rust',\n  ]\n}",
+            truncated: "{\n  \"transaction\": {\n    \"id\": \"tx_98231\",\n    \"amount\": 150.45,\n    \"items\": [\n      {\n        \"name\": \"Premium Subscription\",\n        \"qty\": 1\n      \n    "
+        };
+
+        function loadExample() {
+            const select = document.getElementById('example-select');
+            const val = select.value;
+            if (val && examples[val]) {
+                document.getElementById('json-input').value = examples[val];
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('json-input').value = '';
+            document.getElementById('example-select').value = '';
+        }
+
+        // Core Repair Logic
+        function repairJSON(raw) {
+            let s = raw.trim();
+            let actions = [];
+
+            // 1. Strip markdown code blocks
+            if (s.startsWith('```')) {
+                s = s.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+                actions.push("Stripped Markdown wrappers");
+            }
+
+            // 2. Replace smart quotes
+            const smartQuotesRegex = /[\u201C\u201D\u201E\u201F\u2033\u2036]/g;
+            if (smartQuotesRegex.test(s)) {
+                s = s.replace(smartQuotesRegex, '"');
+                actions.push("Converted smart quotes");
+            }
+
+            // 3. Convert single quotes to double quotes for keys and values
+            // We need to be careful not to break apostrophes inside strings, but standard JSON repair usually converts single quotes
+            // This regex targets single quotes that wrap keys or values
+            const singleQuoteRegex = /'([^'\\]*(?:\\.[^'\\]*)*)'/g;
+            if (singleQuoteRegex.test(s)) {
+                s = s.replace(singleQuoteRegex, '"$1"');
+                actions.push("Converted single quotes");
+            }
+
+            // 4. Fix unquoted keys
+            // Find words followed by a colon and wrap them in double quotes if not already
+            const unquotedKeyRegex = /([{, ]\s*)([a-zA-Z0-9_$]+)\s*:/g;
+            if (unquotedKeyRegex.test(s)) {
+                s = s.replace(unquotedKeyRegex, '$1"$2":');
+                actions.push("Quoted unquoted keys");
+            }
+
+            // 5. Remove trailing commas before closing braces/brackets
+            const trailingCommaRegex = /,\s*([\]}])/g;
+            if (trailingCommaRegex.test(s)) {
+                s = s.replace(trailingCommaRegex, '$1');
+                actions.push("Removed trailing commas");
+            }
+
+            // 6. Balance brackets/braces
+            let stack = [];
+            let addedBrackets = false;
+            for (let char of s) {
+                if (char === '{') stack.push('}');
+                else if (char === '[') stack.push(']');
+                else if (char === '}' || char === ']') {
+                    if (stack.length > 0 && stack[stack.length - 1] === char) {
+                        stack.pop();
+                    }
+                }
+            }
+            // Append missing closing characters in reverse order
+            while (stack.length > 0) {
+                s += stack.pop();
+                addedBrackets = true;
+            }
+            if (addedBrackets) {
+                actions.push("Balanced missing brackets");
+            }
+
+            return { repairedText: s, actions };
+        }
+
+        function processJSON() {
+            // Check Credits
+            if (runsRemaining <= 0) {
+                openPaywall();
+                return;
+            }
+
+            const inputVal = document.getElementById('json-input').value;
+            if (!inputVal.trim()) {
+                showToast("Please enter some JSON to fix!", "error");
+                return;
+            }
+
+            // Decrement run if not unlimited
+            if (runsRemaining < 10000) {
+                runsRemaining--;
+                localStorage.setItem(STORAGE_KEY, runsRemaining);
+                updateCreditBadge();
+            }
+
+            const outputPre = document.getElementById('json-output');
+            const statusBadge = document.getElementById('status-badge');
+            const statsDisplay = document.getElementById('stats-display');
+            const actionsDisplay = document.getElementById('repair-actions-taken');
+            const errorLogContainer = document.getElementById('error-log-container');
+            const errorLogText = document.getElementById('error-log-text');
+
+            // Reset UI
+            errorLogContainer.classList.add('hidden');
+            statusBadge.className = "hidden text-[10px] font-bold px-2 py-0.5 rounded-full";
+
+            try {
+                // Try parsing directly first
+                let parsed;
+                let wasClean = false;
+                try {
+                    parsed = JSON.parse(inputVal);
+                    wasClean = true;
+                } catch (e) {
+                    // Direct parse failed, run repair heuristics
+                }
+
+                let finalJSONString = "";
+                let actionsTaken = [];
+
+                if (wasClean) {
+                    parsed = JSON.parse(inputVal);
+                    actionsTaken.push("None (JSON was already valid)");
+                } else {
+                    const repairResult = repairJSON(inputVal);
+                    finalJSONString = repairResult.repairedText;
+                    actionsTaken = repairResult.actions;
+                    parsed = JSON.parse(finalJSONString);
+                }
+
+                // Formatting options
+                const indentVal = document.getElementById('indent-select').value;
+                let formattedResult = "";
+                if (indentVal === 'minify') {
+                    formattedResult = JSON.stringify(parsed);
+                } else {
+                    formattedResult = JSON.stringify(parsed, null, parseInt(indentVal, 10));
+                }
+
+                // Update Output
+                outputPre.textContent = formattedResult;
+                outputPre.className = "w-full flex-grow p-4 text-emerald-400 font-mono text-sm overflow-auto whitespace-pre-wrap select-all";
+                
+                // Status Badge
+                statusBadge.classList.remove('hidden');
+                if (wasClean) {
+                    statusBadge.textContent = "VALID";
+                    statusBadge.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
+                } else {
+                    statusBadge.textContent = "REPAIRED & VALID";
+                    statusBadge.classList.add('bg-indigo-500/10', 'text-indigo-400', 'border', 'border-indigo-500/20');
+                }
+
+                // Stats
+                const origSize = new Blob([inputVal]).size;
+                const newSize = new Blob([formattedResult]).size;
+                const diff = ((origSize - newSize) / origSize * 100).toFixed(1);
+                statsDisplay.textContent = `Original: ${origSize}B | Output: ${newSize}B (${diff > 0 ? 'Reduced ' + diff + '%' : 'Expanded'})`;
+
+                // Actions Taken
+                actionsDisplay.textContent = "Actions: " + actionsTaken.join(", ");
+                showToast("JSON successfully processed!", "success");
+
+            } catch (err) {
+                // If even repair fails, show raw error
+                outputPre.textContent = "// Repair failed. See error log below.";
+                outputPre.className = "w-full flex-grow p-4 text-rose-400 font-mono text-sm overflow-auto whitespace-pre-wrap";
+                
+                statusBadge.classList.remove('hidden');
+                statusBadge.textContent = "UNREPAIRABLE";
+                statusBadge.classList.add('bg-rose-500/10', 'text-rose-400', 'border', 'border-rose-500/20');
+
+                errorLogContainer.classList.remove('hidden');
+                errorLogText.textContent = err.message + "\n\nTip: Ensure the input contains a structure resembling JSON objects or arrays.";
+                actionsDisplay.textContent = "Failed to repair syntax.";
+                showToast("Could not repair JSON syntax.", "error");
+            }
+        }
+
+        // Utility Functions
+        function copyOutput() { 
+            const outputText = document.getElementById('json-output').textContent;
+            if (outputText.startsWith('//')) {
+                showToast("Nothing to copy!", "error");
+                return;
+            }
+            navigator.clipboard.writeText(outputText).then(() => {
+                const copyBtnText = document.getElementById('copy-btn-text');
+                copyBtnText.textContent = "Copied!";
+                showToast("Copied to clipboard!", "success");
+                setTimeout(() => {
+                    copyBtnText.textContent = "Copy";
+                }, 2000);
+            });
+        }
+
+        function downloadOutput() {
+            const outputText = document.getElementById('json-output').textContent;
+            if (outputText.startsWith('//')) {
+                showToast("Nothing to download!", "error");
+                return;
+            }
+            const blob = new Blob([outputText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'repaired_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Download started!", "success");
+        }
+
+        // Paywall & Promo Logic
+        function openPaywall() {
+            const modal = document.getElementById('paywall-modal');
+            const content = document.getElementById('paywall-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 50);
+        }
+
+        function closePaywall() {
+            const modal = document.getElementById('paywall-modal');
+            const content = document.getElementById('paywall-content');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const error = document.getElementById('promo-error');
+            if (code === 'PRO5' || code === 'PRO20') {
+                runsRemaining = 999999; // Unlimited
+                localStorage.setItem(STORAGE_KEY, runsRemaining);
+                updateCreditBadge();
+                error.classList.add('hidden');
+                closePaywall();
+                showToast("Promo applied! Unlimited Access Unlocked!", "success");
+            } else {
+                error.classList.remove('hidden');
+            }
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+            if (type === "error") {
+                toastIcon.innerHTML = `<svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else {
+                toastIcon.innerHTML = `<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
