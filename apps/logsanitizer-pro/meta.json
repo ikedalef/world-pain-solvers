@@ -1,0 +1,17 @@
+{
+  "app_slug": "logsanitizer-pro",
+  "title": "LogSanitizer Pro: Universal Log Cleaner & JSON Extractor",
+  "target_pain": "Developers and AI engineers wasting hours squinting at messy terminal logs, ANSI escape codes, nested JSON payloads, and cryptic segfault stack traces.",
+  "key_features": [
+    "Strip ANSI escape codes instantly",
+    "Extract & pretty-print embedded JSON payloads",
+    "Filter logs by severity (Segfault, Error, Warn)",
+    "Format & highlight stack traces",
+    "Export cleaned logs to TXT or JSON"
+  ],
+  "category": "Developer Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access)",
+    "$9/mo Pro Unlimited"
+  ]
+}
