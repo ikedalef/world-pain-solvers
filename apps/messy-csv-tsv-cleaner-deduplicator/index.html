@@ -3,400 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messy CSV & TSV Data Cleaner & Deduplicator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        slate: {
-                            950: '#020617',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Messy CSV/TSV Data Cleaner & Deduplicator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col">
 
-    <!-- Header / Nav -->
-    <header class="border-b border-slate-800 bg-slate-955/80 backdrop-blur sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2 rounded-lg text-white">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <div class="bg-emerald-500/10 text-emerald-400 p-2.5 rounded-xl border border-emerald-500/20">
+                    <i class="fa-solid fa-broom-ball text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">DataClean Pro</h1>
-                    <p class="text-xs text-slate-400">Messy CSV/TSV Sanitizer & Deduplicator</p>
+                    <h1 class="font-bold text-lg tracking-tight">CSV/TSV Data Cleaner Pro</h1>
+                    <p class="text-xs text-slate-400">Instantly clean, trim, normalize & deduplicate raw data</p>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
-                <div id="credit-badge" class="bg-indigo-950/80 border border-indigo-800 text-indigo-300 px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1.5">
-                    <i class="fa-solid fa-bolt text-indigo-400"></i>
-                    <span>Free Run: <strong id="runs-count">1</strong> left</span>
+                <div id="credit-badge" class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-medium text-emerald-400 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="credit-text">Free Run: 1 left</span>
                 </div>
-                <button onclick="openPaywall()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-600/20">
+                <button onclick="openPaywall()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm shadow-lg shadow-emerald-900/20 transition cursor-pointer">
                     Unlock Pro
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Interface -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            <!-- Input Panel -->
-            <div class="flex flex-col space-y-4">
-                <div class="flex items-center justify-between">
-                    <label for="raw-input" class="text-sm font-semibold text-slate-300 flex items-center space-x-2">
-                        <i class="fa-regular fa-file-lines text-indigo-400"></i>
-                        <span>Paste Raw CSV / TSV Data</span>
-                    </label>
-                    <div class="flex space-x-2">
-                        <button onclick="loadSample()" class="text-xs text-indigo-400 hover:text-indigo-300 underline">Load Sample Data</button>
-                        <button onclick="clearInput()" class="text-xs text-slate-400 hover:text-slate-200">Clear</button>
+    <!-- Main Layout -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Control Panel (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-emerald-400"></i> Cleaning Rules
+                </h2>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Input Delimiter</label>
+                        <select id="input-delimiter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="auto">Auto-Detect</option>
+                            <option value=",">Comma (,)</option>
+                            <option value="\t">Tab (TSV)</option>
+                            <option value=";">Semicolon (;)</option>
+                            <option value="|">Pipe (|)</option>
+                        </select>
                     </div>
-                </div>
-                
-                <textarea id="raw-input" rows="12" placeholder="id, name, email, role&#10;1,  Alice Smith , alice@example.com , Admin&#10;2, Bob Jones, bob@example.com, User&#10;1,  Alice Smith , alice@example.com , Admin&#10;3, Charlie , charlie@example.com , " class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-sm font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition resize-none"></textarea>
-                
-                <!-- Cleaning Controls -->
-                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-3">
-                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cleaning Rules</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="opt-trim" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                            <span class="text-slate-300 text-xs">Trim Whitespace</span>
+
+                    <div class="space-y-2 pt-2 border-t border-slate-800">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="opt-trim" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
+                            <span class="text-sm text-slate-300">Trim whitespace from cells</span>
                         </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="opt-dedup" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                            <span class="text-slate-300 text-xs">Remove Duplicates</span>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="opt-dedup" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
+                            <span class="text-sm text-slate-300">Remove exact duplicate rows</span>
                         </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="opt-empty" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                            <span class="text-slate-300 text-xs">Drop Empty Rows</span>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="opt-empty-rows" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
+                            <span class="text-sm text-slate-300">Remove empty/blank rows</span>
                         </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="opt-quotes" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                            <span class="text-slate-300 text-xs">Fix Malformed Quotes</span>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="opt-empty-cols" class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
+                            <span class="text-sm text-slate-300">Remove completely empty columns</span>
                         </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="opt-lowercase-headers" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                            <span class="text-slate-300 text-xs">Lowercase Headers</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="opt-sort" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                            <span class="text-slate-300 text-xs">Sort Alphabetically</span>
-                        </label>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800">
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Text Case Normalization</label>
+                        <select id="opt-case" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="none">None (Keep Original)</option>
+                            <option value="lower">lowercase all</option>
+                            <option value="upper">UPPERCASE ALL</option>
+                            <option value="title">Title Case Headers & Cells</option>
+                        </select>
                     </div>
                 </div>
 
-                <button onclick="processData()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-play"></i>
-                    <span>Clean & Deduplicate Data Now</span>
+                <button onclick="processData()" class="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-900/30 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Clean & Process Data
                 </button>
             </div>
 
-            <!-- Output Panel -->
-            <div class="flex flex-col space-y-4">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm font-semibold text-slate-300 flex items-center space-x-2">
-                        <i class="fa-solid fa-square-poll-horizontal text-emerald-400"></i>
-                        <span>Sanitized Output</span>
-                    </span>
-                    <div class="flex space-x-2">
-                        <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5">
-                            <i class="fa-regular fa-copy"></i>
-                            <span>Copy</span>
-                        </button>
-                        <button onclick="downloadOutput()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5">
-                            <i class="fa-solid fa-download"></i>
-                            <span>Download CSV</span>
-                        </button>
+            <!-- Quick Stats Card -->
+            <div id="stats-card" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 hidden">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Processing Report</h3>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div id="stat-rows" class="text-xl font-bold text-emerald-400">0</div>
+                        <div class="text-xs text-slate-500 mt-1">Rows Kept</div>
                     </div>
-                </div>
-
-                <!-- Stats Bar -->
-                <div id="stats-bar" class="grid grid-cols-3 gap-3 hidden">
-                    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-                        <span class="block text-xs text-slate-400">Original Rows</span>
-                        <strong id="stat-orig" class="text-lg text-slate-200">0</strong>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div id="stat-dupes" class="text-xl font-bold text-amber-400">0</div>
+                        <div class="text-xs text-slate-500 mt-1">Duplicates Removed</div>
                     </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-                        <span class="block text-xs text-slate-400">Duplicates Removed</span>
-                        <strong id="stat-dups" class="text-lg text-amber-400">0</strong>
-                    </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-                        <span class="block text-xs text-slate-400">Final Clean Rows</span>
-                        <strong id="stat-final" class="text-lg text-emerald-400">0</strong>
-                    </div>
-                </div>
-
-                <div class="relative flex-grow">
-                    <textarea id="raw-output" readonly rows="15" placeholder="Cleaned output will appear here instantly..." class="w-full h-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-300 focus:outline-none transition resize-none"></textarea>
                 </div>
             </div>
-
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
-        <p>DataClean Pro &bull; 100% Client-Side Secure Processing. Your data never leaves your browser.</p>
-    </footer>
+        <!-- Right Workspace (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col space-y-6">
+            <!-- Input Area -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-file-arrow-down text-emerald-400"></i> Raw CSV / TSV Input
+                    </label>
+                    <button onclick="loadSample()" class="text-xs text-emerald-400 hover:underline cursor-pointer">Load Sample Data</button>
+                </div>
+                <textarea id="input-data" placeholder="Paste messy CSV, TSV, or spreadsheet data here...&#10;name, email, city&#10;  John Doe , JOHN@EMAIL.COM , New York &#10;Jane Smith, jane@email.com, London&#10;John Doe, JOHN@EMAIL.COM, New York" class="w-full h-48 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-slate-300 focus:outline-none focus:border-emerald-500 resize-y"></textarea>
+            </div>
+
+            <!-- Output Area -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-square-check text-emerald-400"></i> Cleaned Output
+                    </label>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-copy"></i> Copy
+                        </button>
+                        <button onclick="downloadOutput()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-download"></i> Download CSV
+                        </button>
+                    </div>
+                </div>
+                <textarea id="output-data" readonly placeholder="Processed clean result will appear here..." class="w-full h-48 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-400 focus:outline-none resize-y"></textarea>
+            </div>
+        </div>
+
+    </main>
 
     <!-- Paywall Modal -->
     <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
-            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative text-center">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <div class="text-center space-y-2">
-                <div class="inline-flex bg-indigo-600/20 text-indigo-400 p-3 rounded-full mb-1">
-                    <i class="fa-solid fa-unlock-keyhole text-xl"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white">Free Run Limit Reached</h3>
-                <p class="text-sm text-slate-400">Upgrade to Pro for unlimited CSV/TSV cleaning, large file support, and priority data pipelines.</p>
+            <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-lock text-2xl"></i>
             </div>
-
-            <div class="space-y-3">
-                <div class="border border-indigo-600/50 bg-indigo-950/20 rounded-xl p-4 cursor-pointer">
-                    <div class="flex justify-between items-center">
-                        <span class="font-semibold text-sm text-indigo-300">Lifetime Access</span>
-                        <span class="text-indigo-400 font-bold">$5</span>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-1">One-time payment. Full lifetime updates.</p>
-                </div>
-
-                <div class="border border-slate-800 bg-slate-950 rounded-xl p-4 cursor-pointer">
-                    <div class="flex justify-between items-center">
-                        <span class="font-semibold text-sm text-slate-200">Pro Monthly</span>
-                        <span class="text-slate-200 font-bold">$9/mo</span>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-1">Cancel anytime. Unlimited transformations.</p>
-                </div>
-            </div>
-
-            <div class="space-y-3">
-                <a href="" target="_blank" class="block w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl text-center transition shadow-lg shadow-indigo-600/20">
-                    Proceed to Secure Checkout
+            <h3 class="text-2xl font-bold tracking-tight mb-2">Unlock Unlimited Runs</h3>
+            <p class="text-slate-400 text-sm mb-6">You have exhausted your free trial run. Upgrade for lifetime unlimited data processing.</p>
+            
+            <div class="space-y-3 mb-6">
+                <a href="" class="block w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-900/30 transition text-center">
+                    $5 One-Time (Lifetime Access - Early Bird)
                 </a>
-                
-                <div class="pt-2 border-t border-slate-800 text-center">
-                    <p class="text-xs text-slate-500 mb-2">Already purchased or testing? Enter activation code:</p>
-                    <div class="flex space-x-2">
-                        <input type="text" id="promo-code" placeholder="Enter PRO5 or PRO20" class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-3 text-xs text-white focus:outline-none focus:border-indigo-500">
-                        <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-xs font-medium transition">Apply</button>
-                    </div>
+                <a href="" class="block w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3.5 px-4 rounded-xl transition text-center border border-slate-700">
+                    $9/month (Pro Unlimited)
+                </a>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800">
+                <p class="text-xs text-slate-500 mb-2">Have a promo code?</p>
+                <div class="flex gap-2">
+                    <input type="text" id="promo-code" placeholder="Enter PRO5" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 uppercase focus:outline-none focus:border-emerald-500">
+                    <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-sm font-semibold transition cursor-pointer">Apply</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-700 text-slate-200 px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-2">
-        <i class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toast-msg" class="text-sm font-medium">Action completed successfully.</span>
-    </div>
-
+    <!-- JavaScript Business Logic -->
     <script>
-        // Initialize LocalStorage Runs
-        if (localStorage.getItem('app_runs_remaining') === null) {
-            localStorage.setItem('app_runs_remaining', '1');
+        // Credit Management
+        function getRunsRemaining() {
+            let runs = localStorage.getItem('app_runs_remaining');
+            if (runs === null) {
+                runs = 1;
+                localStorage.setItem('app_runs_remaining', runs);
+            }
+            return parseInt(runs);
         }
 
-        updateRunsDisplay();
-
-        function updateRunsDisplay() {
-            let runs = parseInt(localStorage.getItem('app_runs_remaining') || '0');
-            if (runs < 0) runs = 0;
-            document.getElementById('runs-count').innerText = runs;
+        function updateCreditBadge() {
+            const runs = getRunsRemaining();
+            const badgeText = document.getElementById('credit-text');
+            if (runs >= 99999) {
+                badgeText.innerText = 'PRO UNLIMITED';
+            } else {
+                badgeText.innerText = `Free Run: ${runs} left`;
+            }
         }
+
+        updateCreditBadge();
 
         function loadSample() {
-            const sample = `id, name, email, role
-1,  Alice Smith , alice@example.com , Admin
-2, Bob Jones, bob@example.com, User
-1,  Alice Smith , alice@example.com , Admin
-3, Charlie , charlie@example.com , 
-4,  Diana Prince , diana@themyscira.gov , Editor
-2, Bob Jones, bob@example.com, User`;
-            document.getElementById('raw-input').value = sample;
+            const sample = `name, email, city, notes\n  John Doe , JOHN@EMAIL.COM , New York , VIP client \nJane Smith, jane@email.com, London, Regular\nJohn Doe, JOHN@EMAIL.COM, New York, VIP client\n, , , \nBob Johnson, bob@example.com, Paris, `;
+            document.getElementById('input-data').value = sample;
         }
 
-        function clearInput() {
-            document.getElementById('raw-input').value = '';
-            document.getElementById('raw-output').value = '';
-            document.getElementById('stats-bar').classList.add('hidden');
-        }
-
-        function parseCSVLine(text, delimiter = ',') {
-            let result = [];
-            let row = [];
-            let inQuotes = false;
-            let currentVal = '';
-            
-            for (let i = 0; i < text.length; i++) {
-                let c = text[i];
-                let nextC = text[i + 1];
-
-                if (c === '"' && inQuotes && nextC === '"') {
-                    currentVal += '"';
-                    i++;
-                } else if (c === '"') {
-                    inQuotes = !inQuotes;
-                } else if (c === delimiter && !inQuotes) {
-                    row.push(currentVal);
-                    currentVal = '';
-                } else if ((c === '\r' || c === '\n') && !inQuotes) {
-                    if (c === '\r' && nextC === '\n') { i++; }
-                    row.push(currentVal);
-                    result.push(row);
-                    row = [];
-                    currentVal = '';
-                } else {
-                    currentVal += c;
-                }
-            }
-            if (currentVal !== '' || row.length > 0) {
-                row.push(currentVal);
-                result.push(row);
-            }
-            return result;
-        }
-
-        function detectDelimiter(text) {
-            const sample = text.split('\n')[0] || '';
-            const commas = (sample.match(/,/g) || []).length;
-            const tabs = (sample.match(/\t/g) || []).length;
-            const semis = (sample.match(/;/g) || []).length;
-            
-            if (tabs > commas && tabs > semis) return '\t';
-            if (semis > commas && semis > tabs) return ';';
-            return ',';
+        function titleCase(str) {
+            return str.replace(/\w\S*/g, function(txt) {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
         }
 
         function processData() {
-            let runs = parseInt(localStorage.getItem('app_runs_remaining') || '0');
+            let runs = getRunsRemaining();
             if (runs <= 0) {
                 openPaywall();
                 return;
             }
 
-            const rawText = document.getElementById('raw-input').value.trim();
-            if (!rawText) {
-                showToast('Please enter or paste some CSV/TSV data.', true);
+            const rawInput = document.getElementById('input-data').value.trim();
+            if (!rawInput) {
+                alert('Please enter or paste some CSV/TSV data first.');
                 return;
             }
 
             // Decrement run
-            runs--;
-            localStorage.setItem('app_runs_remaining', runs.toString());
-            updateRunsDisplay();
-
-            const delimiter = detectDelimiter(rawText);
-            let parsedRows = parseCSVLine(rawText, delimiter);
-
-            if (parsedRows.length === 0) {
-                showToast('No valid rows found.', true);
-                return;
+            if (runs < 99999) {
+                runs -= 1;
+                localStorage.setItem('app_runs_remaining', runs);
+                updateCreditBadge();
             }
 
-            const origCount = parsedRows.length;
-
+            const delimiterSetting = document.getElementById('input-delimiter').value;
             const optTrim = document.getElementById('opt-trim').checked;
             const optDedup = document.getElementById('opt-dedup').checked;
-            const optEmpty = document.getElementById('opt-empty').checked;
-            const optLowerHeaders = document.getElementById('opt-lowercase-headers').checked;
-            const optSort = document.getElementById('opt-sort').checked;
+            const optEmptyRows = document.getElementById('opt-empty-rows').checked;
+            const optEmptyCols = document.getElementById('opt-empty-cols').checked;
+            const optCase = document.getElementById('opt-case').value;
 
-            let header = parsedRows[0];
-            let body = parsedRows.slice(1);
-
-            if (optLowerHeaders && header) {
-                header = header.map(h => h.trim().toLowerCase());
+            // Parse CSV
+            let parseConfig = { header: false, skipEmptyLines: false };
+            if (delimiterSetting !== 'auto') {
+                parseConfig.delimiter = delimiterSetting;
             }
 
-            let processedBody = [];
+            let parsed = Papa.parse(rawInput, parseConfig);
+            let rows = parsed.data;
+
+            if (rows.length === 0) return;
+
+            let initialRowCount = rows.length;
+
+            // Process rows
+            let processedRows = [];
             let seenRows = new Set();
 
-            for (let row of body) {
-                if (optEmpty && row.every(cell => cell.trim() === '')) {
-                    continue;
+            for (let r = 0; r < rows.length; r++) {
+                let row = rows[r];
+                
+                // Trim cells
+                if (optTrim) {
+                    row = row.map(cell => typeof cell === 'string' ? cell.trim() : cell);
                 }
 
-                let cleanedRow = row.map(cell => {
-                    let val = cell;
-                    if (optTrim) val = val.trim();
-                    return val;
-                });
+                // Case normalization
+                if (optCase === 'lower') {
+                    row = row.map(cell => typeof cell === 'string' ? cell.toLowerCase() : cell);
+                } else if (optCase === 'upper') {
+                    row = row.map(cell => typeof cell === 'string' ? cell.toUpperCase() : cell);
+                } else if (optCase === 'title') {
+                    row = row.map(cell => typeof cell === 'string' ? titleCase(cell) : cell);
+                }
 
+                // Check empty row
+                if (optEmptyRows) {
+                    let isEmpty = row.every(cell => cell === "" || cell === null);
+                    if (isEmpty) continue;
+                }
+
+                // Deduplication
                 if (optDedup) {
-                    let rowString = cleanedRow.join('|');
+                    let rowString = JSON.stringify(row);
                     if (seenRows.has(rowString)) {
                         continue;
                     }
                     seenRows.add(rowString);
                 }
 
-                processedBody.push(cleanedRow);
+                processedRows.push(row);
             }
 
-            if (optSort && processedBody.length > 0) {
-                processedBody.sort((a, b) => {
-                    return (a[0] || '').localeCompare(b[0] || '');
-                });
+            // Purge completely empty columns if requested
+            if (optEmptyCols && processedRows.length > 0) {
+                let colCount = processedRows[0].length;
+                let emptyCols = [];
+                for (let c = 0; c < colCount; c++) {
+                    let isColEmpty = processedRows.every(row => row[c] === "" || row[c] === undefined);
+                    if (isColEmpty) emptyCols.push(c);
+                }
+                if (emptyCols.length > 0) {
+                    processedRows = processedRows.map(row => row.filter((_, idx) => !emptyCols.includes(idx)));
+                }
             }
 
-            let finalRows = [header, ...processedBody];
-            
-            // Rebuild CSV string properly quoting fields
-            let outputCSV = finalRows.map(row => {
-                return row.map(cell => {
-                    if (cell.includes(',') || cell.includes('\n') || cell.includes('"')) {
-                        return `"${cell.replace(/"/g, '""')}"`;
-                    }
-                    return cell;
-                }).join(',');
-            }).join('\n');
+            // Unparse back to CSV
+            let finalOutput = Papa.unparse(processedRows);
+            document.getElementById('output-data').value = finalOutput;
 
-            document.getElementById('raw-output').value = outputCSV;
-
-            // Update Stats
-            document.getElementById('stat-orig').innerText = origCount;
-            document.getElementById('stat-dups').innerText = origCount - finalRows.length;
-            document.getElementById('stat-final').innerText = finalRows.length;
-            document.getElementById('stats-bar').classList.remove('hidden');
-
-            showToast('Data cleaned and deduplicated successfully!');
+            // Show Stats
+            document.getElementById('stats-card').classList.remove('hidden');
+            document.getElementById('stat-rows').innerText = processedRows.length;
+            document.getElementById('stat-dupes').innerText = initialRowCount - processedRows.length;
         }
 
         function copyOutput() {
-            const output = document.getElementById('raw-output');
+            const output = document.getElementById('output-data');
             if (!output.value) return;
             output.select();
             navigator.clipboard.writeText(output.value);
-            showToast('Copied clean data to clipboard!');
+            alert('Cleaned data copied to clipboard!');
         }
 
         function downloadOutput() {
-            const output = document.getElementById('raw-output').value;
+            const output = document.getElementById('output-data').value;
             if (!output) return;
             const blob = new Blob([output], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'cleaned_data_' + new Date().toISOString().slice(0, 10) + '.csv';
-            document.body.appendChild(a);
+            a.download = 'cleaned_data_' + new Date().toISOString().slice(0,10) + '.csv';
             a.click();
-            document.body.removeChild(a);
-            showToast('CSV file downloaded successfully!');
+            URL.revokeObjectURL(url);
         }
 
         function openPaywall() {
@@ -410,23 +340,13 @@
         function applyPromo() {
             const code = document.getElementById('promo-code').value.trim().toUpperCase();
             if (code === 'PRO5' || code === 'PRO20') {
-                localStorage.setItem('app_runs_remaining', '999999');
-                updateRunsDisplay();
+                localStorage.setItem('app_runs_remaining', 999999);
+                updateCreditBadge();
                 closePaywall();
-                showToast('Pro License Activated! Unlimited runs unlocked.');
+                alert('Success! Lifetime Pro Unlimited unlocked.');
             } else {
-                showToast('Invalid activation code. Try PRO5.', true);
+                alert('Invalid promo code. Try PRO5');
             }
-        }
-
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-msg');
-            toastMsg.innerText = msg;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
         }
     </script>
 </body>

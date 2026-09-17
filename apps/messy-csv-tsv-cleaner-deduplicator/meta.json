@@ -1,13 +1,13 @@
 {
   "app_slug": "messy-csv-tsv-cleaner-deduplicator",
-  "title": "Messy CSV & TSV Data Cleaner & Deduplicator",
-  "target_pain": "Engineers and data analysts waste hours manually cleaning messy spreadsheets, fixing malformed CSVs, stripping invisible whitespace, and removing duplicate rows.",
+  "title": "Messy CSV/TSV Data Cleaner & Deduplicator",
+  "target_pain": "Cleaning, trimming, normalizing columns, and removing duplicate records from messy exported spreadsheet or CSV/TSV data.",
   "key_features": [
-    "Instant comma/tab/semicolon delimiter auto-detection and correction",
-    "Smart whitespace trimming & invisible character stripping",
-    "Advanced duplicate row removal based on exact match or specific column keys",
-    "Real-time invalid row count & schema anomaly warnings",
-    "One-click clean CSV/JSON download and clipboard export"
+    "Automatic delimiter detection (CSV, TSV, custom)",
+    "Whitespace trimming & case normalization (UPPER, lower, Title Case)",
+    "Advanced duplicate row removal based on specific columns or entire row",
+    "Empty row & column purging",
+    "Instant CSV/JSON/TSV download and clipboard copy"
   ],
   "category": "Data Transformation",
   "pricing_options": [
