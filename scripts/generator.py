@@ -146,8 +146,8 @@ Output strictly valid JSON with keys:
             print(f"[Warn] Model {model_name} failed: {str(e)[:100]}")
             time.sleep(3)
 
-    print("[Notice] Pool exhausted. Sleeping gracefully.")
-    sys.exit(0)
+    print("[Error] Pool exhausted: every model failed. Failing the run so this is visible instead of a silent no-op.")
+    sys.exit(1)
 
 if __name__ == "__main__":
     generate_solution_app()
