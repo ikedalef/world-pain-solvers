@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agent Plan & Prompt Sanitizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+  <!-- Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-sky-500/10 text-sky-400 rounded-lg border border-sky-500/20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-white leading-none">AgentSanitizer <span class="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-mono">PRO v2.4</span></h1>
+          <p class="text-xs text-slate-400">AI Coding Agent Plan & Context Sanitizer</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div id="creditBadge" class="px-3 py-1.5 text-xs font-mono rounded-full bg-slate-800 border border-slate-700 text-sky-400 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+          <span>Free Run: <strong id="runsCount">1</strong> left</span>
+        </div>
+        <button onclick="openPaywall()" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-lg shadow-sky-500/10">
+          Upgrade
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+    <!-- Quick Presets -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Quick Test Samples:</span>
+        <button onclick="loadSample('claudePlan')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Claude Code Plan</button>
+        <button onclick="loadSample('messyJson')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Messy Agent Log</button>
+        <button onclick="loadSample('secretLeak')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Leaked Key Prompt</button>
+      </div>
+      <div class="text-xs text-slate-400">
+        100% Client-side Processing &bull; Zero Data Storage
+      </div>
+    </div>
+
+    <!-- Processing Controls Grid -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <label class="flex items-center space-x-2 text-xs font-medium text-slate-300 cursor-pointer">
+        <input type="checkbox" id="optRedact" checked class="rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500">
+        <span>Redact Secrets & PII</span>
+      </label>
+      <label class="flex items-center space-x-2 text-xs font-medium text-slate-300 cursor-pointer">
+        <input type="checkbox" id="optStripLines" checked class="rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500">
+        <span>Strip Line Numbers & Bloat</span>
+      </label>
+      <label class="flex items-center space-x-2 text-xs font-medium text-slate-300 cursor-pointer">
+        <input type="checkbox" id="optFormat" checked class="rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500">
+        <span>Format JSON / Markdown</span>
+      </label>
+      <label class="flex items-center space-x-2 text-xs font-medium text-slate-300 cursor-pointer">
+        <input type="checkbox" id="optDedupe" checked class="rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500">
+        <span>Deduplicate Lines</span>
+      </label>
+    </div>
+
+    <!-- Workspace Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Input Panel -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="bg-slate-800/60 px-4 py-3 border-b border-slate-800 flex justify-between items-center">
+          <span class="text-sm font-semibold text-slate-200">Raw Input (Plan / Prompt / Logs)</span>
+          <span id="inputStats" class="text-xs font-mono text-slate-400">0 chars | ~0 tokens</span>
+        </div>
+        <textarea id="rawInput" placeholder="Paste your raw Cursor plan, Claude Code output, prompt logs, or JSON payload here..." class="w-full h-96 p-4 bg-slate-950 text-slate-200 font-mono text-xs border-none focus:outline-none focus:ring-0 resize-none leading-relaxed" oninput="updateInputStats()"></textarea>
+        <div class="p-3 border-t border-slate-800 bg-slate-900 flex justify-end">
+          <button onclick="processData()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold px-5 py-2 rounded-lg text-sm transition flex items-center gap-2 shadow-md shadow-sky-500/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Sanitize & Optimize Context
+          </button>
+        </div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="bg-slate-800/60 px-4 py-3 border-b border-slate-800 flex justify-between items-center">
+          <span class="text-sm font-semibold text-slate-200">Sanitized Output</span>
+          <span id="outputStats" class="text-xs font-mono text-sky-400">0 chars | ~0 tokens</span>
+        </div>
+        <textarea id="cleanOutput" readonly placeholder="Sanitized, token-optimized output will appear here..." class="w-full h-96 p-4 bg-slate-950 text-emerald-400 font-mono text-xs border-none focus:outline-none focus:ring-0 resize-none leading-relaxed"></textarea>
+        <div class="p-3 border-t border-slate-800 bg-slate-900 flex justify-between items-center">
+          <div id="savingsBadge" class="text-xs text-slate-400 font-mono">
+            Savings: <span class="text-emerald-400 font-bold">0% tokens saved</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded text-xs font-medium border border-slate-700 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+              Copy
+            </button>
+            <button onclick="downloadOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded text-xs font-medium border border-slate-700 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Paywall Modal -->
+  <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div class="text-center mb-6">
+        <div class="inline-flex p-3 bg-sky-500/10 text-sky-400 rounded-full mb-3 border border-sky-500/20">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-white">Free Limit Reached</h2>
+        <p class="text-slate-400 text-xs mt-1">Upgrade now to sanitize unlimited coding agent plans, prompts, and payloads.</p>
+      </div>
+
+      <!-- Pricing Options -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div class="bg-slate-950 border border-sky-500/40 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-xs text-sky-400 font-semibold uppercase tracking-wider">Early Bird</div>
+            <div class="text-2xl font-extrabold text-white mt-1">$5 <span class="text-xs font-normal text-slate-400">one-time</span></div>
+            <p class="text-xs text-slate-400 mt-2">Lifetime Access, Unlimited Runs, All Features.</p>
+          </div>
+          <a href="https://stripe.com" target="_blank" class="mt-4 block text-center bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-2 rounded-lg text-xs transition">
+            Get Lifetime Access
+          </a>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Pro Unlimited</div>
+            <div class="text-2xl font-extrabold text-white mt-1">$9 <span class="text-xs font-normal text-slate-400">/mo</span></div>
+            <p class="text-xs text-slate-400 mt-2">Cancel anytime. Unlimited context optimization.</p>
+          </div>
+          <a href="https://stripe.com" target="_blank" class="mt-4 block text-center bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition">
+            Start Monthly Pro
+          </a>
+        </div>
+      </div>
+
+      <!-- Promo Code Unlock -->
+      <div class="border-t border-slate-800 pt-4">
+        <label class="block text-xs font-medium text-slate-400 mb-1">Have a Pro Key or Access Code?</label>
+        <div class="flex gap-2">
+          <input type="text" id="promoInput" placeholder="Enter PRO5 or PRO20" class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+          <button onclick="applyPromo()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-1.5 rounded-lg text-xs font-medium border border-slate-700">
+            Activate
+          </button>
+        </div>
+        <div id="promoError" class="text-xs text-rose-400 mt-1 hidden">Invalid code. Enter PRO5 or PRO20 to unlock.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-slate-800 bg-slate-950 py-4 text-center text-xs text-slate-500">
+    AgentSanitizer &copy; 2025 &bull; Real-time Client-Side AI Context & Plan Cleaner
+  </footer>
+
+  <script>
+    let runsRemaining = localStorage.getItem('app_runs_remaining');
+    let isPro = localStorage.getItem('app_is_pro') === 'true';
+
+    if (runsRemaining === null) {
+      runsRemaining = 1;
+      localStorage.setItem('app_runs_remaining', runsRemaining);
+    } else {
+      runsRemaining = parseInt(runsRemaining, 10);
+    }
+
+    function updateBadge() {
+      const badge = document.getElementById('runsCount');
+      const badgeContainer = document.getElementById('creditBadge');
+      if (isPro) {
+        badgeContainer.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-emerald-400 font-bold">UNLIMITED PRO</span>`;
+      } else {
+        if (badge) badge.innerText = runsRemaining;
+      }
+    }
+
+    function estimateTokens(text) {
+      if (!text) return 0;
+      return Math.ceil(text.length / 3.8);
+    }
+
+    function updateInputStats() {
+      const input = document.getElementById('rawInput').value;
+      const tokens = estimateTokens(input);
+      document.getElementById('inputStats').innerText = `${input.length} chars | ~${tokens} tokens`;
+    }
+
+    function processData() {
+      if (!isPro && runsRemaining <= 0) {
+        openPaywall();
+        return;
+      }
+
+      const input = document.getElementById('rawInput').value;
+      if (!input.trim()) {
+        alert("Please paste or load sample input first.");
+        return;
+      }
+
+      let text = input;
+
+      // 1. Redact Secrets & PII
+      if (document.getElementById('optRedact').checked) {
+        text = text.replace(/sk-[a-zA-Z0-9_-]{20,}/g, '[REDACTED_OPENAI_KEY]');
+        text = text.replace(/(AKIA|ASIA)[0-9A-Z]{16}/g, '[REDACTED_AWS_KEY]');
+        text = text.replace(/Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*/gi, 'Bearer [REDACTED_TOKEN]');
+        text = text.replace(/(api[_-]?key|secret|password|auth_token)\s*[:=]\s*["']?([^\s"']+)["']?/gi, '$1: "[REDACTED]"');
+        text = text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]');
+        text = text.replace(/\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g, '[REDACTED_IP]');
+      }
+
+      // 2. Strip Line Numbers & Log Bloat
+      if (document.getElementById('optStripLines').checked) {
+        text = text.replace(/^\s*\d+[\s:|]/gm, '');
+        text = text.replace(/\[\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\]/gi, '');
+      }
+
+      // 3. Deduplicate Lines
+      if (document.getElementById('optDedupe').checked) {
+        const lines = text.split('\n');
+        const unique = [];
+        const seen = new Set();
+        for (let l of lines) {
+          const trimmed = l.trim();
+          if (trimmed === '' || !seen.has(trimmed)) {
+            unique.push(l);
+            if (trimmed !== '') seen.add(trimmed);
+          }
+        }
+        text = unique.join('\n');
+      }
+
+      // 4. Format JSON or Compress Whitespace
+      if (document.getElementById('optFormat').checked) {
+        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+          try {
+            const parsed = JSON.parse(text);
+            text = JSON.stringify(parsed, null, 2);
+          } catch(e) {
+            text = text.replace(/\n{3,}/g, '\n\n');
+          }
+        } else {
+          text = text.replace(/\n{3,}/g, '\n\n');
+        }
+      }
+
+      document.getElementById('cleanOutput').value = text;
+
+      // Stats calculation
+      const inTokens = estimateTokens(input);
+      const outTokens = estimateTokens(text);
+      document.getElementById('outputStats').innerText = `${text.length} chars | ~${outTokens} tokens`;
+
+      const savedPct = inTokens > 0 ? Math.max(0, Math.round(((inTokens - outTokens) / inTokens) * 100)) : 0;
+      document.getElementById('savingsBadge').innerHTML = `Savings: <span class="text-emerald-400 font-bold">${savedPct}% tokens saved (${Math.max(0, inTokens - outTokens)} tokens)</span>`;
+
+      // Decrement runs if not pro
+      if (!isPro) {
+        runsRemaining--;
+        localStorage.setItem('app_runs_remaining', runsRemaining);
+        updateBadge();
+      }
+    }
+
+    function loadSample(type) {
+      if (type === 'claudePlan') {
+        document.getElementById('rawInput').value = `1 | # Implementation Plan - Refactor Auth Service\n2 | [2025-05-12T14:22:01Z] System Prompt initialized with sk-proj-891238912389123891238912389123\n3 | User email for verification: dev-team@company.internal\n4 | AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE\n5 | Step 1: Create JWT middleware\n6 | Step 1: Create JWT middleware\n7 | Step 2: Test auth endpoints at 192.168.1.105`;
+      } else if (type === 'messyJson') {
+        document.getElementById('rawInput').value = `{"status":"error","logs":["10:00:01 User logged in api_key=sk-1234567890abcdef1234567890abcdef","10:00:01 User logged in api_key=sk-1234567890abcdef1234567890abcdef"],"context":{"auth_token":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9","email":"admin@server.org"}}`;
+      } else if (type === 'secretLeak') {
+        document.getElementById('rawInput').value = `Please review this plan for deploying our server:\n- Set DB_PASSWORD="SuperSecretPass123!"\n- Connect to AWS using AKIAJ2BB444333221110\n- Contact admin@domain.com if 10.0.0.1 returns 500 status.\n- Contact admin@domain.com if 10.0.0.1 returns 500 status.`;
+      }
+      updateInputStats();
+    }
+
+    function copyOutput() {
+      const out = document.getElementById('cleanOutput').value;
+      if (!out) return;
+      navigator.clipboard.writeText(out);
+      alert('Sanitized output copied to clipboard!');
+    }
+
+    function downloadOutput() {
+      const out = document.getElementById('cleanOutput').value;
+      if (!out) return;
+      const blob = new Blob([out], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'sanitized_agent_plan.txt';
+      a.click();
+    }
+
+    function openPaywall() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+
+    function closePaywall() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function applyPromo() {
+      const val = document.getElementById('promoInput').value.trim().toUpperCase();
+      if (val === 'PRO5' || val === 'PRO20') {
+        isPro = true;
+        localStorage.setItem('app_is_pro', 'true');
+        updateBadge();
+        closePaywall();
+        alert('Pro Mode Unlocked! You have unlimited access.');
+      } else {
+        document.getElementById('promoError').classList.remove('hidden');
+      }
+    }
+
+    // Initialize
+    updateBadge();
+  </script>
+</body>
+</html>

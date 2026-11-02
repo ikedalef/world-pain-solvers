@@ -1,0 +1,17 @@
+{
+  "app_slug": "ai-agent-plan-sanitizer",
+  "title": "AI Agent Plan & Prompt Sanitizer",
+  "target_pain": "Reviewing and feeding raw, bloated coding agent plans (Claude Code, Cursor, Codex) and incident logs into LLMs risks leaking API keys, wasting token context limits, and struggling with unreadable formatting.",
+  "key_features": [
+    "Automatic Secret & PII Redaction (OpenAI Keys, AWS Creds, JWTs, Bearer Tokens, Emails)",
+    "Agent Log & Plan Bloat Cleaner (Strips line numbers, timestamps, system headers)",
+    "Real-time Token & Character Cost Estimator with Savings Calculator",
+    "Duplicate Line & Whitespace De-noiser for LLM Context Window Optimization",
+    "One-click Raw/Cleaned Export with Local Storage Usage Tracking & Paywall Logic"
+  ],
+  "category": "Developer Tools & AI Workflows",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
