@@ -1,0 +1,17 @@
+{
+  "app_slug": "csv-json-data-cleaner-deduplicator",
+  "title": "Raw Data Sanitizer & Deduplicator Pro",
+  "target_pain": "Messy CSV, TSV, and JSON data containing duplicates, inconsistent casing, blank lines, and broken delimiters that break ingestion pipelines.",
+  "key_features": [
+    "Instant client-side CSV, TSV & JSON parsing and cleaning",
+    "Smart duplicate row removal based on exact match or specific column keys",
+    "Automatic trim whitespace, lowercase/uppercase normalization, and null-value stripping",
+    "Real-time data stats (row count, column count, duplicate count removed)",
+    "Export cleaned data instantly to CSV, JSON, or Copy to Clipboard"
+  ],
+  "category": "Data Engineering & Utilities",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

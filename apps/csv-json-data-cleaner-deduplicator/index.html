@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Data Sanitizer & Deduplicator Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-broom text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white">DataSanitizer <span class="text-blue-500 font-mono text-xs px-2 py-0.5 bg-blue-500/10 rounded-full border border-blue-500/20">PRO</span></h1>
+                    <p class="text-xs text-slate-400">Clean, deduplicate, and normalize CSV, TSV & JSON instantly.</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="creditBadge" class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2">
+                    <i class="fa-solid fa-bolt text-yellow-400"></i>
+                    <span>Free Run: <strong id="runsCount">1</strong> left</span>
+                </div>
+                <button onclick="openPaywallModal()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-md transition">
+                    Unlock Lifetime ($5)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left Column: Input & Options -->
+        <div class="flex flex-col space-y-4">
+            <div class="flex items-center justify-between">
+                <label class="text-sm font-semibold text-slate-300 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-arrow-down text-blue-400"></i>
+                    <span>Paste Raw Data (CSV, TSV, or JSON)</span>
+                </label>
+                <button onclick="loadSampleData()" class="text-xs text-blue-400 hover:underline flex items-center space-x-1">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Load Messy Sample</span>
+                </button>
+            </div>
+
+            <textarea id="rawInput" placeholder="Paste your unformatted CSV, TSV, or JSON here...&#10;e.g.&#10;id,name,email&#10;1, John Doe, JOHN@gmail.com&#10;1, John Doe, JOHN@gmail.com&#10;2, Jane Smith,  JANE@yahoo.com " class="w-full h-64 bg-slate-900 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition resize-none"></textarea>
+
+            <!-- Sanitizer Configuration -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Cleaning Rules</h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="optDeduplicate" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                        <span>Remove Exact Duplicates</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="optTrim" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                        <span>Trim Whitespaces</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="optRemoveBlanks" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                        <span>Remove Empty Rows</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="optLowerEmail" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                        <span>Lowercase Email Fields</span>
+                    </label>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
+                    <div class="text-xs text-slate-400" id="inputStats">Ready for input</div>
+                    <button onclick="processData()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-blue-600/30 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Sanitize & Process</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Output & Export -->
+        <div class="flex flex-col space-y-4">
+            <div class="flex items-center justify-between">
+                <label class="text-sm font-semibold text-slate-300 flex items-center space-x-2">
+                    <i class="fa-solid fa-square-poll-horizontal text-emerald-400"></i>
+                    <span>Sanitized Output</span>
+                </label>
+                <div class="flex items-center space-x-2">
+                    <button onclick="copyOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy</span>
+                    </button>
+                    <button onclick="downloadOutput()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download</span>
+                    </button>
+                </div>
+            </div>
+
+            <textarea id="rawOutput" readonly placeholder="Cleaned output will appear here..." class="w-full h-80 bg-slate-900 border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-400 focus:outline-none transition resize-none"></textarea>
+
+            <!-- Metric Summary Cards -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+                    <div class="text-slate-500 text-[10px] uppercase font-bold">Original Rows</div>
+                    <div id="statOriginal" class="text-lg font-mono font-bold text-slate-200">0</div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+                    <div class="text-slate-500 text-[10px] uppercase font-bold">Duplicates Removed</div>
+                    <div id="statDupes" class="text-lg font-mono font-bold text-amber-400">0</div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+                    <div class="text-slate-500 text-[10px] uppercase font-bold">Final Clean Rows</div>
+                    <div id="statFinal" class="text-lg font-mono font-bold text-emerald-400">0</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Paywall Modal -->
+    <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
+            <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="text-center space-y-2">
+                <div class="bg-blue-600/20 text-blue-400 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto text-xl border border-blue-500/30">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Free Run Limit Reached</h3>
+                <p class="text-xs text-slate-400">Upgrade to Pro Unlimited to process massive datasets, CSVs, and JSON files without limits.</p>
+            </div>
+
+            <div class="space-y-3">
+                <div onclick="selectPlan(this)" class="bg-slate-800/60 border-2 border-blue-600 rounded-xl p-4 cursor-pointer relative">
+                    <div class="absolute -top-2.5 right-4 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Best Value</div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-bold text-white">Lifetime Access</div>
+                            <div class="text-xs text-slate-400">One-time payment. No subscriptions.</div>
+                        </div>
+                        <div class="text-lg font-bold text-blue-400">$5</div>
+                    </div>
+                </div>
+
+                <div onclick="selectPlan(this)" class="bg-slate-800/30 border border-slate-700/60 rounded-xl p-4 cursor-pointer hover:border-slate-600 transition">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-bold text-white">Pro Monthly</div>
+                            <div class="text-xs text-slate-400">Billed monthly. Cancel anytime.</div>
+                        </div>
+                        <div class="text-lg font-bold text-slate-200">$9/mo</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <a href="" target="_blank" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/30 transition">
+                    <span>Proceed to Secure Checkout</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+                
+                <div class="flex items-center space-x-2 pt-2">
+                    <input type="text" id="licenseKeyInput" placeholder="Enter PRO5 or PRO20" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <button onclick="activateLicense()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-xs font-semibold transition">Activate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/60 py-4 text-center text-xs text-slate-500">
+        DataSanitizer Pro &bull; 100% Client-Side Browser Security. Your data never leaves your device.
+    </footer>
+
+    <!-- JavaScript Engine -->
+    <script>
+        let runsRemaining = localStorage.getItem('app_runs_remaining');
+        if (runsRemaining === null) {
+            runsRemaining = 1;
+            localStorage.setItem('app_runs_remaining', runsRemaining);
+        } else {
+            runsRemaining = parseInt(runsRemaining);
+        }
+
+        function updateRunDisplay() {
+            document.getElementById('runsCount').innerText = runsRemaining;
+        }
+        updateRunDisplay();
+
+        function loadSampleData() {
+            const sample = `id,name,email,role
+1, Alice Smith , ALICE@company.com, Engineering
+1, Alice Smith , ALICE@company.com, Engineering
+2,Bob Jones, bob@company.com, Product
+3,  Charlie Brown, CHARLIE@company.com, Design
+
+2,Bob Jones, bob@company.com, Product
+4, Diana Prince, DIANA@company.com, Executive`;
+            document.getElementById('rawInput').value = sample;
+            document.getElementById('inputStats').innerText = 'Sample loaded (8 rows)';
+        }
+
+        function processData() {
+            if (runsRemaining <= 0) {
+                openPaywallModal();
+                return;
+            }
+
+            const input = document.getElementById('rawInput').value.trim();
+            if (!input) {
+                alert('Please paste some data to process.');
+                return;
+            }
+
+            // Decrement run
+            runsRemaining--;
+            localStorage.setItem('app_runs_remaining', runsRemaining);
+            updateRunDisplay();
+
+            const optDeduplicate = document.getElementById('optDeduplicate').checked;
+            const optTrim = document.getElementById('optTrim').checked;
+            const optRemoveBlanks = document.getElementById('optRemoveBlanks').checked;
+            const optLowerEmail = document.getElementById('optLowerEmail').checked;
+
+            // Detect if JSON or CSV/TSV
+            let outputText = '';
+            let originalCount = 0;
+            let finalCount = 0;
+            let duplicatesRemoved = 0;
+
+            if (input.startsWith('[') || input.startsWith('{')) {
+                // JSON Processing
+                try {
+                    let jsonData = JSON.parse(input);
+                    let isArray = Array.isArray(jsonData);
+                    let rows = isArray ? jsonData : [jsonData];
+                    originalCount = rows.length;
+
+                    let processedRows = rows.map(row => {
+                        let newRow = {};
+                        for (let key in row) {
+                            let val = row[key];
+                            let cleanKey = optTrim ? key.trim() : key;
+                            if (typeof val === 'string' && optTrim) val = val.trim();
+                            if (optLowerEmail && cleanKey.toLowerCase().includes('email') && typeof val === 'string') {
+                                val = val.toLowerCase();
+                            }
+                            newRow[cleanKey] = val;
+                        }
+                        return newRow;
+                    });
+
+                    if (optRemoveBlanks) {
+                        processedRows = processedRows.filter(row => Object.values(row).some(v => v !== null && v !== ''));
+                    }
+
+                    if (optDeduplicate) {
+                        const seen = new Set();
+                        let uniqueRows = [];
+                        processedRows.forEach(row => {
+                            const str = JSON.stringify(row);
+                            if (!seen.has(str)) {
+                                seen.add(str);
+                                uniqueRows.push(row);
+                            } else {
+                                duplicatesRemoved++;
+                            }
+                        });
+                        processedRows = uniqueRows;
+                    }
+
+                    finalCount = processedRows.length;
+                    outputText = JSON.stringify(isArray ? processedRows : processedRows[0], null, 2);
+                } catch (e) {
+                    alert('Invalid JSON format: ' + e.message);
+                    return;
+                }
+            } else {
+                // CSV / TSV Processing
+                let delimiter = input.includes('\t') ? '\t' : ',';
+                let lines = input.split(/\r?\n/);
+                originalCount = lines.length;
+
+                if (optRemoveBlanks) {
+                    lines = lines.filter(l => l.trim() !== '');
+                }
+
+                let parsedRows = lines.map(line => line.split(delimiter));
+                let header = parsedRows[0];
+                let dataRows = parsedRows.slice(1);
+
+                let emailIdx = header.findIndex(h => h.toLowerCase().includes('email'));
+
+                let cleanedRows = dataRows.map(row => {
+                    return row.map(cell => {
+                        let val = cell;
+                        if (optTrim) val = val.trim();
+                        return val;
+                    });
+                });
+
+                if (optLowerEmail && emailIdx !== -1) {
+                    cleanedRows = cleanedRows.map(row => {
+                        if (row[emailIdx]) row[emailIdx] = row[emailIdx].toLowerCase();
+                        return row;
+                    });
+                }
+
+                if (optDeduplicate) {
+                    const seen = new Set();
+                    let uniqueData = [];
+                    cleanedRows.forEach(row => {
+                        const key = row.join('|');
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            uniqueData.push(row);
+                        } else {
+                            duplicatesRemoved++;
+                        }
+                    });
+                    cleanedRows = uniqueData;
+                }
+
+                let finalLines = [header.join(delimiter), ...cleanedRows.map(r => r.join(delimiter))];
+                finalCount = finalLines.length;
+                outputText = finalLines.join('\n');
+            }
+
+            document.getElementById('rawOutput').value = outputText;
+            document.getElementById('statOriginal').innerText = originalCount;
+            document.getElementById('statDupes').innerText = duplicatesRemoved;
+            document.getElementById('statFinal').innerText = finalCount;
+            document.getElementById('inputStats').innerText = `Processed successfully`;
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('rawOutput');
+            if (!output.value) return;
+            navigator.clipboard.writeText(output.value);
+            alert('Cleaned output copied to clipboard!');
+        }
+
+        function downloadOutput() {
+            const output = document.getElementById('rawOutput').value;
+            if (!output) return;
+            let filename = output.startsWith('[') || output.startsWith('{') ? 'sanitized_data.json' : 'sanitized_data.csv';
+            const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function openPaywallModal() {
+            document.getElementById('paywallModal').classList.remove('hidden');
+        }
+
+        function closePaywallModal() {
+            document.getElementById('paywallModal').classList.add('hidden');
+        }
+
+        function activateLicense() {
+            const code = document.getElementById('licenseKeyInput').value.trim();
+            if (code === 'PRO5' || code === 'PRO20' || code === 'LIFETIME') {
+                localStorage.setItem('app_runs_remaining', '999999');
+                runsRemaining = 999999;
+                updateRunDisplay();
+                closePaywallModal();
+                alert('Success! Lifetime Pro Unlimited unlocked.');
+            } else {
+                alert('Invalid license key. Try PRO5');
+            }
+        }
+
+        function selectPlan(el) {
+            document.querySelectorAll('#paywallModal .border-2').forEach(e => {
+                e.classList.remove('border-blue-600', 'border-2');
+                e.classList.add('border', 'border-slate-700/60');
+            });
+            el.classList.remove('border-slate-700/60');
+            el.classList.add('border-2', 'border-blue-600');
+        }
+    </script>
+</body>
+</html>
