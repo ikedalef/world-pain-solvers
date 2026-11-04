@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Context Sanitizer &amp; Data Optimizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950: '#020617' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-white">
+
+  <!-- HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold bg-gradient-to-r from-cyan-400 via-sky-200 to-white bg-clip-text text-transparent">
+          LLM Data Sanitizer Pro
+        </h1>
+        <p class="text-xs text-slate-400 hidden sm:block">Clean HTML entities, repair JSON, deduplicate &amp; optimize context</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <div id="credit-badge" class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 flex items-center gap-1.5 shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span id="badge-text">Free Run: 1 left</span>
+      </div>
+      <button onclick="openPaywallModal()" class="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white transition shadow-md shadow-cyan-500/20 active:scale-95">
+        Upgrade
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 flex flex-col gap-6">
+    
+    <!-- QUICK TOOLBAR & PRESETS -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-medium text-slate-400 mr-1">Quick Load Presets:</span>
+        <button onclick="loadPreset('hn_messy')" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition">
+          HN Raw JSON (&amp;#x27; + HTML)
+        </button>
+        <button onclick="loadPreset('broken_json')" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition">
+          Broken JSON &amp; Trailing Commas
+        </button>
+        <button onclick="loadPreset('duplicates')" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition">
+          Duplicate List &amp; HTML Logs
+        </button>
+      </div>
+      
+      <button onclick="clearAll()" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-800/60 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        Clear Input
+      </button>
+    </div>
+
+    <!-- PIPELINE OPTIONS -->
+    <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-lg backdrop-blur-sm grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+      <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition">
+        <input type="checkbox" id="opt-unescape" checked class="accent-cyan-500 rounded bg-slate-900 border-slate-700">
+        <span class="text-slate-300 font-medium">Fix Entities (&amp;#x27;)</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition">
+        <input type="checkbox" id="opt-strip-html" checked class="accent-cyan-500 rounded bg-slate-900 border-slate-700">
+        <span class="text-slate-300 font-medium">Strip HTML Tags</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition">
+        <input type="checkbox" id="opt-fix-json" checked class="accent-cyan-500 rounded bg-slate-900 border-slate-700">
+        <span class="text-slate-300 font-medium">Repair Broken JSON</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition">
+        <input type="checkbox" id="opt-dedupe" checked class="accent-cyan-500 rounded bg-slate-900 border-slate-700">
+        <span class="text-slate-300 font-medium">Deduplicate Records</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition">
+        <input type="checkbox" id="opt-trim" checked class="accent-cyan-500 rounded bg-slate-900 border-slate-700">
+        <span class="text-slate-300 font-medium">Trim Blank Space</span>
+      </label>
+      <div class="flex flex-col justify-center">
+        <select id="opt-output-format" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-cyan-300 font-semibold focus:outline-none focus:border-cyan-500">
+          <option value="json">Export: Clean JSON</option>
+          <option value="markdown">Export: Markdown Prompt</option>
+          <option value="csv">Export: Structured CSV</option>
+          <option value="text">Export: Plain Text</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- WORKSPACE PANEL -->
+    <div class="grid lg:grid-cols-2 gap-6 flex-1 min-h-[460px]">
+      
+      <!-- INPUT PANEL -->
+      <div class="flex flex-col bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Raw / Messy Input</span>
+          </div>
+          <span id="input-stats" class="text-xs text-slate-400 font-mono">0 chars | ~0 tokens</span>
+        </div>
+        <textarea id="raw-input" placeholder="Paste messy CSV, raw API JSON exports, HTML log files, or unformatted text lists here..." class="w-full flex-1 min-h-[300px] p-3.5 bg-slate-950 font-mono text-xs text-slate-200 border border-slate-800 rounded-xl focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none resize-none leading-relaxed"></textarea>
+      </div>
+
+      <!-- OUTPUT PANEL -->
+      <div class="flex flex-col bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Sanitized Output</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="output-stats" class="text-xs text-emerald-400 font-mono font-medium">0 chars | ~0 tokens</span>
+          </div>
+        </div>
+        <textarea id="clean-output" readonly placeholder="Transformed, sanitized, and token-optimized result will appear here..." class="w-full flex-1 min-h-[300px] p-3.5 bg-slate-950 font-mono text-xs text-cyan-100 border border-slate-800 rounded-xl focus:outline-none resize-none leading-relaxed"></textarea>
+      </div>
+    </div>
+
+    <!-- ACTION BAR & METRICS -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-6 text-xs text-slate-300 font-mono w-full md:w-auto justify-around md:justify-start">
+        <div>
+          <span class="text-slate-500 block text-[10px] uppercase font-sans font-bold">Bytes Saved</span>
+          <span id="stat-saved-bytes" class="text-base font-bold text-slate-100">0 B</span>
+        </div>
+        <div class="h-8 w-px bg-slate-800"></div>
+        <div>
+          <span class="text-slate-500 block text-[10px] uppercase font-sans font-bold">Token Reduction</span>
+          <span id="stat-token-reduction" class="text-base font-bold text-emerald-400">0%</span>
+        </div>
+        <div class="h-8 w-px bg-slate-800"></div>
+        <div>
+          <span class="text-slate-500 block text-[10px] uppercase font-sans font-bold">Records Cleaned</span>
+          <span id="stat-records-count" class="text-base font-bold text-cyan-400">0</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+        <button onclick="copyToClipboard()" class="px-4 py-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition flex items-center gap-2 active:scale-95">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          Copy Result
+        </button>
+        <button onclick="downloadResult()" class="px-4 py-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition flex items-center gap-2 active:scale-95">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download
+        </button>
+        <button onclick="runTransform()" class="px-6 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/25 transition active:scale-95 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Transform Data Now
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500">
+    <p>© LLM Context Sanitizer Pro — High-Performance Client-Side Prompt Context Cleaner</p>
+  </footer>
+
+  <!-- PAYWALL MODAL -->
+  <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex justify-between items-start mb-4">
+        <div class="p-2.5 bg-cyan-950/80 border border-cyan-500/30 rounded-xl text-cyan-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        </div>
+        <button onclick="closePaywallModal()" class="text-slate-400 hover:text-slate-200 text-lg p-1">&times;</button>
+      </div>
+
+      <h2 class="text-xl font-bold text-white mb-2">Unlock Unlimited Data Sanitization</h2>
+      <p class="text-xs text-slate-400 mb-6 leading-relaxed">
+        You've reached your free usage limit. Upgrade to Pro for unlimited JSON repairs, entity unescaping, token compression, and context preparation.
+      </p>
+
+      <div class="space-y-3 mb-6">
+        <a href="https://stripe.com" target="_blank" class="w-full block text-center py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/25 transition">
+          Get Lifetime Access — $5 One-Time (Early Bird)
+        </a>
+        <a href="https://stripe.com" target="_blank" class="w-full block text-center py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs transition">
+          Subscribe Pro Unlimited — $9/mo
+        </a>
+      </div>
+
+      <div class="border-t border-slate-800 pt-4">
+        <label class="block text-[11px] font-medium text-slate-400 mb-1.5">Have an Activation Key or Promo Code?</label>
+        <div class="flex gap-2">
+          <input type="text" id="promo-code-input" placeholder="Enter code (e.g. PRO5)" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 uppercase font-mono focus:border-cyan-500 focus:outline-none">
+          <button onclick="applyPromoCode()" class="px-4 py-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 font-semibold text-xs rounded-lg transition">
+            Activate
+          </button>
+        </div>
+        <p id="promo-msg" class="text-[11px] mt-2 hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-700 text-slate-100 px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-2 translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <span id="toast-icon" class="text-cyan-400">✓</span>
+    <span id="toast-msg">Notification message</span>
+  </div>
+
+  <script>
+    // STATE & INITIALIZATION
+    const PRESETS = {
+      hn_messy: JSON.stringify([
+        {
+          "source": "HackerNews Ask HN",
+          "title": "Ask HN: Impact of US Elections on AI?",
+          "context": "First off, apologies for bringing up politics. Unfortunately, it is relevant to the conversation.<p>The US midterm elections just concluded, and with t&#x27;s shift in policy, what&#x27;s next? &quot;AI regulation&quot; is top of mind.</p>",
+          "score": 142
+        },
+        {
+          "source": "HackerNews Ask HN",
+          "title": "Ask HN: How to Keep the Edge as an Engineer?",
+          "context": "Hi, for the past few months I&#x27;ve been thinking a lot about my work as a software engineer and how I&#x27;ll be able to provide benefits to companies.<p>Any recommendations for books or habits?</p>",
+          "score": 89
+        },
+        {
+          "source": "HackerNews Ask HN",
+          "title": "Ask HN: How to Keep the Edge as an Engineer?",
+          "context": "Hi, for the past few months I&#x27;ve been thinking a lot about my work as a software engineer and how I&#x27;ll be able to provide benefits to companies.<p>Any recommendations for books or habits?</p>",
+          "score": 89
+        }
+      ], null, 2),
+      broken_json: `[
+  {
+    "id": 101,
+    "title": "Missing quote & bad trailing comma",
+    "tags": ["AI", "Prompt",],
+  },
+  {
+    "id": 102,
+    "title": "Unescaped 'quotes' in text",
+    "content": "Here&#x27;s a messy <a href='#'>link</a> with raw entities &amp; HTML tags.",
+  },
+]`,
+      duplicates: `log-entry-101: User signed in from IP 192.168.1.1
+log-entry-102: Fetching context for GPT-4 prompt &amp; pipeline
+log-entry-101: User signed in from IP 192.168.1.1
+log-entry-103: API response status &#x27;200 OK&#x27; &lt;success&gt;
+log-entry-102: Fetching context for GPT-4 prompt &amp; pipeline`
+    };
+
+    function initApp() {
+      if (localStorage.getItem('app_runs_remaining') === null) {
+        localStorage.setItem('app_runs_remaining', '1');
+      }
+      updateBadge();
+      loadPreset('hn_messy');
+      setupLiveStats();
+    }
+
+    function updateBadge() {
+      const isPro = localStorage.getItem('app_pro_unlocked') === 'true';
+      const badgeText = document.getElementById('badge-text');
+      const creditBadge = document.getElementById('credit-badge');
+      
+      if (isPro) {
+        badgeText.innerText = 'PRO Lifetime Active';
+        creditBadge.className = 'px-3 py-1 text-xs font-semibold rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 shadow-inner';
+      } else {
+        const runs = parseInt(localStorage.getItem('app_runs_remaining') || '0', 10);
+        badgeText.innerText = `Free Run: ${runs} left`;
+      }
+    }
+
+    function setupLiveStats() {
+      const rawInput = document.getElementById('raw-input');
+      rawInput.addEventListener('input', () => {
+        const text = rawInput.value;
+        const chars = text.length;
+        const approxTokens = Math.ceil(chars / 4);
+        document.getElementById('input-stats').innerText = `${chars.toLocaleString()} chars | ~${approxTokens.toLocaleString()} tokens`;
+      });
+    }
+
+    function loadPreset(key) {
+      const inputEl = document.getElementById('raw-input');
+      inputEl.value = PRESETS[key] || '';
+      inputEl.dispatchEvent(new Event('input'));
+      showToast('Loaded preset example');
+    }
+
+    function clearAll() {
+      document.getElementById('raw-input').value = '';
+      document.getElementById('clean-output').value = '';
+      document.getElementById('raw-input').dispatchEvent(new Event('input'));
+      resetMetrics();
+    }
+
+    function resetMetrics() {
+      document.getElementById('output-stats').innerText = '0 chars | ~0 tokens';
+      document.getElementById('stat-saved-bytes').innerText = '0 B';
+      document.getElementById('stat-token-reduction').innerText = '0%';
+      document.getElementById('stat-records-count').innerText = '0';
+    }
+
+    // HTML & ENTITY SANITIZERS
+    function unescapeHTMLEntities(str) {
+      if (!str) return '';
+      const txt = document.createElement('textarea');
+      txt.innerHTML = str;
+      return txt.value
+        .replace(/&#x27;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+    }
+
+    function stripTags(html) {
+      if (!html) return '';
+      return html
+        .replace(/<p[^>]*>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\n\s*\n/g, '\n')
+        .trim();
+    }
+
+    function repairBrokenJSONString(raw) {
+      let cleaned = raw.trim();
+      // Remove trailing commas before close brackets
+      cleaned = cleaned.replace(/,\s*([\}\]])/g, '$1');
+      return cleaned;
+    }
+
+    // CORE BUSINESS LOGIC
+    function runTransform() {
+      const isPro = localStorage.getItem('app_pro_unlocked') === 'true';
+      let runsLeft = parseInt(localStorage.getItem('app_runs_remaining') || '0', 10);
+
+      if (!isPro && runsLeft <= 0) {
+        openPaywallModal();
+        return;
+      }
+
+      const rawText = document.getElementById('raw-input').value;
+      if (!rawText.trim()) {
+        showToast('Please enter or load data first', 'warning');
+        return;
+      }
+
+      const doUnescape = document.getElementById('opt-unescape').checked;
+      const doStripHTML = document.getElementById('opt-strip-html').checked;
+      const doFixJSON = document.getElementById('opt-fix-json').checked;
+      const doDedupe = document.getElementById('opt-dedupe').checked;
+      const doTrim = document.getElementById('opt-trim').checked;
+      const format = document.getElementById('opt-output-format').value;
+
+      let resultString = '';
+      let recordCount = 0;
+
+      try {
+        // Step 1: Try Parsing as JSON
+        let parsedData = null;
+        let preprocessed = rawText;
+        if (doFixJSON) {
+          preprocessed = repairBrokenJSONString(preprocessed);
+        }
+
+        try {
+          parsedData = JSON.parse(preprocessed);
+        } catch (e) {
+          parsedData = null; // Fallback to text mode
+        }
+
+        if (parsedData) {
+          // Process Object / Array
+          let items = Array.isArray(parsedData) ? parsedData : [parsedData];
+          
+          if (doDedupe) {
+            const seen = new Set();
+            items = items.filter(item => {
+              const key = JSON.stringify(item);
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+          }
+
+          recordCount = items.length;
+
+          items = items.map(item => {
+            if (typeof item === 'string') {
+              let res = item;
+              if (doUnescape) res = unescapeHTMLEntities(res);
+              if (doStripHTML) res = stripTags(res);
+              if (doTrim) res = res.trim();
+              return res;
+            } else if (typeof item === 'object' && item !== null) {
+              const cleanObj = {};
+              for (let [k, v] of Object.entries(item)) {
+                if (typeof v === 'string') {
+                  let res = v;
+                  if (doUnescape) res = unescapeHTMLEntities(res);
+                  if (doStripHTML) res = stripTags(res);
+                  if (doTrim) res = res.trim();
+                  cleanObj[k] = res;
+                } else {
+                  cleanObj[k] = v;
+                }
+              }
+              return cleanObj;
+            }
+            return item;
+          });
+
+          // FORMAT OUTPUT
+          if (format === 'json') {
+            resultString = JSON.stringify(items.length === 1 && !Array.isArray(parsedData) ? items[0] : items, null, 2);
+          } else if (format === 'markdown') {
+            resultString = items.map((item, idx) => {
+              if (typeof item === 'object') {
+                const lines = [`### Record ${idx + 1}`];
+                for (let [k, v] of Object.entries(item)) {
+                  lines.push(`**${k}:** ${v}`);
+                }
+                return lines.join('\n');
+              }
+              return `### Record ${idx + 1}\n${item}`;
+            }).join('\n\n---\n\n');
+          } else if (format === 'csv') {
+            if (items.length > 0 && typeof items[0] === 'object') {
+              const headers = Array.from(new Set(items.flatMap(obj => Object.keys(obj))));
+              const csvLines = [headers.join(',')];
+              items.forEach(obj => {
+                const row = headers.map(h => {
+                  const val = (obj[h] !== undefined ? obj[h] : '').toString().replace(/"/g, '""');
+                  return `"${val}"`;
+                });
+                csvLines.push(row.join(','));
+              });
+              resultString = csvLines.join('\n');
+            } else {
+              resultString = items.join('\n');
+            }
+          } else {
+            resultString = items.map(i => typeof i === 'object' ? JSON.stringify(i) : i).join('\n\n');
+          }
+
+        } else {
+          // Line by line Text Mode
+          let lines = rawText.split('\n');
+          if (doTrim) lines = lines.map(l => l.trim()).filter(Boolean);
+          if (doUnescape) lines = lines.map(l => unescapeHTMLEntities(l));
+          if (doStripHTML) lines = lines.map(l => stripTags(l));
+          if (doDedupe) lines = Array.from(new Set(lines));
+
+          recordCount = lines.length;
+          resultString = lines.join('\n');
+        }
+
+      } catch (err) {
+        console.error(err);
+        showToast('Error parsing data structure', 'error');
+        return;
+      }
+
+      // Render Output
+      const outputEl = document.getElementById('clean-output');
+      outputEl.value = resultString;
+
+      // Calculate Metrics
+      const rawBytes = new Blob([rawText]).size;
+      const cleanBytes = new Blob([resultString]).size;
+      const savedBytes = rawBytes - cleanBytes;
+      const rawTokens = Math.ceil(rawText.length / 4);
+      const cleanTokens = Math.ceil(resultString.length / 4);
+      const tokenReduction = rawTokens > 0 ? Math.max(0, Math.round(((rawTokens - cleanTokens) / rawTokens) * 100)) : 0;
+
+      document.getElementById('output-stats').innerText = `${resultString.length.toLocaleString()} chars | ~${cleanTokens.toLocaleString()} tokens`;
+      document.getElementById('stat-saved-bytes').innerText = `${savedBytes > 0 ? '-' : ''}${Math.abs(savedBytes)} B`;
+      document.getElementById('stat-token-reduction').innerText = `${tokenReduction}%`;
+      document.getElementById('stat-records-count').innerText = recordCount.toString();
+
+      // Consume credit if not Pro
+      if (!isPro) {
+        runsLeft = Math.max(0, runsLeft - 1);
+        localStorage.setItem('app_runs_remaining', runsLeft.toString());
+        updateBadge();
+      }
+
+      showToast('Data transformed successfully!');
+    }
+
+    // UTILITIES
+    function copyToClipboard() {
+      const output = document.getElementById('clean-output').value;
+      if (!output) {
+        showToast('Nothing to copy yet', 'warning');
+        return;
+      }
+      navigator.clipboard.writeText(output).then(() => {
+        showToast('Copied to clipboard!');
+      });
+    }
+
+    function downloadResult() {
+      const output = document.getElementById('clean-output').value;
+      if (!output) {
+        showToast('Nothing to download yet', 'warning');
+        return;
+      }
+      const format = document.getElementById('opt-output-format').value;
+      const extMap = { json: 'json', markdown: 'md', csv: 'csv', text: 'txt' };
+      const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `sanitized_data.${extMap[format] || 'txt'}`;
+      link.click();
+      showToast('Download started');
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywall-modal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywall-modal').classList.add('hidden');
+    }
+
+    function applyPromoCode() {
+      const code = document.getElementById('promo-code-input').value.trim().toUpperCase();
+      const msgEl = document.getElementById('promo-msg');
+      if (code === 'PRO5' || code === 'PRO20') {
+        localStorage.setItem('app_pro_unlocked', 'true');
+        updateBadge();
+        msgEl.className = 'text-[11px] mt-2 text-emerald-400 font-semibold';
+        msgEl.innerText = 'PRO access unlocked! Unlimited usage granted.';
+        msgEl.classList.remove('hidden');
+        setTimeout(() => {
+          closePaywallModal();
+          showToast('PRO Lifetime Activated!');
+        }, 1200);
+      } else {
+        msgEl.className = 'text-[11px] mt-2 text-rose-400 font-semibold';
+        msgEl.innerText = 'Invalid promo code. Try PRO5.';
+        msgEl.classList.remove('hidden');
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+      
+      toastMsg.innerText = msg;
+      toastIcon.innerText = type === 'error' ? '✕' : type === 'warning' ? '⚠' : '✓';
+      toastIcon.className = type === 'error' ? 'text-rose-400' : type === 'warning' ? 'text-amber-400' : 'text-cyan-400';
+      
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    // Run on init
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

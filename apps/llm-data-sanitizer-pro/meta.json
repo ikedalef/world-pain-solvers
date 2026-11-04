@@ -1,0 +1,18 @@
+{
+  "app_slug": "llm-data-sanitizer-pro",
+  "title": "LLM Context Sanitizer & Data Optimizer",
+  "target_pain": "Messy raw web exports, HTML entities (&#x27;), trailing commas, broken quotes, duplicate lines, and HTML tags waste prompt tokens and ruin LLM function calling pipelines.",
+  "key_features": [
+    "Automatic HTML Entity Unescaping (&amp;, &#x27;, &quot;, &lt;, &gt;)",
+    "HTML Tag Stripping & Clean Formatting for Prompt Context",
+    "JSON Repair (Trailing Commas, Quote Normalization, Bad Escapes)",
+    "Record & Line Deduplication Engine",
+    "Multi-Format Export: Clean JSON, Markdown LLM Context, CSV, or Text",
+    "Live Token & Byte Reduction Analyzer"
+  ],
+  "category": "Developer Utilities",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/mo Pro Unlimited"
+  ]
+}
