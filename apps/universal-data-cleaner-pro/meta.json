@@ -1,0 +1,18 @@
+{
+  "app_slug": "universal-data-cleaner-pro",
+  "title": "Universal Data Cleaner & Deduplicator",
+  "target_pain": "Cleaning messy CSV, TSV, or JSON exports from various tools is manual, error-prone, and time-consuming for developers and data analysts.",
+  "key_features": [
+    "Auto-format detection (CSV, TSV, JSON)",
+    "Smart Deduplication by specific column",
+    "Whitespace trimming & null value removal",
+    "Column renaming & mapping",
+    "Instant CSV to JSON conversion",
+    "One-click export to CSV"
+  ],
+  "category": "Data Productivity",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access)",
+    "$9/mo Pro Unlimited"
+  ]
+}

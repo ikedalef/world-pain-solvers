@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Data Cleaner Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body { background-color: #020617; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen font-sans">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Universal Data Cleaner</h1>
+                <p class="text-slate-400 mt-1">Professional-grade data transformation & deduplication.</p>
+            </div>
+            <div id="credit-badge" class="px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-sm font-medium">
+                Free Runs: <span id="runs-left" class="text-emerald-400">1</span> left
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Input Section -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="glass p-6 rounded-2xl">
+                    <label class="block text-sm font-semibold mb-3 text-slate-300">Paste Raw Data (CSV, TSV, or JSON Array)</label>
+                    <textarea id="input-data" class="w-full h-64 bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none custom-scrollbar" placeholder="Paste your messy data here..."></textarea>
+                </div>
+
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-slate-200">Transformation Logic</h3>
+                        <button onclick="processData()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 transition-colors rounded-lg font-bold text-white shadow-lg shadow-emerald-900/20">
+                            Run Transformation
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Deduplicate By Column</label>
+                            <input id="dedupe-key" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm" placeholder="e.g. email or id">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Output Format</label>
+                            <select id="output-format" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm">
+                                <option value="csv">CSV (Standard)</option>
+                                <option value="json">JSON (Pretty)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="space-y-6">
+                <div class="glass p-6 rounded-2xl h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-slate-200">Cleaned Output</h3>
+                        <div class="flex gap-2">
+                            <button onclick="copyToClipboard()" class="p-2 hover:bg-slate-700 rounded-lg transition-colors" title="Copy">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="0 0 24 24"></path><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </button>
+                            <button onclick="downloadResult()" class="p-2 hover:bg-slate-700 rounded-lg transition-colors" title="Download">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="output-data" readonly class="flex-grow w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-emerald-400 custom-scrollbar" placeholder="Results will appear here..."></textarea>
+                    <div id="stats" class="mt-4 text-xs text-slate-500 flex justify-between">
+                        <span>Rows: <span id="stat-rows">0</span></span>
+                        <span>Deduplicated: <span id="stat-dedupe">0</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-3xl p-8 shadow-2xl">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Free Run Limit Reached</h2>
+                <p class="text-slate-400 mb-8">Upgrade to Pro to unlock unlimited data transformations and advanced schema mapping.</p>
+                
+                <div class="space-y-4">
+                    <a href="https://buy.stripe.com/test_6oE7v0g9p" class="block w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold transition-all transform hover:scale-[1.02]">
+                        Get Lifetime Access - $5
+                    </a>
+                    <a href="https://buy.stripe.com/test_6oE7v0g9p" class="block w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition-all">
+                        Pro Monthly - $9/mo
+                    </a>
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-slate-800">
+                    <p class="text-xs text-slate-500 mb-3 uppercase tracking-widest">Have a promo code?</p>
+                    <div class="flex gap-2">
+                        <input id="promo-code" type="text" class="flex-grow bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm" placeholder="Enter code...">
+                        <button onclick="applyPromo()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-bold">Apply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining')) ?? 1;
+        if (isNaN(runsRemaining)) runsRemaining = 1;
+        updateCreditBadge();
+
+        function updateCreditBadge() {
+            document.getElementById('runs-left').innerText = runsRemaining === -1 ? '∞' : runsRemaining;
+            if (runsRemaining === -1) {
+                document.getElementById('credit-badge').classList.add('border-emerald-500/50', 'text-emerald-400');
+            }
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            if (code === 'PRO5' || code === 'PRO20') {
+                runsRemaining = -1;
+                localStorage.setItem('app_runs_remaining', -1);
+                updateCreditBadge();
+                document.getElementById('paywall-modal').classList.add('hidden');
+                alert('Success! Lifetime Pro Access Unlocked.');
+            } else {
+                alert('Invalid promo code.');
+            }
+        }
+
+        function processData() {
+            if (runsRemaining === 0) {
+                document.getElementById('paywall-modal').classList.remove('hidden');
+                return;
+            }
+
+            const input = document.getElementById('input-data').value.trim();
+            if (!input) return alert('Please paste some data first.');
+
+            let parsedData = [];
+            const dedupeKey = document.getElementById('dedupe-key').value.trim();
+            const format = document.getElementById('output-format').value;
+
+            try {
+                // 1. Parse Logic
+                if (input.startsWith('[') || input.startsWith('{')) {
+                    parsedData = JSON.parse(input);
+                    if (!Array.isArray(parsedData)) parsedData = [parsedData];
+                } else {
+                    const result = Papa.parse(input, { header: true, skipEmptyLines: true });
+                    parsedData = result.data;
+                }
+
+                // 2. Clean Logic (Trim whitespace from all values)
+                parsedData = parsedData.map(row => {
+                    const newRow = {};
+                    for (let key in row) {
+                        newRow[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+                    }
+                    return newRow;
+                });
+
+                // 3. Deduplicate Logic
+                const originalCount = parsedData.length;
+                if (dedupeKey) {
+                    const seen = new Set();
+                    parsedData = parsedData.filter(item => {
+                        const val = item[dedupeKey];
+                        if (seen.has(val)) return false;
+                        seen.add(val);
+                        return true;
+                    });
+                }
+                const dedupeCount = originalCount - parsedData.length;
+
+                // 4. Output Generation
+                let finalOutput = '';
+                if (format === 'json') {
+                    finalOutput = JSON.stringify(parsedData, null, 2);
+                } else {
+                    finalOutput = Papa.unparse(parsedData);
+                }
+
+                document.getElementById('output-data').value = finalOutput;
+                document.getElementById('stat-rows').innerText = parsedData.length;
+                document.getElementById('stat-dedupe').innerText = dedupeCount;
+
+                // 5. Credit Management
+                if (runsRemaining > 0) {
+                    runsRemaining--;
+                    localStorage.setItem('app_runs_remaining', runsRemaining);
+                    updateCreditBadge();
+                }
+
+            } catch (e) {
+                alert('Error parsing data: ' + e.message);
+            }
+        }
+
+        function copyToClipboard() {
+            const el = document.getElementById('output-data');
+            el.select();
+            document.execCommand('copy');
+            alert('Copied to clipboard!');
+        }
+
+        function downloadResult() {
+            const content = document.getElementById('output-data').value;
+            if (!content) return;
+            const format = document.getElementById('output-format').value;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cleaned_data_${new Date().getTime()}.${format}`;
+            a.click();
+        }
+    </script>
+</body>
+</html>
