@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Social Campaign Matrix & Localizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- Top Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg border border-indigo-500/30">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h1.5a2.5 2.5 0 002.5-2.5V11a2 2 0 012-2h1.053M17 19.828V18a2 2 0 012-2h1.5M12 3a9 9 0 100 18 9 9 0 000-18z"></svg>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight text-white">Campaign Matrix & Post Localizer</h1>
+          <p class="text-xs text-slate-400">Cross-Platform Social Optimizer for EU & Global Growth</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div id="credit-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+          <span id="credit-count-text">Free Runs Left: 1</span>
+        </div>
+        <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-lg shadow-indigo-600/20 border border-indigo-500/30 flex items-center gap-1.5">
+          <span>Unlock Pro</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- Input Controls (Left Column) -->
+    <div class="lg:col-span-5 space-y-6 flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-5 flex-1">
+        <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+          <span>1. Base Campaign Data</span>
+          <span class="text-xs font-normal text-slate-500">Real-Time Engine</span>
+        </h2>
+
+        <!-- Content Input -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5">Master Post Copy / Message</label>
+          <textarea id="base-text" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition placeholder-slate-600 resize-none" placeholder="Launch your SaaS or e-commerce brand across Europe! Track performance and localized reach effortless with our new tool.">Expand your brand presence across Europe! Discover tailored insights, localized audience engagement strategies, and streamlined cross-platform posting for maximum conversion.</textarea>
+        </div>
+
+        <!-- Landing Page URL & UTM options -->
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Landing Page URL (Optional)</label>
+            <input type="url" id="landing-url" value="https://mybrand.com/launch" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition placeholder-slate-600" placeholder="https://example.com/page">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">UTM Campaign</label>
+              <input type="text" id="utm-campaign" value="eu_growth_2025" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">UTM Medium</label>
+              <input type="text" id="utm-medium" value="social_organic" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+          </div>
+        </div>
+
+        <!-- Target Region Preset -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5">Target Region & Auto-Hashtags</label>
+          <select id="region-preset" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+            <option value="weu">Western Europe (DE, FR, NL, BE)</option>
+            <option value="neu">Northern Europe (UK, SE, NO, DK)</option>
+            <option value="seu">Southern Europe (ES, IT, PT, GR)</option>
+            <option value="cee">Central & Eastern Europe (PL, CZ, RO)</option>
+            <option value="us">North America (US, CA)</option>
+            <option value="global" selected>Global Market (Generic EU & INT)</option>
+          </select>
+        </div>
+
+        <!-- Custom Hashtags -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Additional Hashtags (comma or space separated)</label>
+          <input type="text" id="custom-hashtags" value="#Marketing #SaaS #Growth2025" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition placeholder-slate-600">
+        </div>
+
+        <!-- Platform Selection Toggles -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-2">Target Social Networks</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex items-center gap-2 p-2 rounded bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+              <input type="checkbox" class="platform-toggle rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" value="twitter" checked>
+              <span class="text-xs text-slate-300 font-medium">X / Twitter</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+              <input type="checkbox" class="platform-toggle rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" value="linkedin" checked>
+              <span class="text-xs text-slate-300 font-medium">LinkedIn</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+              <input type="checkbox" class="platform-toggle rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" value="instagram" checked>
+              <span class="text-xs text-slate-300 font-medium">Instagram</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+              <input type="checkbox" class="platform-toggle rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" value="facebook" checked>
+              <span class="text-xs text-slate-300 font-medium">Facebook</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+              <input type="checkbox" class="platform-toggle rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" value="threads" checked>
+              <span class="text-xs text-slate-300 font-medium">Threads</span>
+            </label>
+          </div>
+        </div>
+
+        <button onclick="processCampaign()" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg shadow-indigo-600/30 border border-indigo-500/30 transition flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></svg>
+          <span>Transform & Generate Matrix</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Output Results (Right Column) -->
+    <div class="lg:col-span-7 space-y-6 flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex-1 flex flex-col">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">2. Optimized Social Outputs</h2>
+            <p class="text-xs text-slate-500">Auto-trimmed links, dynamic UTMs, and character limit checks</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="exportCSV()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></svg>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Platform Cards Container -->
+        <div id="output-container" class="mt-5 space-y-4 flex-1 overflow-y-auto max-h-[620px] pr-1">
+          <!-- Dynamically filled by JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- PRO PAYWALL MODAL -->
+  <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-6 text-center">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-sm font-bold">✕</button>
+      
+      <div class="w-14 h-14 bg-indigo-600/20 border border-indigo-500/30 rounded-2xl flex items-center justify-center mx-auto text-indigo-400">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></svg>
+      </div>
+
+      <div>
+        <h3 class="text-xl font-bold text-white">Upgrade to Pro Unlimited</h3>
+        <p class="text-xs text-slate-400 mt-1">You've reached your free transformation quota. Unlock unlimited high-converting social matrix localizations.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 text-left">
+        <a href="https://stripe.com" target="_blank" class="border border-indigo-500/40 bg-indigo-950/30 hover:bg-indigo-900/40 p-4 rounded-xl block transition group">
+          <span class="text-xs text-indigo-400 font-semibold block">Early Bird Special</span>
+          <span class="text-lg font-extrabold text-white block mt-0.5">$5 <span class="text-xs font-normal text-slate-400">/ one-time</span></span>
+          <span class="text-[10px] text-slate-400 block mt-2 group-hover:text-slate-300">Lifetime Unlimited Access →</span>
+        </a>
+        <a href="https://stripe.com" target="_blank" class="border border-slate-800 bg-slate-950/50 hover:bg-slate-800/50 p-4 rounded-xl block transition group">
+          <span class="text-xs text-slate-400 font-semibold block">Monthly Pro</span>
+          <span class="text-lg font-extrabold text-white block mt-0.5">$9 <span class="text-xs font-normal text-slate-400">/ month</span></span>
+          <span class="text-[10px] text-slate-400 block mt-2 group-hover:text-slate-300">Cancel anytime →</span>
+        </a>
+      </div>
+
+      <!-- Promo Code Unlock -->
+      <div class="pt-2 border-t border-slate-800/80">
+        <label class="block text-xs text-slate-400 mb-2 font-medium">Have a Pro Code or License Key?</label>
+        <div class="flex gap-2">
+          <input type="text" id="promo-code-input" placeholder="Enter code (e.g. PRO5)" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 uppercase flex-1 focus:outline-none focus:border-indigo-500">
+          <button onclick="applyPromoCode()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Activate</button>
+        </div>
+        <p id="promo-error" class="text-[11px] text-rose-400 mt-1 hidden">Invalid code. Try <strong>PRO5</strong> or <strong>PRO20</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Business Logic -->
+  <script>
+    const REGION_HASHTAGS = {
+      weu: ['#MarketingEU', '#EcommerceDE', '#BusinessFR', '#TechNL', '#DigitalEurope'],
+      neu: ['#TechUK', '#NordicBusiness', '#DigitalUK', '#StartupSE', '#EuroMarket'],
+      seu: ['#StartupES', '#BusinessIT', '#DigitalEU', '#TechSouthEU', '#MarketingES'],
+      cee: ['#TechPoland', '#StartupCEE', '#DigitalCZ', '#EuropeTech', '#EUStartups'],
+      us: ['#USMarketing', '#TechUSA', '#DigitalGrowth', '#StartupUS', '#ScaleUp'],
+      global: ['#GlobalBusiness', '#InternationalMarketing', '#TechNews', '#Growth', '#DigitalStrategy']
+    };
+
+    const PLATFORM_LIMITS = {
+      twitter: { name: 'X / Twitter', max: 280, icon: 'M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z' },
+      linkedin: { name: 'LinkedIn', max: 3000, icon: 'M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z' },
+      instagram: { name: 'Instagram', max: 2200, icon: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z' },
+      facebook: { name: 'Facebook', max: 63206, icon: 'M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z' },
+      threads: { name: 'Threads', max: 500, icon: 'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm1 14.93c-2.48 0-4.5-2.02-4.5-4.5S10.52 7.93 13 7.93c1.9 0 3.51 1.19 4.15 2.87-.27.14-.56.26-.87.36-.5-1.32-1.78-2.26-3.28-2.26-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5c1.19 0 2.24-.6 2.87-1.52.28.18.59.33.92.44-.86 1.34-2.33 2.17-3.79 2.17z' }
+    };
+
+    let generatedResults = [];
+
+    function getRunsRemaining() {
+      const val = localStorage.getItem('app_runs_remaining');
+      if (val === null) {
+        localStorage.setItem('app_runs_remaining', '1');
+        return 1;
+      }
+      return parseInt(val, 10);
+    }
+
+    function isPro() {
+      return localStorage.getItem('app_is_pro') === 'true';
+    }
+
+    function updateCreditDisplay() {
+      const countText = document.getElementById('credit-count-text');
+      if (isPro()) {
+        countText.textContent = 'Pro Unlimited Access';
+      } else {
+        const remaining = getRunsRemaining();
+        countText.textContent = `Free Runs Left: ${remaining}`;
+      }
+    }
+
+    function buildUtmUrl(baseUrl, platform, campaign, medium) {
+      if (!baseUrl) return '';
+      try {
+        const url = new URL(baseUrl);
+        url.searchParams.set('utm_source', platform);
+        url.searchParams.set('utm_medium', medium || 'social');
+        if (campaign) url.searchParams.set('utm_campaign', campaign);
+        return url.toString();
+      } catch(e) {
+        return baseUrl;
+      }
+    }
+
+    function processCampaign() {
+      if (!isPro()) {
+        const remaining = getRunsRemaining();
+        if (remaining <= 0) {
+          openModal();
+          return;
+        }
+        localStorage.setItem('app_runs_remaining', (remaining - 1).toString());
+        updateCreditDisplay();
+      }
+
+      const baseText = document.getElementById('base-text').value.trim();
+      const url = document.getElementById('landing-url').value.trim();
+      const campaign = document.getElementById('utm-campaign').value.trim();
+      const medium = document.getElementById('utm-medium').value.trim();
+      const region = document.getElementById('region-preset').value;
+      const customTagsInput = document.getElementById('custom-hashtags').value.trim();
+      
+      // Parse hashtags
+      const regionTags = REGION_HASHTAGS[region] || [];
+      const customTags = customTagsInput ? customTagsInput.split(/[,\s]+/).map(t => t.startsWith('#') ? t : `#${t}`) : [];
+      const allHashtags = [...new Set([...regionTags, ...customTags])].join(' ');
+
+      const selectedPlatforms = Array.from(document.querySelectorAll('.platform-toggle:checked')).map(cb => cb.value);
+      
+      const container = document.getElementById('output-container');
+      container.innerHTML = '';
+      generatedResults = [];
+
+      if (selectedPlatforms.length === 0) {
+        container.innerHTML = '<p class="text-xs text-rose-400 p-4 bg-rose-950/30 border border-rose-800/40 rounded-lg">Please select at least one target social network.</p>';
+        return;
+      }
+
+      selectedPlatforms.forEach((pKey, idx) => {
+        const spec = PLATFORM_LIMITS[pKey];
+        const taggedUrl = buildUtmUrl(url, pKey, campaign, medium);
+        
+        // Format text block
+        let formattedText = baseText;
+        if (taggedUrl) {
+          formattedText += `\n\n🔗 ${taggedUrl}`;
+        }
+        if (allHashtags) {
+          formattedText += `\n\n${allHashtags}`;
+        }
+
+        const charCount = formattedText.length;
+        const isOverLimit = charCount > spec.max;
+        const percentage = Math.min(Math.round((charCount / spec.max) * 100), 100);
+        
+        generatedResults.push({
+          platform: spec.name,
+          text: formattedText,
+          charCount,
+          max: spec.max
+        });
+
+        const card = document.createElement('div');
+        card.className = 'bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-3 relative group hover:border-slate-700 transition';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><path d="${spec.icon}"/></svg>
+              <span class="text-xs font-semibold text-slate-200">${spec.name}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono ${isOverLimit ? 'text-rose-400 font-bold' : 'text-slate-400'}">
+                ${charCount} / ${spec.max} chars
+              </span>
+              <button onclick="copyText(this, ${idx})" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded text-xs transition flex items-center gap-1 border border-slate-700">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="w-full bg-slate-900 rounded-full h-1 overflow-hidden">
+            <div class="h-full ${isOverLimit ? 'bg-rose-500' : 'bg-indigo-500'} transition-all duration-300" style="width: ${percentage}%"></div>
+          </div>
+
+          <!-- Output Text Box -->
+          <textarea readonly class="w-full bg-slate-900/60 border border-slate-800/80 rounded p-2.5 text-xs text-slate-300 font-sans focus:outline-none resize-none leading-relaxed min-h-[90px]">${escapeHtml(formattedText)}</textarea>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function copyText(btn, idx) {
+      const item = generatedResults[idx];
+      if (!item) return;
+      navigator.clipboard.writeText(item.text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<span class="text-emerald-400">Copied!</span>`;
+        setTimeout(() => btn.innerHTML = orig, 1500);
+      });
+    }
+
+    function exportCSV() {
+      if (generatedResults.length === 0) {
+        alert('Please generate social post outputs first.');
+        return;
+      }
+      let csv = 'Platform,Character Count,Max Limit,Post Content\n';
+      generatedResults.forEach(r => {
+        const escapedText = '"' + r.text.replace(/"/g, '""') + '"';
+        csv += `"${r.platform}",${r.charCount},${r.max},${escapedText}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', `social_campaign_matrix_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openModal() {
+      document.getElementById('paywall-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('paywall-modal').classList.add('hidden');
+    }
+
+    function applyPromoCode() {
+      const code = document.getElementById('promo-code-input').value.trim().toUpperCase();
+      const errEl = document.getElementById('promo-error');
+      if (code === 'PRO5' || code === 'PRO20') {
+        localStorage.setItem('app_is_pro', 'true');
+        updateCreditDisplay();
+        closeModal();
+        errEl.classList.add('hidden');
+        alert('Pro Access Granted! You now have unlimited transformations.');
+      } else {
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    // Initialize on Page Load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCreditDisplay();
+      processCampaign();
+    });
+  </script>
+</body>
+</html>

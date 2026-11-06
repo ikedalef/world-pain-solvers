@@ -1,0 +1,17 @@
+{
+  "app_slug": "global-social-campaign-matrix",
+  "title": "Global Social Campaign Matrix & Post Localizer",
+  "target_pain": "Multi-region social media marketing requires manual adaptation of text limits, regional hashtags, platform specs, and custom UTM tracking across Europe and global markets.",
+  "key_features": [
+    "Multi-Platform Formatting (X/Twitter, LinkedIn, Instagram, Facebook, Threads)",
+    "Regional Hashtag Auto-Injector for European & Global Markets",
+    "Dynamic UTM Link Builder per Platform",
+    "Character Limit & Constraint Validation with Visual Progress",
+    "Bulk CSV & Multi-line Post Matrix Exporter"
+  ],
+  "category": "Marketing & Social Media",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
