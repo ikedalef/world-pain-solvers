@@ -1,0 +1,17 @@
+{
+  "app_slug": "class-schedule-data-cleaner",
+  "title": "Local Class & Event Schedule Data Cleaner",
+  "target_pain": "Converting messy, unformatted dance studio schedules, workshop listings, and local activity text into structured CSV, JSON, and ICS calendar files with automatic time standardization, genre tagging, and deduplication.",
+  "key_features": [
+    "Smart Multi-Format Parsing (Raw Text, Pipe Delimited, Messy CSV & TSV)",
+    "Automatic Genre Tagging (Hip-Hop, Breaking, House, Heels, Jazz, Yoga, etc.) & Level Extraction",
+    "Time Format Standardizer (12-Hour AM/PM <-> 24-Hour ISO Normalization)",
+    "Automatic Duplicate Removal & Instructor / Address Field Normalization",
+    "One-Click Real Exports (Download Clean CSV, JSON Data, iCalendar .ICS File, or Copy to Clipboard)"
+  ],
+  "category": "Data Processing & Utilities",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

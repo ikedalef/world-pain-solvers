@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Class & Event Schedule Data Cleaner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              900: '#4c1d95'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased flex flex-col justify-between">
+
+  <!-- Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          ⚡
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-100 leading-tight">ClassFormat Pro</h1>
+          <p class="text-xs text-slate-400">Local Class & Event Schedule Cleaner</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div id="creditBadge" class="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="creditCountText">Free Run: 1 left</span>
+        </div>
+        <button onclick="openPaywallModal()" class="hidden sm:inline-flex px-3.5 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold shadow-md transition-all">
+          Upgrade Pro
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow space-y-8">
+    
+    <!-- Intro & Presets -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 p-6 rounded-2xl border border-slate-800">
+      <div>
+        <h2 class="text-xl font-bold text-white">Clean, Parse & Standardize Studio Schedules</h2>
+        <p class="text-sm text-slate-400 mt-1 max-w-2xl">
+          Paste messy multi-line class schedules, unstructured event listings, or CSVs. Automatically extract instructors, levels, genres (Hip Hop, House, etc.), normalize times, and export to clean CSV, JSON, or iCal calendar format.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="loadSampleData('hiphop')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-lg border border-slate-700 text-slate-200 transition-colors flex items-center gap-1.5">
+          <span>📋</span> Load Sydney HipHop Sample
+        </button>
+        <button onclick="loadSampleData('fitness')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-lg border border-slate-700 text-slate-200 transition-colors flex items-center gap-1.5">
+          <span>📋</span> Load Multi-Studio CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Input & Controls Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Input Area -->
+      <div class="lg:col-span-8 space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            Raw Unstructured Data / Messy CSV
+          </label>
+          <button onclick="clearInput()" class="text-xs text-slate-400 hover:text-rose-400 transition-colors">Clear Text</button>
+        </div>
+        <textarea id="rawInput" rows="11" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-200 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 placeholder-slate-600 shadow-inner resize-y" placeholder="Paste raw studio schedules, multi-line listings, or CSV data here..."></textarea>
+      </div>
+
+      <!-- Control Panel -->
+      <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-6">
+        <div class="space-y-4">
+          <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
+            ⚙️ Cleaning Options
+          </h3>
+          
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Time Format Output</label>
+            <select id="optTimeFormat" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+              <option value="12h">12-Hour AM/PM (e.g. 6:30 PM)</option>
+              <option value="24h">24-Hour ISO (e.g. 18:30)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Default City / Region</label>
+            <input type="text" id="optCity" value="Sydney, NSW" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-violet-500" placeholder="e.g. Sydney, Australia" />
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input type="checkbox" id="optDeduplicate" checked class="rounded border-slate-700 bg-slate-950 text-violet-600 focus:ring-violet-500 w-4 h-4">
+              <span>Auto-Deduplicate Duplicate Classes</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input type="checkbox" id="optExtractGenres" checked class="rounded border-slate-700 bg-slate-950 text-violet-600 focus:ring-violet-500 w-4 h-4">
+              <span>Auto-Tag Genres (Hip Hop, House, etc.)</span>
+            </label>
+          </div>
+        </div>
+
+        <button onclick="processData()" class="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-violet-600/25 transition-all text-sm flex items-center justify-center gap-2 group">
+          <span>🚀 Clean & Format Schedule</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="summarySection" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs font-medium text-slate-400">Total Classes</p>
+        <p id="statTotal" class="text-2xl font-bold text-slate-100 mt-1">0</p>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs font-medium text-slate-400">Unique Genres</p>
+        <p id="statGenres" class="text-2xl font-bold text-violet-400 mt-1">0</p>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs font-medium text-slate-400">Instructors Extracted</p>
+        <p id="statInstructors" class="text-2xl font-bold text-indigo-400 mt-1">0</p>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs font-medium text-slate-400">Avg. Class Price</p>
+        <p id="statAvgPrice" class="text-2xl font-bold text-emerald-400 mt-1">$0</p>
+      </div>
+    </div>
+
+    <!-- Output Results Section -->
+    <div id="outputSection" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <div class="flex items-center gap-3 flex-1 max-w-md">
+          <input type="text" id="tableSearch" oninput="filterResults()" placeholder="Search class name, instructor, genre..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+        </div>
+        <!-- Export Buttons -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="downloadCSV()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg border border-slate-700 transition-colors flex items-center gap-1">
+            <span>📥</span> CSV
+          </button>
+          <button onclick="downloadJSON()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg border border-slate-700 transition-colors flex items-center gap-1">
+            <span>📥</span> JSON
+          </button>
+          <button onclick="downloadICS()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg border border-slate-700 transition-colors flex items-center gap-1">
+            <span>📅</span> iCal (.ICS)
+          </button>
+          <button onclick="copyToClipboard()" class="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white rounded-lg transition-colors flex items-center gap-1 shadow-md shadow-violet-600/20">
+            <span>📋</span> Copy All
+          </button>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Day & Time</th>
+                <th class="py-3 px-4">Class / Title</th>
+                <th class="py-3 px-4">Instructor</th>
+                <th class="py-3 px-4">Level</th>
+                <th class="py-3 px-4">Genres</th>
+                <th class="py-3 px-4">Location</th>
+                <th class="py-3 px-4 text-right">Price</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-800/60 text-slate-300 font-mono">
+              <!-- Rows rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Paywall Modal -->
+  <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-6">
+      <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 text-xl font-bold">&times;</button>
+      
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 bg-gradient-to-tr from-violet-600 to-indigo-500 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-lg shadow-indigo-500/30">
+          👑
+        </div>
+        <h3 class="text-xl font-bold text-white">Upgrade to Pro Unlimited</h3>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">
+          You've reached your free run limit. Unlock unlimited schedule cleaning, bulk CSV imports, iCal generation & API exports.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <a href="https://stripe.com" target="_blank" class="border border-slate-700 bg-slate-800/60 hover:bg-slate-800 p-4 rounded-xl text-center space-y-2 transition-all block group">
+          <p class="text-xs text-slate-400 uppercase font-semibold">Lifetime Access</p>
+          <p class="text-2xl font-extrabold text-white group-hover:text-violet-400 transition-colors">$5 <span class="text-xs font-normal text-slate-400">one-time</span></p>
+          <span class="inline-block px-3 py-1 bg-violet-600 text-white rounded-lg text-xs font-semibold w-full shadow">Get Lifetime</span>
+        </a>
+        <a href="https://stripe.com" target="_blank" class="border border-violet-500/50 bg-violet-950/20 hover:bg-violet-950/40 p-4 rounded-xl text-center space-y-2 transition-all block group relative">
+          <span class="absolute -top-2.5 right-3 bg-violet-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">Best Value</span>
+          <p class="text-xs text-violet-300 uppercase font-semibold">Pro Monthly</p>
+          <p class="text-2xl font-extrabold text-white group-hover:text-violet-400 transition-colors">$9 <span class="text-xs font-normal text-slate-400">/ mo</span></p>
+          <span class="inline-block px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-semibold w-full shadow">Start Monthly</span>
+        </a>
+      </div>
+
+      <div class="border-t border-slate-800 pt-4 space-y-3">
+        <p class="text-xs text-slate-400 text-center font-medium">Have a promo code?</p>
+        <div class="flex gap-2">
+          <input type="text" id="promoCodeInput" placeholder="Enter code (e.g. PRO5 or PRO20)" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-violet-500 uppercase font-mono">
+          <button onclick="applyPromoCode()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 transition-colors">
+            Apply Code
+          </button>
+        </div>
+        <p id="promoError" class="text-xs text-rose-400 text-center hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-emerald-600 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl transition-all transform translate-y-20 opacity-0 z-50 flex items-center gap-2">
+    <span>✅</span> <span id="toastMsg">Notification</span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-900/40 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p>© 2025 ClassFormat Pro • Instant Local Class & Schedule Data Cleaning Engine</p>
+      <div class="flex gap-4">
+        <a href="#" onclick="openPaywallModal(); return false;" class="hover:text-slate-300 transition-colors">Pricing</a>
+        <a href="https://stripe.com" target="_blank" class="hover:text-slate-300 transition-colors">Stripe Billing</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic JS -->
+  <script>
+    let state = {
+      runsRemaining: 1,
+      isPro: false,
+      cleanedData: []
+    };
+
+    const SAMPLES = {
+      hiphop: `Sydney Dance Hub - Mon 6:00 PM - 7:15 PM | Urban Hip Hop (Beginner) with Dave | 142 Regent St, Redfern | $22
+Sydney Dance Hub - Mon 7:30 PM - 8:45 PM | Hip Hop Choreography (Intermediate) with Sarah | 142 Regent St, Redfern | $25
+Cutz & Moves Studio - Tue 18:30 - 19:30 | Popping & Locking (All Levels) with Marcus | 88 Broadway, Ultimo | $20
+Cutz & Moves Studio - Tue 19:30 - 20:30 | Breaking / B-Boy Foundations (Beginner) with Ken | 88 Broadway, Ultimo | $20
+Harbour Dance Academy - Wed 5:30 PM - 6:30 PM | Commercial Hip Hop (All Levels) with Elena | 45 York St, Sydney CBD | $24
+Harbour Dance Academy - Wed 6:30 PM - 7:45 PM | House Dance & Footwork (Intermediate) with Dave | 45 York St, Sydney CBD | $24
+Sydney Dance Hub - Thu 6:00 PM - 7:00 PM | Hip Hop Heels (Open Level) with Chloe | 142 Regent St, Redfern | $23
+Sydney Dance Hub - Mon 6:00 PM - 7:15 PM | Urban Hip Hop (Beginner) with Dave | 142 Regent St, Redfern | $22`,
+      
+      fitness: `Studio Name, Class Name, Instructor, Day, Start Time, End Time, Address, Price
+CoreFitness Sydney, Morning HIIT & Cardio, Alex Rivera, Monday, 07:00 AM, 08:00 AM, 12 Pitt St Sydney, $25
+CoreFitness Sydney, Vinyasa Flow Yoga, Emma Watson, Monday, 08:30 AM, 09:30 AM, 12 Pitt St Sydney, $22
+BodyTone Studio, Power Pilates, Michael Croft, Tuesday, 17:30, 18:30, 204 George St Sydney, $28
+BodyTone Studio, Power Pilates, Michael Croft, Tuesday, 17:30, 18:30, 204 George St Sydney, $28
+Urban Groove Co, Hip Hop Cardio Dance, Sarah Jenkins, Wednesday, 18:00, 19:15, 55 Oxford St Darlinghurst, $20
+Urban Groove Co, Afrobeats & House, Tunde O., Thursday, 19:00, 20:15, 55 Oxford St Darlinghurst, $22`
+    };
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      initCredits();
+      loadSampleData('hiphop');
+    });
+
+    function initCredits() {
+      const savedPro = localStorage.getItem('app_pro_unlocked');
+      if (savedPro === 'true') {
+        state.isPro = true;
+      }
+      const savedRuns = localStorage.getItem('app_runs_remaining');
+      if (savedRuns !== null) {
+        state.runsRemaining = parseInt(savedRuns, 10);
+      } else {
+        localStorage.setItem('app_runs_remaining', '1');
+      }
+      updateCreditBadge();
+    }
+
+    function updateCreditBadge() {
+      const textEl = document.getElementById('creditCountText');
+      if (state.isPro) {
+        textEl.textContent = 'Pro Unlimited';
+        textEl.className = 'text-xs font-bold text-violet-400';
+      } else {
+        textEl.textContent = `Free Run: ${state.runsRemaining} left`;
+      }
+    }
+
+    function loadSampleData(type) {
+      document.getElementById('rawInput').value = SAMPLES[type];
+      showToast('Loaded sample dataset');
+    }
+
+    function clearInput() {
+      document.getElementById('rawInput').value = '';
+    }
+
+    function processData() {
+      if (!state.isPro && state.runsRemaining <= 0) {
+        openPaywallModal();
+        return;
+      }
+
+      const rawText = document.getElementById('rawInput').value.trim();
+      if (!rawText) {
+        showToast('Please enter class or schedule text first');
+        return;
+      }
+
+      const timeFormat = document.getElementById('optTimeFormat').value;
+      const cityRegion = document.getElementById('optCity').value.trim();
+      const deduplicate = document.getElementById('optDeduplicate').checked;
+      const extractGenres = document.getElementById('optExtractGenres').checked;
+
+      const lines = rawText.split(/\r?\n/).filter(line => line.trim().length > 0);
+      let parsedResults = [];
+
+      lines.forEach((line, index) => {
+        // Skip header if CSV format
+        if (index === 0 && line.toLowerCase().includes('studio name') && line.toLowerCase().includes('class name')) {
+          return;
+        }
+
+        let parsed = parseSingleLine(line, cityRegion, timeFormat, extractGenres);
+        if (parsed) {
+          parsedResults.push(parsed);
+        }
+      });
+
+      if (deduplicate) {
+        const seen = new Set();
+        parsedResults = parsedResults.filter(item => {
+          const key = `${item.title.toLowerCase()}|${item.day}|${item.startTime}|${item.instructor.toLowerCase()}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+
+      state.cleanedData = parsedResults;
+
+      // Deduct run credit if not pro
+      if (!state.isPro) {
+        state.runsRemaining = Math.max(0, state.runsRemaining - 1);
+        localStorage.setItem('app_runs_remaining', state.runsRemaining.toString());
+        updateCreditBadge();
+      }
+
+      renderResults();
+      showToast(`Cleaned ${parsedResults.length} class entries!`);
+    }
+
+    function parseSingleLine(line, defaultCity, timeFormat, extractGenres) {
+      // Check CSV vs unstructured delimiter
+      let parts = line.includes('|') ? line.split('|') : line.split(',');
+      if (parts.length < 2) {
+        parts = line.split('-');
+      }
+
+      let text = line;
+      let dayMatch = text.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/i);
+      let day = dayMatch ? dayMatch[0] : 'TBD';
+
+      // Time Extraction
+      let timeMatches = text.match(/(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?)/gi);
+      let startTime = '18:00';
+      let endTime = '19:00';
+      if (timeMatches && timeMatches.length >= 1) {
+        startTime = normalizeTime(timeMatches[0], timeFormat);
+        if (timeMatches[1]) {
+          endTime = normalizeTime(timeMatches[1], timeFormat);
+        }
+      }
+
+      // Instructor Extraction (with / by)
+      let instructorMatch = text.match(/(?:with|by|inst:?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+      let instructor = instructorMatch ? instructorMatch[1] : 'Staff';
+
+      // Level Extraction
+      let levelMatch = text.match(/\b(Beginner|Beg|Intermediate|Int|Advanced|Adv|Open Level|All Levels)\b/i);
+      let level = levelMatch ? levelMatch[0] : 'All Levels';
+
+      // Price Extraction
+      let priceMatch = text.match(/\$(\d+(?:\.\d{2})?)/);
+      let price = priceMatch ? `$${priceMatch[1]}` : '$20';
+
+      // Genres Extraction
+      let genres = [];
+      if (extractGenres) {
+        const genreKeywords = ['Hip Hop', 'Urban', 'House', 'Popping', 'Locking', 'Breaking', 'Heels', 'Choreography', 'K-Pop', 'Jazz', 'Contemporary', 'Ballet', 'Yoga', 'HIIT', 'Cardio', 'Pilates'];
+        genreKeywords.forEach(kw => {
+          if (new RegExp('\\b' + kw + '\\b', 'i').test(text)) {
+            genres.push(kw);
+          }
+        });
+        if (genres.length === 0) genres.push('General Class');
+      }
+
+      // Address / Location
+      let address = defaultCity;
+      let addrMatch = text.match(/(\d+\s+[^|,$]+(?:St|Rd|Ave|Blvd|Street|Road)[^|,$]*)/i);
+      if (addrMatch) {
+        address = `${addrMatch[1].trim()}, ${defaultCity}`;
+      }
+
+      // Title Extraction
+      let title = parts[0].trim();
+      if (parts.length > 1 && (parts[1].toLowerCase().includes('hip') || parts[1].toLowerCase().includes('dance') || parts[1].toLowerCase().includes('flow') || parts[1].toLowerCase().includes('pilates'))) {
+        title = parts[1].trim();
+      }
+      title = title.replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i, '').trim();
+      if (!title || title.length < 3) title = 'Dance / Fitness Class';
+
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        day: day,
+        startTime: startTime,
+        endTime: endTime,
+        title: title,
+        instructor: instructor,
+        level: level,
+        genres: genres,
+        address: address,
+        price: price
+      };
+    }
+
+    function normalizeTime(timeStr, format) {
+      timeStr = timeStr.trim().toUpperCase();
+      let isPM = timeStr.includes('PM');
+      let isAM = timeStr.includes('AM');
+      let clean = timeStr.replace(/(AM|PM)/g, '').trim();
+      let [h, m] = clean.split(':').map(n => parseInt(n, 10));
+      if (isNaN(m)) m = 0;
+
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+
+      if (format === '24h') {
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+      } else {
+        let displayH = h % 12 || 12;
+        let ampm = h >= 12 ? 'PM' : 'AM';
+        return `${displayH}:${m.toString().padStart(2, '0')} ${ampm}`;
+      }
+    }
+
+    function renderResults() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      document.getElementById('summarySection').classList.remove('hidden');
+      document.getElementById('outputSection').classList.remove('hidden');
+
+      // Calculate stats
+      const total = state.cleanedData.length;
+      const allGenres = new Set(state.cleanedData.flatMap(d => d.genres));
+      const allInstructors = new Set(state.cleanedData.map(d => d.instructor));
+      let totalPrice = 0;
+      state.cleanedData.forEach(d => {
+        let p = parseFloat(d.price.replace('$', '')) || 0;
+        totalPrice += p;
+      });
+      const avgPrice = total > 0 ? (totalPrice / total).toFixed(2) : '0';
+
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statGenres').textContent = allGenres.size;
+      document.getElementById('statInstructors').textContent = allInstructors.size;
+      document.getElementById('statAvgPrice').textContent = `$${avgPrice}`;
+
+      state.cleanedData.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition-colors';
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-violet-300 font-semibold">${item.day}<br><span class="text-[11px] text-slate-400 font-normal">${item.startTime} - ${item.endTime}</span></td>
+          <td class="py-3 px-4 font-medium text-slate-100">${escapeHtml(item.title)}</td>
+          <td class="py-3 px-4 text-slate-300">${escapeHtml(item.instructor)}</td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-indigo-300 font-semibold">${escapeHtml(item.level)}</span></td>
+          <td class="py-3 px-4"><div class="flex flex-wrap gap-1">${item.genres.map(g => `<span class="px-1.5 py-0.5 rounded bg-violet-950/60 border border-violet-800/60 text-[10px] text-violet-300">${escapeHtml(g)}</span>`).join('')}</div></td>
+          <td class="py-3 px-4 text-slate-400 text-[11px]">${escapeHtml(item.address)}</td>
+          <td class="py-3 px-4 text-right font-semibold text-emerald-400">${item.price}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterResults() {
+      const query = document.getElementById('tableSearch').value.toLowerCase();
+      const rows = document.querySelectorAll('#tableBody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    }
+
+    function downloadCSV() {
+      if (state.cleanedData.length === 0) return;
+      let csv = 'Day,Start Time,End Time,Title,Instructor,Level,Genres,Location,Price\n';
+      state.cleanedData.forEach(d => {
+        csv += `"${d.day}","${d.startTime}","${d.endTime}","${escapeCsv(d.title)}","${escapeCsv(d.instructor)}","${d.level}","${d.genres.join(';')}","${escapeCsv(d.address)}","${d.price}"\n`;
+      });
+      triggerFileDownload(csv, 'cleaned_class_schedule.csv', 'text/csv');
+      showToast('Downloaded CSV!');
+    }
+
+    function downloadJSON() {
+      if (state.cleanedData.length === 0) return;
+      const json = JSON.stringify(state.cleanedData, null, 2);
+      triggerFileDownload(json, 'cleaned_class_schedule.json', 'application/json');
+      showToast('Downloaded JSON!');
+    }
+
+    function downloadICS() {
+      if (state.cleanedData.length === 0) return;
+      let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ClassFormatPro//EN\n';
+      state.cleanedData.forEach(item => {
+        ics += 'BEGIN:VEVENT\n';
+        ics += `SUMMARY:${escapeIcs(item.title)}\n`;
+        ics += `DESCRIPTION:${escapeIcs(`Instructor: ${item.instructor} | Level: ${item.level} | Price: ${item.price}`)}\n`;
+        ics += `LOCATION:${escapeIcs(item.address)}\n`;
+        ics += 'END:VEVENT\n';
+      });
+      ics += 'END:VCALENDAR';
+      triggerFileDownload(ics, 'classes_schedule.ics', 'text/calendar');
+      showToast('Downloaded iCal (.ICS) calendar!');
+    }
+
+    function copyToClipboard() {
+      if (state.cleanedData.length === 0) return;
+      let csv = 'Day,Start Time,End Time,Title,Instructor,Level,Genres,Location,Price\n';
+      state.cleanedData.forEach(d => {
+        csv += `"${d.day}","${d.startTime}","${d.endTime}","${escapeCsv(d.title)}","${escapeCsv(d.instructor)}","${d.level}","${d.genres.join(';')}","${escapeCsv(d.address)}","${d.price}"\n`;
+      });
+      navigator.clipboard.writeText(csv).then(() => {
+        showToast('Clean CSV copied to clipboard!');
+      });
+    }
+
+    function triggerFileDownload(content, filename, contentType) {
+      const blob = new Blob([content], { type: contentType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function applyPromoCode() {
+      const input = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+      const errorEl = document.getElementById('promoError');
+      if (input === 'PRO5' || input === 'PRO20') {
+        state.isPro = true;
+        localStorage.setItem('app_pro_unlocked', 'true');
+        updateCreditBadge();
+        closePaywallModal();
+        showToast('🎉 Lifetime Pro access activated!');
+      } else {
+        errorEl.textContent = 'Invalid promo code. Use PRO5 or PRO20 for instant access.';
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+    function escapeCsv(str) {
+      return str.replace(/"/g, '""');
+    }
+    function escapeIcs(str) {
+      return str.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    }
+  </script>
+</body>
+</html>
