@@ -1,0 +1,17 @@
+{
+  "app_slug": "llm-shield-text-protector",
+  "title": "LLMShield - Anti-Scraping Text Obfuscator & Invisible Watermarker",
+  "target_pain": "Writers and publishers face unauthorized web scraping and uncredited AI model ingestion. LLMShield injects invisible steganographic canary watermarks, selective homoglyph token breaks, and anti-crawler noise to poison illicit scrapers while preserving human readability.",
+  "key_features": [
+    "Zero-Width Steganographic Watermarking (Encodes author cryptographic ID into invisible Unicode spaces)",
+    "Subtle Homoglyph Token Breaker (Replaces Latin glyphs with visually identical Cyrillic chars to disrupt tokenizer embeddings)",
+    "Canary Trap & Attribution Payload Injector (Embeds hidden anti-crawl verification signatures)",
+    "Built-in Watermark Extractor & Decoder (Extracts hidden authorship proof from suspected scraped text)",
+    "Export to Protected Markdown, Raw HTML with Honeypot Tags, or Copied Text"
+  ],
+  "category": "Publishing & Security",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
