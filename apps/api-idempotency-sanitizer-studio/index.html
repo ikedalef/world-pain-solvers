@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Idempotency & Webhook Payload Sanitizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="text/javascript">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              950: '#020617'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .font-mono-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 text-white p-2 rounded-xl shadow-lg shadow-indigo-500/20 font-bold text-sm tracking-wider">
+          API
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-100 text-base leading-tight">Idempotency & Payload Studio</h1>
+          <p class="text-xs text-slate-400">Safe Retry Matrix & Credential Redactor</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <!-- Credit Badge -->
+        <div id="credit-badge" class="flex items-center space-x-2 bg-slate-900 border border-slate-700/80 px-3 py-1.5 rounded-full text-xs font-medium">
+          <span id="credit-indicator" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="credit-text" class="text-slate-300">Free Run: 1 left</span>
+        </div>
+
+        <button onclick="openPaywallModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-md shadow-indigo-600/20 active:scale-95">
+          Upgrade Pro
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Work Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+    
+    <!-- Tab Switcher -->
+    <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 gap-4">
+      <div class="flex space-x-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+        <button id="tab-cleaner" onclick="switchTab('cleaner')" class="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all shadow-sm">
+          1. JSON Repair & Credential Sanitizer
+        </button>
+        <button id="tab-idempotency" onclick="switchTab('idempotency')" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+          2. Idempotency Key Hasher
+        </button>
+        <button id="tab-retry" onclick="switchTab('retry')" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+          3. Retry & Backoff Calculator
+        </button>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button onclick="loadSampleData()" class="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer px-2 py-1">
+          Load Sample Payload (Broken JSON + SSH Agent Leak)
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 1: JSON Repair & Credential Sanitizer -->
+    <section id="sec-cleaner" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Input Box -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+            <span>Raw Webhook / API Payload</span>
+          </label>
+          <span class="text-xs text-slate-500">Auto-detects unquoted keys, trailing commas & credentials</span>
+        </div>
+        <textarea id="raw-input" rows="16" class="w-full bg-slate-950 text-slate-200 border border-slate-800 rounded-xl p-4 font-mono-code text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none leading-relaxed" placeholder="Paste payload JSON, raw logs, or headers here..."></textarea>
+        
+        <div class="mt-4 flex items-center justify-between gap-3">
+          <div class="flex items-center space-x-3 text-xs text-slate-400">
+            <label class="flex items-center space-x-1.5 cursor-pointer">
+              <input type="checkbox" id="chk-sanitize-auth" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+              <span>Scrub SSH/Tokens</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer">
+              <input type="checkbox" id="chk-strip-nulls" class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+              <span>Strip Nulls/Empty</span>
+            </label>
+          </div>
+          <button onclick="executeCleanAndSanitize()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>Repair & Sanitize Payload</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Output Box -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+            <span>Sanitized & Validated Output</span>
+          </label>
+          <div id="status-tag" class="hidden px-2.5 py-0.5 rounded-full text-xs font-semibold"></div>
+        </div>
+        <textarea id="clean-output" readonly rows="16" class="w-full bg-slate-950 text-emerald-400 border border-slate-800 rounded-xl p-4 font-mono-code text-xs focus:outline-none resize-none leading-relaxed" placeholder="Sanitized JSON result will appear here..."></textarea>
+        
+        <div class="mt-4 flex items-center justify-end space-x-3">
+          <button onclick="copyToClipboard('clean-output')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs px-4 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center space-x-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <span>Copy Output</span>
+          </button>
+          <button onclick="downloadOutput('clean-output', 'sanitized-payload.json')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center space-x-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Download JSON</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Idempotency Key Hasher -->
+    <section id="sec-idempotency" class="hidden flex-col gap-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-sm font-bold text-slate-200 mb-2">Deterministic Idempotency Hash Generator</h2>
+        <p class="text-xs text-slate-400 mb-6">Generate a unique HTTP <code class="text-indigo-400 bg-slate-950 px-1 py-0.5 rounded">Idempotency-Key</code> header based on payload fields to prevent duplicate vendor actions (e.g. shipping label purchases, credit card charges) when network requests time out.</p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">JSON Payload for Hashing</label>
+              <textarea id="idempotency-input" rows="8" class="w-full bg-slate-950 text-slate-200 border border-slate-800 rounded-xl p-4 font-mono-code text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="{
+  &quot;order_id&quot;: &quot;ORD-99824&quot;,
+  &quot;amount&quot;: 49.99,
+  &quot;currency&quot;: &quot;USD&quot;
+}"></textarea>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button onclick="generateIdempotencyKey()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20">
+                Compute Idempotency Headers
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">HTTP Header Output</span>
+              <div class="mt-4 space-y-4 font-mono-code text-xs">
+                <div>
+                  <span class="text-slate-500 block mb-1">Header Name:</span>
+                  <code class="text-slate-200 bg-slate-900 px-2 py-1 rounded block border border-slate-800">Idempotency-Key</code>
+                </div>
+                <div>
+                  <span class="text-slate-500 block mb-1">SHA-256 Hash Value:</span>
+                  <textarea id="idempotency-hash" readonly rows="3" class="w-full bg-slate-900 text-emerald-400 border border-slate-800 p-2 rounded text-xs focus:outline-none resize-none"></textarea>
+                </div>
+                <div>
+                  <span class="text-slate-500 block mb-1">cURL Request Header snippet:</span>
+                  <textarea id="idempotency-curl" readonly rows="2" class="w-full bg-slate-900 text-amber-300 border border-slate-800 p-2 rounded text-xs focus:outline-none resize-none"></textarea>
+                </div>
+              </div>
+            </div>
+            <button onclick="copyToClipboard('idempotency-curl')" class="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs py-2 rounded-lg border border-slate-700 transition-all">
+              Copy Header Snippet
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Retry & Exponential Backoff Calculator -->
+    <section id="sec-retry" class="hidden flex-col gap-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-sm font-bold text-slate-200 mb-2">Exponential Backoff & Jitter Schedule Calculator</h2>
+        <p class="text-xs text-slate-400 mb-6">Calculate safe retry timestamps for failed HTTP endpoints (e.g. status 429 Rate Limited, 504 Gateway Timeout) to prevent thundering herd crashes.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Max Retries</label>
+            <input type="number" id="retry-max" value="5" min="1" max="10" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Base Delay (seconds)</label>
+            <input type="number" id="retry-base" value="2" min="1" max="60" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Max Delay (seconds)</label>
+            <input type="number" id="retry-max-delay" value="60" min="5" max="3600" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Jitter Algorithm</label>
+            <select id="retry-jitter" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+              <option value="full">Full Random Jitter</option>
+              <option value="equal">Equal Jitter</option>
+              <option value="none">No Jitter (Strict)</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="calculateRetrySchedule()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 mb-6">
+          Calculate Retry Timeline Matrix
+        </button>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <h3 class="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Generated Retry Matrix (JSON output)</h3>
+          <textarea id="retry-matrix-output" readonly rows="8" class="w-full bg-slate-950 text-indigo-300 font-mono-code text-xs focus:outline-none resize-none"></textarea>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Paywall Modal -->
+  <div id="paywall-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden px-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center flex flex-col items-center">
+      <div class="w-12 h-12 bg-indigo-600/20 text-indigo-400 rounded-full flex items-center justify-center mb-4 border border-indigo-500/30">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      </div>
+      
+      <h3 class="text-xl font-bold text-slate-100 mb-1">Free Run Limit Reached</h3>
+      <p class="text-xs text-slate-400 mb-6 max-w-sm">You have used your 1 instant test execution. Unlock unlimited payload transformations and idempotency key generations.</p>
+
+      <!-- Offer Cards -->
+      <div class="w-full space-y-3 mb-6">
+        <a href="#" onclick="event.preventDefault();" class="block bg-gradient-to-r from-indigo-900/40 to-slate-800 hover:to-slate-750 border border-indigo-500/40 rounded-xl p-3 text-left transition-all">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-sm text-indigo-300">$5 One-Time Access</span>
+            <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-semibold">EARLY BIRD</span>
+          </div>
+          <p class="text-xs text-slate-400">Lifetime unlimited runs & idempotency tools.</p>
+        </a>
+
+        <a href="#" onclick="event.preventDefault();" class="block bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl p-3 text-left transition-all">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-sm text-slate-200">$9 / month</span>
+            <span class="text-[10px] text-slate-400">Pro Unlimited</span>
+          </div>
+          <p class="text-xs text-slate-400">Priority updates & automated webhook retry engine.</p>
+        </a>
+      </div>
+
+      <!-- Promo Activation -->
+      <div class="w-full border-t border-slate-800 pt-4 text-left">
+        <label class="block text-[11px] font-semibold text-slate-400 mb-1.5">Have a License / Promo Code?</label>
+        <div class="flex space-x-2">
+          <input type="text" id="promo-code-input" placeholder="Enter code PRO5 or PRO20" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono uppercase text-slate-200 focus:outline-none focus:border-indigo-500">
+          <button onclick="activatePromoCode()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2 rounded-lg transition-all">
+            Unlock
+          </button>
+        </div>
+        <p id="promo-error" class="text-[11px] text-rose-400 mt-1.5 hidden">Invalid promo code. Try PRO5 or PRO20.</p>
+      </div>
+
+      <button onclick="closePaywallModal()" class="mt-4 text-xs text-slate-500 hover:text-slate-400 underline">Close dialog</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-700 text-slate-200 text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 transition-all duration-300 transform translate-y-20 opacity-0 z-50">
+    <span id="toast-msg">Notification message</span>
+  </div>
+
+  <!-- App Logic Javascript -->
+  <script>
+    // State Management
+    const STORAGE_RUNS = 'app_runs_remaining';
+    const STORAGE_UNLOCKED = 'app_is_pro_unlocked';
+
+    function getRunsRemaining() {
+      const saved = localStorage.getItem(STORAGE_RUNS);
+      if (saved === null) return 1; // Default 1 free run
+      return parseInt(saved, 10);
+    }
+
+    function isProUnlocked() {
+      return localStorage.getItem(STORAGE_UNLOCKED) === 'true';
+    }
+
+    function updateCreditDisplay() {
+      const creditText = document.getElementById('credit-text');
+      const creditIndicator = document.getElementById('credit-indicator');
+      
+      if (isProUnlocked()) {
+        creditText.textContent = 'PRO Lifetime Active';
+        creditText.className = 'text-indigo-300 font-bold';
+        creditIndicator.className = 'w-2 h-2 rounded-full bg-indigo-400';
+      } else {
+        const runs = getRunsRemaining();
+        creditText.textContent = `Free Run: ${runs} left`;
+        if (runs === 0) {
+          creditText.className = 'text-rose-400 font-bold';
+          creditIndicator.className = 'w-2 h-2 rounded-full bg-rose-400';
+        } else {
+          creditText.className = 'text-slate-300';
+          creditIndicator.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        }
+      }
+    }
+
+    function consumeCreditOrCheck() {
+      if (isProUnlocked()) return true;
+      const runs = getRunsRemaining();
+      if (runs <= 0) {
+        openPaywallModal();
+        return false;
+      }
+      localStorage.setItem(STORAGE_RUNS, (runs - 1).toString());
+      updateCreditDisplay();
+      return true;
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywall-modal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywall-modal').classList.add('hidden');
+    }
+
+    function activatePromoCode() {
+      const code = document.getElementById('promo-code-input').value.trim().toUpperCase();
+      const errorEl = document.getElementById('promo-error');
+      if (code === 'PRO5' || code === 'PRO20' || code === 'LIFETIME') {
+        localStorage.setItem(STORAGE_UNLOCKED, 'true');
+        updateCreditDisplay();
+        closePaywallModal();
+        showToast('Successfully unlocked Pro Lifetime Access!');
+      } else {
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // Tab Switcher
+    function switchTab(tabName) {
+      const tabs = ['cleaner', 'idempotency', 'retry'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const sec = document.getElementById(`sec-${t}`);
+        if (t === tabName) {
+          btn.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all shadow-sm';
+          sec.classList.remove('hidden');
+          if (t !== 'cleaner') sec.classList.add('flex');
+        } else {
+          btn.className = 'px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all';
+          sec.classList.add('hidden');
+          sec.classList.remove('flex');
+        }
+      });
+    }
+
+    // Sample Data Injection
+    function loadSampleData() {
+      const sample = `{
+  status: "failed_timeout",
+  vendor_request: {
+    action: "purchase_shipping_label",
+    carrier: "DHL_EXPRESS",
+    cost_usd: 142.50,
+    // Trailing comma below
+    auth_header: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.secret_token",
+    ssh_agent_key: "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\nQyNTUxOQAAACBA1f4x9+dummyKeySampleDataForAuditPurposeOnly==\n-----END OPENSSH PRIVATE KEY-----",
+  },
+  retry_count: 0
+}`;
+      document.getElementById('raw-input').value = sample;
+      showToast('Loaded sample messy payload');
+    }
+
+    // JSON Cleaning & Sanitizing Logic
+    function executeCleanAndSanitize() {
+      if (!consumeCreditOrCheck()) return;
+
+      const raw = document.getElementById('raw-input').value;
+      const statusTag = document.getElementById('status-tag');
+      const sanitizeAuth = document.getElementById('chk-sanitize-auth').checked;
+      const stripNulls = document.getElementById('chk-strip-nulls').checked;
+
+      if (!raw.trim()) {
+        showToast('Please enter a raw payload first');
+        return;
+      }
+
+      try {
+        let processedStr = raw;
+
+        // 1. Scrub Sensitive credentials if enabled
+        if (sanitizeAuth) {
+          // Scrub OpenSSH private keys
+          processedStr = processedStr.replace(/-----BEGIN[A-Z\s]+PRIVATE KEY-----([\s\S]*?)-----END[A-Z\s]+PRIVATE KEY-----/g, '[REDACTED_SSH_PRIVATE_KEY]');
+          // Scrub Bearer tokens
+          processedStr = processedStr.replace(/Bearer\s+[A-Za-z0-9\-_\.~+\/]+=*/gi, 'Bearer [REDACTED_JWT_TOKEN]');
+          // Scrub AWS Keys
+          processedStr = processedStr.replace(/AKIA[0-9A-Z]{16}/g, '[REDACTED_AWS_ACCESS_KEY]');
+        }
+
+        // 2. Fix JSON formatting
+        // Remove single-line JS comments // ...
+        processedStr = processedStr.replace(/\/\/.*$/gm, '');
+        // Fix unquoted keys e.g. status: -> "status":
+        processedStr = processedStr.replace(/([{,]\s*)([a-zA-Z0-9_$]+)\s*:/g, '$1"$2":');
+        // Fix trailing commas in objects or arrays
+        processedStr = processedStr.replace(/,\s*([}\]])/g, '$1');
+        // Fix single quotes around string values
+        processedStr = processedStr.replace(/:\s*'([^']*)'/g, ': "$1"');
+
+        let parsed = JSON.parse(processedStr);
+
+        // 3. Strip Nulls/Empty if checked
+        if (stripNulls) {
+          parsed = removeEmptyFields(parsed);
+        }
+
+        const outputStr = JSON.stringify(parsed, null, 2);
+        document.getElementById('clean-output').value = outputStr;
+
+        statusTag.textContent = 'VALID JSON & SANITIZED';
+        statusTag.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+        showToast('Payload repaired & sanitized successfully');
+      } catch (err) {
+        document.getElementById('clean-output').value = `// Parsing Error: ${err.message}\n// Raw Input cleanup attempted string:\n` + raw;
+        statusTag.textContent = 'SYNTAX ERROR DETECTED';
+        statusTag.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20';
+      }
+    }
+
+    function removeEmptyFields(obj) {
+      if (Array.isArray(obj)) {
+        return obj.map(removeEmptyFields).filter(v => v !== null && v !== undefined && v !== '');
+      } else if (obj !== null && typeof obj === 'object') {
+        return Object.entries(obj).reduce((acc, [k, v]) => {
+          const cleaned = removeEmptyFields(v);
+          if (cleaned !== null && cleaned !== undefined && cleaned !== '') {
+            acc[k] = cleaned;
+          }
+          return acc;
+        }, {});
+      }
+      return obj;
+    }
+
+    // Idempotency Key Computation (SHA-256)
+    async function generateIdempotencyKey() {
+      if (!consumeCreditOrCheck()) return;
+
+      const input = document.getElementById('idempotency-input').value;
+      if (!input.trim()) {
+        showToast('Enter a valid JSON payload to compute hash');
+        return;
+      }
+
+      try {
+        // Canonicalize JSON (sort keys to make hash deterministic)
+        const parsed = JSON.parse(input);
+        const sortedCanonical = JSON.stringify(parsed, Object.keys(parsed).sort());
+
+        // Web Crypto SHA-256
+        const msgUint8 = new TextEncoder().encode(sortedCanonical);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        const idempotencyKey = `idemp_sha256_${hashHex.substring(0, 32)}`;
+
+        document.getElementById('idempotency-hash').value = idempotencyKey;
+        document.getElementById('idempotency-curl').value = `-H "Idempotency-Key: ${idempotencyKey}"`;
+        showToast('Generated Idempotency Header');
+      } catch (e) {
+        showToast('Invalid JSON payload for idempotency calculation');
+      }
+    }
+
+    // Exponential Backoff Calculator
+    function calculateRetrySchedule() {
+      if (!consumeCreditOrCheck()) return;
+
+      const maxRetries = parseInt(document.getElementById('retry-max').value, 10) || 5;
+      const baseDelay = parseFloat(document.getElementById('retry-base').value) || 2;
+      const maxDelay = parseFloat(document.getElementById('retry-max-delay').value) || 60;
+      const jitterType = document.getElementById('retry-jitter').value;
+
+      const schedule = [];
+      let now = new Date();
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        let expDelay = Math.min(maxDelay, baseDelay * Math.pow(2, attempt - 1));
+        let finalDelay = expDelay;
+
+        if (jitterType === 'full') {
+          finalDelay = Math.random() * expDelay;
+        } else if (jitterType === 'equal') {
+          finalDelay = (expDelay / 2) + (Math.random() * (expDelay / 2));
+        }
+
+        // add to date
+        now = new Date(now.getTime() + finalDelay * 1000);
+
+        schedule.push({
+          attempt,
+          delay_seconds: parseFloat(finalDelay.toFixed(2)),
+          scheduled_execution_iso: now.toISOString()
+        });
+      }
+
+      document.getElementById('retry-matrix-output').value = JSON.stringify(schedule, null, 2);
+      showToast('Calculated retry schedule');
+    }
+
+    // Utilities
+    function copyToClipboard(elementId) {
+      const text = document.getElementById(elementId).value;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard');
+      });
+    }
+
+    function downloadOutput(elementId, filename) {
+      const text = document.getElementById(elementId).value;
+      if (!text) return;
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Init on load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCreditDisplay();
+      loadSampleData();
+    });
+  </script>
+</body>
+</html>

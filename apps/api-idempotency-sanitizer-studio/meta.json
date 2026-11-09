@@ -1,0 +1,16 @@
+{
+  "app_slug": "api-idempotency-sanitizer-studio",
+  "title": "API Idempotency Key & Payload Sanitizer Studio",
+  "target_pain": "Eliminates duplicate vendor API charges during job timeouts via deterministic SHA-256 idempotency hashing and prevents SSH/Auth token leaks in webhooks.",
+  "key_features": [
+    "JSON Syntax Repair & Payload Normalizer (fixes trailing commas, unquoted keys, single quotes)",
+    "Deterministic Idempotency Key & Request Signature Generator (SHA-256 / MD5)",
+    "SSH Key, Auth Token & Credential Auto-Redactor (scrubs sensitive data before retry/logs)",
+    "Exponential Backoff & Jitter Matrix Calculator for Timed-Out Jobs"
+  ],
+  "category": "Developer Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
