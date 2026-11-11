@@ -1,0 +1,17 @@
+{
+  "app_slug": "cloud-init-ansible-generator",
+  "title": "Natural Spec to Cloud-Init & Bash Server Provisioner",
+  "target_pain": "Engineers wasting hours wrestling with Ansible YAML syntax, Jinja indentation errors, and verbose playbooks just to provision small Linux servers or bare metal instances.",
+  "key_features": [
+    "Declarative Server Spec compiler: converts clean multi-line requirements (packages, users, docker containers, firewall rules, cronjobs, swap) into hardened production scripts",
+    "Generates dual deployment targets: cloud-config (cloud-init YAML for AWS/Hetzner/DigitalOcean) and Idempotent Standalone Bash script",
+    "Integrated live syntax validator & dry-run inspector with instant copy and file download",
+    "Pre-built production templates: Hardened Docker Host, Nginx Reverse Proxy & Node, PostgreSQL Database Server",
+    "Real deterministic local JS engine - no dummy placeholders or mock API calls"
+  ],
+  "category": "Developer Tools / DevOps",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

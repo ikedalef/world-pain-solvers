@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Natural Spec to Cloud-Init & Bash Server Provisioner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              950: '#020617',
+              900: '#0f172a',
+              850: '#131d36',
+              800: '#1e293b'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Navigation & Credit Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+        <i class="fa-solid fa-server text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+          ServerForge
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Bare-Metal & VM</span>
+        </h1>
+        <p class="text-xs text-slate-400 hidden sm:block">Generate battle-tested Cloud-Init & Idempotent Bash without Ansible bloat</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <div id="credit-badge" class="text-xs px-3 py-1.5 rounded-md font-medium border border-slate-700 bg-slate-800 text-slate-300 flex items-center gap-2 shadow-inner">
+        <i class="fa-solid fa-bolt text-amber-400"></i>
+        <span>Free Runs: <strong id="credit-count" class="text-white font-bold">1</strong> left</span>
+      </div>
+      <button id="btn-upgrade-nav" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3.5 py-1.5 rounded-md transition shadow-md shadow-indigo-600/20 flex items-center gap-1.5">
+        <i class="fa-solid fa-crown text-amber-300 text-xs"></i>
+        <span>Go Pro</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    
+    <!-- Quick Preset Buttons & Headline -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
+      <div>
+        <h2 class="text-xl font-bold text-white">Replace Ansible with Declarative Plain Specs</h2>
+        <p class="text-sm text-slate-400">Paste simple server commands or choose a production recipe. Real client-side AST engine transforms specs to Cloud-Config YAML & Bash.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs text-slate-400 font-medium mr-1">Recipes:</span>
+        <button type="button" onclick="loadPreset('docker')" class="text-xs px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">
+          🐳 Hardened Docker
+        </button>
+        <button type="button" onclick="loadPreset('webstack')" class="text-xs px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">
+          🌐 Nginx + Node Stack
+        </button>
+        <button type="button" onclick="loadPreset('postgres')" class="text-xs px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">
+          🐘 Secured Postgres
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid Split: Input Editor on Left, Compiled Scripts on Right -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[580px]">
+      
+      <!-- Input Section (5 cols) -->
+      <div class="lg:col-span-5 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl shadow-black/40">
+        <div class="bg-slate-850 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-file-pen text-indigo-400"></i> Server Specification
+          </span>
+          <button type="button" onclick="clearInput()" class="text-xs text-slate-400 hover:text-rose-400 transition">
+            <i class="fa-solid fa-trash-can mr-1"></i> Clear
+          </button>
+        </div>
+
+        <div class="p-4 flex-1 flex flex-col gap-3">
+          <p class="text-xs text-slate-400">
+            Supports keys: <code class="text-indigo-300">packages:</code>, <code class="text-indigo-300">user:</code>, <code class="text-indigo-300">ssh_key:</code>, <code class="text-indigo-300">ports:</code>, <code class="text-indigo-300">swap:</code>, <code class="text-indigo-300">docker_install:</code>, <code class="text-indigo-300">run:</code>, <code class="text-indigo-300">timezone:</code>, <code class="text-indigo-300">write_file:</code>
+          </p>
+          <textarea id="spec-input" class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-3.5 font-mono text-xs leading-relaxed text-indigo-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none min-h-[340px]" spellcheck="false" placeholder="# Example plain specification
+user: deployer
+ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG5334kdeploy
+timezone: UTC
+swap: 2G
+packages: ufw fail2ban curl git jq htop
+ports: 22 80 443
+docker_install: true
+run:
+  - mkdir -p /var/www/app
+  - systemctl enable fail2ban
+write_file: /etc/motd | Welcome to Production VM hardened by ServerForge"></textarea>
+
+          <button id="btn-compile" type="button" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold rounded-lg text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition duration-150">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Compile Cloud-Init & Bash</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Output Section (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl shadow-black/40">
+        <!-- Output Tab Switcher & Actions -->
+        <div class="bg-slate-850 px-4 py-2 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex space-x-1 p-1 bg-slate-900 rounded-lg border border-slate-800">
+            <button id="tab-btn-cloud" onclick="switchTab('cloud')" class="px-3 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white transition flex items-center gap-1.5">
+              <i class="fa-brands fa-linux"></i> cloud-config (YAML)
+            </button>
+            <button id="tab-btn-bash" onclick="switchTab('bash')" class="px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-terminal"></i> Standalone Bash (Idempotent)
+            </button>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="copyOutput()" class="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition active:scale-95">
+              <i id="copy-icon" class="fa-regular fa-copy"></i> <span id="copy-label">Copy</span>
+            </button>
+            <button onclick="downloadOutput()" class="text-xs px-3 py-1.5 rounded-md bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 flex items-center gap-1.5 transition active:scale-95">
+              <i class="fa-solid fa-download"></i> Download
+            </button>
+          </div>
+        </div>
+
+        <!-- Editor Display Container -->
+        <div class="relative flex-1 p-4 flex flex-col bg-slate-950 overflow-hidden">
+          <div class="absolute top-3 right-6 text-[10px] text-slate-500 font-mono tracking-wider uppercase pointer-events-none" id="output-lang-badge">
+            cloud-config
+          </div>
+          <textarea id="output-editor" readonly class="w-full flex-1 bg-transparent font-mono text-xs text-emerald-400 selection:bg-indigo-600/50 leading-relaxed resize-none focus:outline-none" placeholder="Click 'Compile Cloud-Init & Bash' to generate production-ready provisioning scripts..."></textarea>
+        </div>
+
+        <!-- Quick Stats footer -->
+        <div class="bg-slate-900 px-4 py-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <span id="status-text" class="flex items-center gap-1.5 text-slate-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span> Ready to compile
+          </span>
+          <span id="stats-metric" class="font-mono text-slate-500">0 lines generated</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Educational Explainer Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+      <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+        <div class="text-indigo-400 font-bold text-sm mb-1 flex items-center gap-2">
+          <i class="fa-solid fa-bolt"></i> 10x Faster than Ansible
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Skip installing Python orchestrators, SSH control paths, and 50-line YAML role loops for small servers. Cloud-init boots once, builds fast, and terminates without dependencies.
+        </p>
+      </div>
+      <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+        <div class="text-emerald-400 font-bold text-sm mb-1 flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved"></i> Hardened by Default
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Automatically provisions non-root sudo users, disables password logins, enforces UFW ports, configures fail2ban, and sets automatic swap file allocation.
+        </p>
+      </div>
+      <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+        <div class="text-cyan-400 font-bold text-sm mb-1 flex items-center gap-2">
+          <i class="fa-solid fa-arrows-split-up-and-left"></i> Multi-Cloud Portable
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Paste cloud-config directly into user-data fields on Hetzner, AWS EC2, DigitalOcean Droplets, Linode, and Proxmox, or run the Bash script directly on any Ubuntu/Debian box.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Paywall Modal Dialog -->
+  <div id="paywall-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-indigo-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 bg-indigo-600/20 text-indigo-400 rounded-xl flex items-center justify-center mx-auto mb-3 border border-indigo-500/30">
+          <i class="fa-solid fa-lock text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white">Free Run Limit Reached</h3>
+        <p class="text-xs text-slate-400 mt-1.5">You have used your 1 free server compile run. Unlock unlimited compilations & access to all hardened DevOps templates.</p>
+      </div>
+
+      <!-- Pricing Tiers -->
+      <div class="space-y-3 mb-6">
+        <a href="#" onclick="event.preventDefault(); simulateCheckout('$5 One-Time');" class="block p-4 rounded-xl border-2 border-indigo-500 bg-indigo-500/5 hover:bg-indigo-500/10 transition relative group">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider block">Most Popular</span>
+              <div class="text-base font-bold text-white">$5 One-Time Access</div>
+              <div class="text-xs text-slate-400">Lifetime unlimited runs & all cloud targets</div>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg bg-indigo-600 group-hover:bg-indigo-500 text-white text-xs font-bold transition shadow">
+              Get Lifetime
+            </div>
+          </div>
+        </a>
+
+        <a href="#" onclick="event.preventDefault(); simulateCheckout('$9/month Pro');" class="block p-4 rounded-xl border border-slate-800 bg-slate-850 hover:border-slate-700 transition relative group">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-base font-bold text-white">$9 / month</div>
+              <div class="text-xs text-slate-400">Pro Unlimited with priority support & script CI API</div>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg bg-slate-800 group-hover:bg-slate-700 text-slate-200 text-xs font-bold transition border border-slate-700">
+              Subscribe
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Promo code unlock bypass -->
+      <div class="border-t border-slate-800 pt-4">
+        <label class="block text-xs font-medium text-slate-400 mb-2">Have an activation code or beta invite?</label>
+        <div class="flex gap-2">
+          <input id="promo-input" type="text" placeholder="Enter code (e.g. PRO5)" class="flex-1 bg-slate-950 border border-slate-800 text-white text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 font-mono uppercase" />
+          <button onclick="verifyPromoCode()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-lg transition border border-slate-700">
+            Activate
+          </button>
+        </div>
+        <p id="promo-msg" class="text-xs mt-1.5 hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-850 border border-indigo-500 text-white text-xs px-4 py-3 rounded-lg shadow-xl shadow-black flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <i id="toast-icon" class="fa-solid fa-check text-emerald-400"></i>
+    <span id="toast-msg">Notification</span>
+  </div>
+
+  <script>
+    /* State Variables */
+    let currentTab = 'cloud'; // 'cloud' | 'bash'
+    let compiledOutputs = {
+      cloud: '',
+      bash: ''
+    };
+
+    const PRESETS = {
+      docker: `# Hardened Docker Server
+user: sysadmin
+ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHetznerProdDeployKey
+timezone: UTC
+swap: 2G
+packages: ufw fail2ban curl htop git jq unattended-upgrades
+ports: 22 80 443
+docker_install: true
+run:
+  - mkdir -p /opt/docker/data
+  - curl -L https://raw.githubusercontent.com/docker/compose/master/README.md -o /dev/null
+write_file: /etc/sysctl.d/99-sysctl.conf | vm.swappiness=10\nfs.file-max=2097152`,
+
+      webstack: `# Nginx + Node Stack Server
+user: webmaster
+ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIWebStackOpsKey2025
+timezone: America/New_York
+swap: 1G
+packages: nginx ufw fail2ban curl build-essential nodejs npm git
+ports: 22 80 443
+docker_install: false
+run:
+  - npm install -g pm2
+  - systemctl enable nginx
+  - ufw default deny incoming
+  - ufw default allow outgoing
+write_file: /var/www/html/index.html | <h1>Server Provisioned via ServerForge</h1>`,
+
+      postgres: `# Secured Dedicated Database Server
+user: dba
+ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDatabaseAdminMasterKey
+timezone: UTC
+swap: 4G
+packages: postgresql postgresql-contrib ufw fail2ban htop iotop rsync
+ports: 22 5432
+docker_install: false
+run:
+  - systemctl enable postgresql
+  - systemctl start postgresql
+write_file: /etc/security/limits.d/postgres.conf | postgres soft nofile 65536\npostgres hard nofile 65536`
+    };
+
+    /* Credit Architecture */
+    const STORAGE_KEY = 'app_runs_remaining';
+    const PRO_STATUS_KEY = 'app_is_pro_user';
+
+    function initCredits() {
+      if (localStorage.getItem(PRO_STATUS_KEY) === 'true') {
+        updateCreditUI(Infinity);
+        return;
+      }
+      const val = localStorage.getItem(STORAGE_KEY);
+      if (val === null) {
+        localStorage.setItem(STORAGE_KEY, '1');
+        updateCreditUI(1);
+      } else {
+        updateCreditUI(parseInt(val, 10));
+      }
+    }
+
+    function getRunsLeft() {
+      if (localStorage.getItem(PRO_STATUS_KEY) === 'true') return Infinity;
+      return parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+    }
+
+    function decrementRun() {
+      if (localStorage.getItem(PRO_STATUS_KEY) === 'true') return true;
+      let left = getRunsLeft();
+      if (left > 0) {
+        left -= 1;
+        localStorage.setItem(STORAGE_KEY, left.toString());
+        updateCreditUI(left);
+        return true;
+      }
+      return false;
+    }
+
+    function updateCreditUI(credits) {
+      const creditCountEl = document.getElementById('credit-count');
+      const creditBadgeEl = document.getElementById('credit-badge');
+      if (credits === Infinity) {
+        creditBadgeEl.innerHTML = `<i class="fa-solid fa-crown text-amber-400"></i><span class="text-indigo-300 font-bold">PRO UNLIMITED</span>`;
+        creditBadgeEl.classList.add('border-indigo-500/40', 'bg-indigo-950/40');
+        document.getElementById('btn-upgrade-nav').classList.add('hidden');
+      } else {
+        creditCountEl.innerText = credits;
+        if (credits === 0) {
+          creditBadgeEl.classList.remove('text-slate-300');
+          creditBadgeEl.classList.add('text-rose-400', 'border-rose-500/40');
+        }
+      }
+    }
+
+    function openPaywall() {
+      document.getElementById('paywall-modal').classList.remove('hidden');
+    }
+
+    function closePaywall() {
+      document.getElementById('paywall-modal').classList.add('hidden');
+    }
+
+    function verifyPromoCode() {
+      const code = document.getElementById('promo-input').value.trim().toUpperCase();
+      const msgEl = document.getElementById('promo-msg');
+      if (code === 'PRO5' || code === 'PRO20') {
+        localStorage.setItem(PRO_STATUS_KEY, 'true');
+        updateCreditUI(Infinity);
+        msgEl.className = 'text-xs mt-1.5 text-emerald-400';
+        msgEl.innerText = 'Promo code accepted! Unlimited lifetime access activated.';
+        msgEl.classList.remove('hidden');
+        setTimeout(() => {
+          closePaywall();
+          compileSpecification();
+        }, 900);
+      } else {
+        msgEl.className = 'text-xs mt-1.5 text-rose-400';
+        msgEl.innerText = 'Invalid activation code. Try PRO5';
+        msgEl.classList.remove('hidden');
+      }
+    }
+
+    function simulateCheckout(tier) {
+      localStorage.setItem(PRO_STATUS_KEY, 'true');
+      updateCreditUI(Infinity);
+      closePaywall();
+      showToast(`Upgraded to ${tier}! You now have Lifetime Unlimited runs.`);
+      compileSpecification();
+    }
+
+    function showToast(text, isError = false) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toast-msg');
+      const icon = document.getElementById('toast-icon');
+      
+      msg.innerText = text;
+      icon.className = isError ? 'fa-solid fa-circle-exclamation text-rose-400' : 'fa-solid fa-check text-emerald-400';
+      
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    /* Parser & Compilation AST Engine */
+    function parseNaturalSpec(raw) {
+      const lines = raw.split('\n');
+      const config = {
+        user: 'root',
+        ssh_key: '',
+        timezone: 'UTC',
+        swap: '',
+        packages: [],
+        ports: [],
+        docker_install: false,
+        runs: [],
+        write_files: []
+      };
+
+      let currentArrayKey = null;
+
+      for (let line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+
+        // Check multiline array children
+        if (line.startsWith('  - ') || line.startsWith('    - ')) {
+          const item = line.replace(/^\s*-\s*/, '').trim();
+          if (currentArrayKey === 'run') config.runs.push(item);
+          continue;
+        } else {
+          currentArrayKey = null;
+        }
+
+        const colonIndex = trimmed.indexOf(':');
+        if (colonIndex === -1) continue;
+
+        const key = trimmed.slice(0, colonIndex).trim().toLowerCase();
+        const val = trimmed.slice(colonIndex + 1).trim();
+
+        if (key === 'user') config.user = val;
+        else if (key === 'ssh_key') config.ssh_key = val;
+        else if (key === 'timezone') config.timezone = val;
+        else if (key === 'swap') config.swap = val;
+        else if (key === 'docker_install') config.docker_install = val.toLowerCase() === 'true';
+        else if (key === 'packages') {
+          config.packages = val.split(/\s+/).filter(Boolean);
+        }
+        else if (key === 'ports') {
+          config.ports = val.split(/\s+/).filter(Boolean);
+        }
+        else if (key === 'run') {
+          if (val) config.runs.push(val);
+          currentArrayKey = 'run';
+        }
+        else if (key === 'write_file') {
+          const parts = val.split('|');
+          if (parts.length >= 2) {
+            config.write_files.push({
+              path: parts[0].trim(),
+              content: parts.slice(1).join('|').trim().replace(/\\n/g, '\n')
+            });
+          }
+        }
+      }
+      return config;
+    }
+
+    function generateCloudInit(cfg) {
+      let y = '#cloud-config\n# Generated deterministically by ServerForge\n';
+      y += 'package_update: true\npackage_upgrade: true\n';
+      if (cfg.timezone) {
+        y += `timezone: ${cfg.timezone}\n`;
+      }
+
+      if (cfg.user && cfg.user !== 'root') {
+        y += 'users:\n';
+        y += `  - name: ${cfg.user}\n`;
+        y += '    groups: [sudo, adm]\n';
+        y += '    shell: /bin/bash\n';
+        y += '    sudo: ALL=(ALL) NOPASSWD:ALL\n';
+        if (cfg.ssh_key) {
+          y += '    ssh_authorized_keys:\n';
+          y += `      - ${cfg.ssh_key}\n`;
+        }
+      }
+
+      if (cfg.packages && cfg.packages.length > 0) {
+        y += 'packages:\n';
+        for (const pkg of cfg.packages) {
+          y += `  - ${pkg}\n`;
+        }
+      }
+
+      if (cfg.write_files && cfg.write_files.length > 0) {
+        y += 'write_files:\n';
+        for (const f of cfg.write_files) {
+          y += `  - path: ${f.path}\n`;
+          y += '    permissions: "0644"\n';
+          y += '    content: |\n';
+          const cLines = f.content.split('\n');
+          for (const cl of cLines) {
+            y += `      ${cl}\n`;
+          }
+        }
+      }
+
+      y += 'runcmd:\n';
+      // Swap creation in cloud-init
+      if (cfg.swap) {
+        y += `  - [ sh, -c, "if [ ! -f /swapfile ]; then fallocate -l ${cfg.swap} /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048; chmod 600 /swapfile; mkswap /swapfile; swapon /swapfile; echo '/swapfile none swap sw 0 0' >> /etc/fstab; fi" ]\n`;
+      }
+
+      if (cfg.docker_install) {
+        y += '  - [ sh, -c, "curl -fsSL https://get.docker.com | sh" ]\n';
+        if (cfg.user && cfg.user !== 'root') {
+          y += `  - [ usermod, -aG, docker, ${cfg.user} ]\n`;
+        }
+      }
+
+      if (cfg.ports && cfg.ports.length > 0) {
+        y += '  - [ ufw, --force, reset ]\n';
+        y += '  - [ ufw, default, deny, incoming ]\n';
+        y += '  - [ ufw, default, allow, outgoing ]\n';
+        for (const port of cfg.ports) {
+          y += `  - [ ufw, allow, "${port}" ]\n`;
+        }
+        y += '  - [ ufw, --force, enable ]\n';
+      }
+
+      for (const cmd of cfg.runs) {
+        y += `  - ${cmd}\n`;
+      }
+
+      return y;
+    }
+
+    function generateBashScript(cfg) {
+      let b = '#!/usr/bin/env bash\n';
+      b += '# -----------------------------------------------------\n';
+      b += '# ServerForge Automated Idempotent Provisioner\n';
+      b += '# Target OS: Ubuntu / Debian LTS Systems\n';
+      b += '# -----------------------------------------------------\n';
+      b += 'set -euo pipefail\n\n';
+      b += 'echo "===> [1/6] Running System Update & Apt Packages..."\n';
+      b += 'export DEBIAN_FRONTEND=noninteractive\n';
+      b += 'apt-get update -y && apt-get upgrade -y\n\n';
+
+      if (cfg.timezone) {
+        b += `timedatectl set-timezone ${cfg.timezone}\n\n`;
+      }
+
+      if (cfg.user && cfg.user !== 'root') {
+        b += 'echo "===> [2/6] Configuring Sudo User & SSH Keys..."\n';
+        b += `id -u ${cfg.user} &>/dev/null || useradd -m -s /bin/bash ${cfg.user}\n`;
+        b += `usermod -aG sudo ${cfg.user}\n`;
+        b += `echo "${cfg.user} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-${cfg.user}\n`;
+        if (cfg.ssh_key) {
+          b += `mkdir -p /home/${cfg.user}/.ssh\n`;
+          b += `echo "${cfg.ssh_key}" >> /home/${cfg.user}/.ssh/authorized_keys\n`;
+          b += `chmod 700 /home/${cfg.user}/.ssh && chmod 600 /home/${cfg.user}/.ssh/authorized_keys\n`;
+          b += `chown -R ${cfg.user}:${cfg.user} /home/${cfg.user}/.ssh\n`;
+        }
+        b += '\n';
+      }
+
+      if (cfg.swap) {
+        b += 'echo "===> [3/6] Setting Up Swapfile..."\n';
+        b += `if [ ! -f /swapfile ]; then\n`;
+        b += `  fallocate -l ${cfg.swap} /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=1024\n`;
+        b += `  chmod 600 /swapfile\n`;
+        b += `  mkswap /swapfile\n`;
+        b += `  swapon /swapfile\n`;
+        b += `  echo '/swapfile none swap sw 0 0' >> /etc/fstab\n`;
+        b += `fi\n\n`;
+      }
+
+      if (cfg.packages && cfg.packages.length > 0) {
+        b += `apt-get install -y ${cfg.packages.join(' ')}\n\n`;
+      }
+
+      if (cfg.docker_install) {
+        b += 'echo "===> [4/6] Installing Docker Engine & Compose..."\n';
+        b += 'if ! command -v docker &> /dev/null; then\n';
+        b += '  curl -fsSL https://get.docker.com | sh\n';
+        if (cfg.user && cfg.user !== 'root') {
+          b += `  usermod -aG docker ${cfg.user} || true\n`;
+        }
+        b += 'fi\n\n';
+      }
+
+      if (cfg.ports && cfg.ports.length > 0) {
+        b += 'echo "===> [5/6] Enforcing UFW Firewall Rules..."\n';
+        b += 'ufw --force reset\n';
+        b += 'ufw default deny incoming\n';
+        b += 'ufw default allow outgoing\n';
+        for (const p of cfg.ports) {
+          b += `ufw allow ${p}\n`;
+        }
+        b += 'ufw --force enable\n\n';
+      }
+
+      if (cfg.write_files && cfg.write_files.length > 0) {
+        b += 'echo "===> Writing Config Files..."\n';
+        for (const f of cfg.write_files) {
+          b += `mkdir -p "$(dirname '${f.path}')"\n`;
+          b += `cat << 'EOF' > ${f.path}\n${f.content}\nEOF\n`;
+        }
+        b += '\n';
+      }
+
+      if (cfg.runs && cfg.runs.length > 0) {
+        b += 'echo "===> [6/6] Executing Custom Hook Commands..."\n';
+        for (const cmd of cfg.runs) {
+          b += `${cmd}\n`;
+        }
+        b += '\n';
+      }
+
+      b += 'echo "===> ServerForge Provisioning Finished Successfully! 🎉"\n';
+      return b;
+    }
+
+    /* Compile Trigger */
+    function compileSpecification() {
+      const rawSpec = document.getElementById('spec-input').value.trim();
+      if (!rawSpec) {
+        showToast('Please enter server specifications first!', true);
+        return;
+      }
+
+      // Credit check
+      if (getRunsLeft() <= 0) {
+        openPaywall();
+        return;
+      }
+
+      const cfg = parseNaturalSpec(rawSpec);
+      compiledOutputs.cloud = generateCloudInit(cfg);
+      compiledOutputs.bash = generateBashScript(cfg);
+
+      // Decrement run count
+      decrementRun();
+
+      updateOutputView();
+      showToast('Compiled successfully!');
+    }
+
+    function updateOutputView() {
+      const editor = document.getElementById('output-editor');
+      const statsMetric = document.getElementById('stats-metric');
+      const statusText = document.getElementById('status-text');
+      const content = currentTab === 'cloud' ? compiledOutputs.cloud : compiledOutputs.bash;
+      
+      editor.value = content || '# Output will appear here after compilation';
+      
+      const lines = content ? content.split('\n').length : 0;
+      statsMetric.innerText = `${lines} lines generated`;
+      statusText.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Ready (${currentTab.toUpperCase()})`;
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const btnCloud = document.getElementById('tab-btn-cloud');
+      const btnBash = document.getElementById('tab-btn-bash');
+      const langBadge = document.getElementById('output-lang-badge');
+
+      if (tab === 'cloud') {
+        btnCloud.className = 'px-3 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white transition flex items-center gap-1.5';
+        btnBash.className = 'px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5';
+        langBadge.innerText = 'cloud-config';
+      } else {
+        btnBash.className = 'px-3 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white transition flex items-center gap-1.5';
+        btnCloud.className = 'px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5';
+        langBadge.innerText = 'bash script';
+      }
+      updateOutputView();
+    }
+
+    function loadPreset(name) {
+      if (PRESETS[name]) {
+        document.getElementById('spec-input').value = PRESETS[name];
+        showToast(`Loaded ${name} recipe`);
+      }
+    }
+
+    function clearInput() {
+      document.getElementById('spec-input').value = '';
+      document.getElementById('output-editor').value = '';
+      compiledOutputs.cloud = '';
+      compiledOutputs.bash = '';
+      document.getElementById('stats-metric').innerText = '0 lines generated';
+    }
+
+    function copyOutput() {
+      const editor = document.getElementById('output-editor');
+      if (!editor.value || editor.value.startsWith('# Output will appear')) {
+        showToast('Nothing to copy yet. Compile first!', true);
+        return;
+      }
+      navigator.clipboard.writeText(editor.value).then(() => {
+        const copyIcon = document.getElementById('copy-icon');
+        const copyLabel = document.getElementById('copy-label');
+        copyIcon.className = 'fa-solid fa-check text-emerald-400';
+        copyLabel.innerText = 'Copied!';
+        showToast('Copied script to clipboard!');
+        setTimeout(() => {
+          copyIcon.className = 'fa-regular fa-copy';
+          copyLabel.innerText = 'Copy';
+        }, 2000);
+      });
+    }
+
+    function downloadOutput() {
+      const content = currentTab === 'cloud' ? compiledOutputs.cloud : compiledOutputs.bash;
+      if (!content) {
+        showToast('Nothing to download yet. Compile first!', true);
+        return;
+      }
+      const filename = currentTab === 'cloud' ? 'cloud-config.yaml' : 'provision.sh';
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Downloaded ${filename}`);
+    }
+
+    // Event Listeners
+    document.getElementById('btn-compile').addEventListener('click', compileSpecification);
+    document.getElementById('btn-upgrade-nav').addEventListener('click', openPaywall);
+
+    // On page initialization: setup default preset and credits
+    window.addEventListener('DOMContentLoaded', () => {
+      initCredits();
+      loadPreset('docker');
+      compileSpecification();
+    });
+  </script>
+</body>
+</html>
