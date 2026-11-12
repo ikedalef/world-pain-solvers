@@ -1,0 +1,17 @@
+{
+  "app_slug": "api-data-pii-sanitizer",
+  "title": "API Log & Data PII Redactor - JSON & Log Sanitizer",
+  "target_pain": "Exposing sensitive PII, API tokens, IP addresses, and credentials in support tickets, public logs, or AI prompt contexts.",
+  "key_features": [
+    "Automated PII & Credential Masking (Emails, IPs, Auth Tokens, Credit Cards, Keys)",
+    "Custom Regex Pattern Matcher & Replacer",
+    "JSON Beautifier, Minifier & Structural Auto-Fixer",
+    "Real-time Sanitization Stats (Replacements Count, Bytes Saved, Processing Speed)",
+    "100% In-Browser Execution (Zero Server Uploads & Zero Data Leakage)"
+  ],
+  "category": "Developer Tools & Data Security",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
