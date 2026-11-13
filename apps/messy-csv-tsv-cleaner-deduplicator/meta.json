@@ -1,15 +1,15 @@
 {
   "app_slug": "messy-csv-tsv-cleaner-deduplicator",
-  "title": "Messy CSV/TSV Data Cleaner & Deduplicator",
-  "target_pain": "Engineers and data analysts waste hours manually cleaning messy comma-separated or tab-separated exports, fixing quote imbalances, trimming whitespace, and stripping duplicate rows.",
+  "title": "Messy CSV & TSV Data Cleaner & Deduplicator",
+  "target_pain": "Engineers and data analysts wasting hours cleaning messy comma/tab separated files, removing duplicate rows, trimming whitespace, fixing malformed quotes, and standardizing casing.",
   "key_features": [
-    "Instant browser-side CSV/TSV parsing and quote-balance correction",
-    "Smart duplicate row removal based on exact match or specific column keys",
-    "Whitespace trimming, case normalization, and empty row purging",
-    "One-click export to clean CSV, TSV, or JSON format",
-    "Built-in paywall & unlock system with promo code validation"
+    "Instant in-browser CSV/TSV parsing & cleaning",
+    "Smart duplicate row removal based on primary keys or exact match",
+    "Whitespace trimming & case normalization (UPPER, lower, Title Case)",
+    "Empty row & column purging",
+    "Real CSV/TSV download & clipboard export"
   ],
-  "category": "Data Engineering Utilities",
+  "category": "Data Engineering & Utilities",
   "pricing_options": [
     "$5 One-Time (Lifetime Access - Early Bird)",
     "$9/month (Pro Unlimited)"
