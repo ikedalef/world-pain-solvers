@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Batch Prompt Injector & Dataset Synthesizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-emerald-500/20">
+          ⚡
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-none tracking-tight text-white">PromptBatch <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 ml-1">Studio</span></h1>
+          <p class="text-xs text-slate-400 mt-0.5">LLM Batch Variable Injector & Dataset Engine</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Runs Badge -->
+        <div id="runsBadgeContainer" class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="runsBadgeText" class="text-slate-300">Free Run: 1 left</span>
+        </div>
+
+        <!-- Pro Action -->
+        <button onclick="openPaywallModal()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5">
+          <i class="fa-solid fa-crown text-slate-950"></i> Unlock Unlimited
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- Left Column: Inputs & Logic Controls (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col gap-5">
+      
+      <!-- Step 1: Data Input -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/20">1</span>
+            <h2 class="font-semibold text-slate-200 text-sm">Source Data Input</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="loadSampleData('csv')" class="text-xs text-emerald-400 hover:underline font-medium">Load CSV Sample</button>
+            <span class="text-slate-700">|</span>
+            <button onclick="loadSampleData('json')" class="text-xs text-emerald-400 hover:underline font-medium">Load JSON Sample</button>
+          </div>
+        </div>
+
+        <!-- Tab Controls -->
+        <div class="flex gap-2 mb-3">
+          <button id="tabCsv" onclick="setDataType('csv')" class="px-3 py-1 rounded text-xs font-semibold bg-slate-800 text-emerald-400 border border-slate-700">CSV / TSV</button>
+          <button id="tabJson" onclick="setDataType('json')" class="px-3 py-1 rounded text-xs font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700">JSON Array</button>
+          <button id="tabLines" onclick="setDataType('lines')" class="px-3 py-1 rounded text-xs font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700">Plain Text Lines</button>
+        </div>
+
+        <textarea id="rawInputData" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition resize-y" placeholder="Paste CSV data (with header row), JSON array of objects, or single text lines..."></textarea>
+        
+        <div class="mt-3 flex items-center justify-between">
+          <button onclick="parseInputSchema()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-1.5 rounded font-medium transition flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-emerald-400"></i> Extract Variables
+          </button>
+          <span id="inputStats" class="text-xs text-slate-400">0 records detected</span>
+        </div>
+
+        <!-- Variable Pills Container -->
+        <div class="mt-3 pt-3 border-t border-slate-800/80">
+          <p class="text-xs text-slate-400 mb-2 flex items-center gap-1">
+            <span>Detected Variables (Click to insert into template):</span>
+          </p>
+          <div id="variablePills" class="flex flex-wrap gap-1.5 min-h-[28px]">
+            <span class="text-xs text-slate-500 italic">Parse data above to extract dynamic variables...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Prompt Template Builder -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/20">2</span>
+            <h2 class="font-semibold text-slate-200 text-sm">Prompt Template & Configuration</h2>
+          </div>
+        </div>
+
+        <!-- System Prompt Optional Input -->
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-slate-400 mb-1">System Prompt (Optional)</label>
+          <input type="text" id="systemPrompt" value="You are an expert data analyzer and copywriter. Process the following context strictly." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500/50" placeholder="System message...">
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-slate-400 mb-1">User Prompt Template (Use {{variable_name}} syntax)</label>
+          <textarea id="promptTemplate" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition resize-y" placeholder="Write your prompt here using dynamic tags like {{first_name}}, {{company}}, or {{input_text}}..."></textarea>
+        </div>
+
+        <!-- Data Cleaning Options -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/50 p-3 rounded-lg border border-slate-800/80 mb-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="optDeduplicate" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0 focus:ring-offset-0">
+            <span class="text-xs text-slate-300">Deduplicate Rows</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="optTrim" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0 focus:ring-offset-0">
+            <span class="text-xs text-slate-300">Trim Whitespace</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="optSkipEmpty" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0 focus:ring-offset-0">
+            <span class="text-xs text-slate-300">Skip Blank Values</span>
+          </label>
+        </div>
+
+        <!-- Output Target Selector -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-800/40 p-3 rounded-lg border border-slate-800">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Target Target Output Format</label>
+            <select id="outputFormatSelect" onchange="updateFormatSettings()" class="bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-emerald-500">
+              <option value="jsonl_openai">OpenAI Batch API (JSONL)</option>
+              <option value="json_array">Structured JSON Array</option>
+              <option value="csv_output">CSV Dataset File</option>
+              <option value="markdown_table">Markdown Table</option>
+              <option value="raw_prompts">Raw Rendered Prompts Text</option>
+            </select>
+          </div>
+
+          <div id="modelSelectWrapper">
+            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Target AI Model</label>
+            <select id="aiModelSelect" class="bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-emerald-500">
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+              <option value="gpt-4o">gpt-4o</option>
+              <option value="claude-3-5-sonnet">claude-3-5-sonnet</option>
+              <option value="deepseek-chat">deepseek-chat</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Execution Button -->
+      <button onclick="executeBatchTransformation()" class="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 transition active:scale-[0.99] flex items-center justify-center gap-2">
+        <i class="fa-solid fa-bolt text-lg"></i> Synthesize Batch Output
+      </button>
+
+    </div>
+
+    <!-- Right Column: Output & Export (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-5">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/20">3</span>
+            <h2 class="font-semibold text-slate-200 text-sm">Generated Output Preview</h2>
+          </div>
+          <span id="resultCountBadge" class="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">0 items</span>
+        </div>
+
+        <!-- Output Viewport -->
+        <div class="relative flex-1 flex flex-col min-h-[350px]">
+          <textarea id="outputResult" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-emerald-400 focus:outline-none resize-none leading-relaxed" placeholder="Your transformed, variable-injected outputs will render here instantly..."></textarea>
+        </div>
+
+        <!-- Export Actions -->
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          <button onclick="copyOutputToClipboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs py-2 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
+            <i class="fa-regular fa-copy text-emerald-400"></i> Copy Output
+          </button>
+          <button onclick="downloadOutputFile()" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10">
+            <i class="fa-solid fa-download"></i> Download File
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-4 mt-auto text-center text-xs text-slate-500">
+    <p>100% Client-Side Engine. No data is stored or transmitted to external servers. Designed for LLM Engineers & Indie Hackers.</p>
+  </footer>
+
+  <!-- Paywall Modal -->
+  <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+      <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+      
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mx-auto mb-3">
+          🚀
+        </div>
+        <h3 class="text-xl font-bold text-white">Upgrade to Pro Unlimited</h3>
+        <p class="text-xs text-slate-400 mt-1">You have used your 1 free batch synthesis. Unlock lifetime unlimited runs & API exports.</p>
+      </div>
+
+      <!-- Pricing Grid -->
+      <div class="space-y-3 mb-6">
+        <a href="https://buy.stripe.com/test_fZe6qA7C63qX9P2fYY" target="_blank" class="block p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition group text-left">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Best Value</span>
+              <h4 class="text-base font-bold text-white">$5 Lifetime Access</h4>
+              <p class="text-xs text-slate-400">One-time payment • Early bird offer</p>
+            </div>
+            <i class="fa-solid fa-arrow-right text-emerald-400 group-hover:translate-x-1 transition"></i>
+          </div>
+        </a>
+
+        <a href="https://buy.stripe.com/test_fZe6qA7C63qX9P2fYY" target="_blank" class="block p-4 rounded-xl border border-slate-800 bg-slate-950 hover:border-slate-700 transition group text-left">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Monthly Plan</span>
+              <h4 class="text-base font-bold text-white">$9 / month</h4>
+              <p class="text-xs text-slate-400">Cancel anytime • Priority updates</p>
+            </div>
+            <i class="fa-solid fa-arrow-right text-slate-400 group-hover:translate-x-1 transition"></i>
+          </div>
+        </a>
+      </div>
+
+      <!-- Promo Activation -->
+      <div class="pt-4 border-t border-slate-800">
+        <label class="block text-xs font-medium text-slate-400 mb-1.5 text-left">Have a Promo / Unlock Code?</label>
+        <div class="flex gap-2">
+          <input type="text" id="promoCodeInput" placeholder="Enter code (e.g. PRO5)" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 flex-1 uppercase font-mono">
+          <button onclick="applyPromoCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-1.5 rounded-lg font-semibold border border-slate-700 transition">
+            Apply
+          </button>
+        </div>
+        <p id="promoStatus" class="text-[11px] mt-1.5 hidden text-left"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Business Logic -->
+  <script>
+    // State Management
+    let currentDataType = 'csv';
+    let parsedSchemaVariables = [];
+    let parsedDataRows = [];
+
+    const SAMPLES = {
+      csv: `first_name,company,role,topic
+Alice,Acme Corp,CTO,LLM Cost Optimization
+Bob,Nexus AI,Lead Developer,Prompt Guardrails
+Charlie,DataFlow,Product Manager,JSON Dataset Pipelines`,
+      json: `[
+  {
+    "customer": "Sarah Jenkins",
+    "product": "Enterprise Tier",
+    "issue": "Rate limit handling on batch endpoints"
+  },
+  {
+    "customer": "Marcus Vance",
+    "product": "Pro Plan",
+    "issue": "Custom regex variable extraction"
+  }
+]`
+    };
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      initCreditSystem();
+      loadSampleData('csv');
+    });
+
+    function initCreditSystem() {
+      let runs = localStorage.getItem('app_runs_remaining');
+      let isPro = localStorage.getItem('app_is_pro') === 'true';
+
+      if (runs === null && !isPro) {
+        runs = 1;
+        localStorage.setItem('app_runs_remaining', 1);
+      }
+
+      updateRunsUI();
+    }
+
+    function updateRunsUI() {
+      const isPro = localStorage.getItem('app_is_pro') === 'true';
+      const runs = parseInt(localStorage.getItem('app_runs_remaining') || '0', 10);
+      const badgeText = document.getElementById('runsBadgeText');
+      
+      if (isPro) {
+        badgeText.textContent = 'Pro Unlimited Access';
+        badgeText.className = 'text-emerald-400 font-semibold';
+      } else {
+        badgeText.textContent = `Free Run: ${runs} left`;
+        badgeText.className = runs > 0 ? 'text-slate-300' : 'text-rose-400 font-semibold';
+      }
+    }
+
+    function checkAndDecrementRun() {
+      const isPro = localStorage.getItem('app_is_pro') === 'true';
+      if (isPro) return true;
+
+      let runs = parseInt(localStorage.getItem('app_runs_remaining') || '0', 10);
+      if (runs > 0) {
+        runs--;
+        localStorage.setItem('app_runs_remaining', runs);
+        updateRunsUI();
+        return true;
+      } else {
+        openPaywallModal();
+        return false;
+      }
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function applyPromoCode() {
+      const input = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+      const status = document.getElementById('promoStatus');
+      
+      if (input === 'PRO5' || input === 'PRO20') {
+        localStorage.setItem('app_is_pro', 'true');
+        updateRunsUI();
+        status.textContent = 'Success! Unlimited Pro access unlocked.';
+        status.className = 'text-[11px] mt-1.5 text-emerald-400 font-semibold text-left';
+        setTimeout(() => {
+          closePaywallModal();
+        }, 1200);
+      } else {
+        status.textContent = 'Invalid promo code. Use PRO5 or PRO20.';
+        status.className = 'text-[11px] mt-1.5 text-rose-400 font-semibold text-left';
+      }
+    }
+
+    function setDataType(type) {
+      currentDataType = type;
+      ['Csv', 'Json', 'Lines'].forEach(t => {
+        const btn = document.getElementById(`tab${t}`);
+        if (t.toLowerCase() === type) {
+          btn.className = 'px-3 py-1 rounded text-xs font-semibold bg-slate-800 text-emerald-400 border border-slate-700';
+        } else {
+          btn.className = 'px-3 py-1 rounded text-xs font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700';
+        }
+      });
+    }
+
+    function loadSampleData(type) {
+      setDataType(type);
+      document.getElementById('rawInputData').value = SAMPLES[type] || '';
+      if (type === 'csv') {
+        document.getElementById('promptTemplate').value = "Write a personalized outbound email to {{first_name}}, who works as {{role}} at {{company}}. Focus on solving challenges with {{topic}}.";
+      } else {
+        document.getElementById('promptTemplate').value = "Synthesize customer inquiry from {{customer}} regarding account tier '{{product}}'. Priority issue: {{issue}}.";
+      }
+      parseInputSchema();
+    }
+
+    // CSV Parsing Logic (Handles quotes and commas standard)
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length < 1) return { headers: [], rows: [] };
+
+      function parseLine(line) {
+        const result = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (c === '"') {
+            if (inQuotes && line[i+1] === '"') {
+              cur += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (c === ',' && !inQuotes) {
+            result.push(cur.trim());
+            cur = '';
+          } else {
+            cur += c;
+          }
+        }
+        result.push(cur.trim());
+        return result;
+      }
+
+      const headers = parseLine(lines[0]);
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const values = parseLine(lines[i]);
+        const row = {};
+        headers.forEach((h, idx) => {
+          row[h] = values[idx] !== undefined ? values[idx] : '';
+        });
+        rows.push(row);
+      }
+      return { headers, rows };
+    }
+
+    function parseInputSchema() {
+      const raw = document.getElementById('rawInputData').value;
+      parsedSchemaVariables = [];
+      parsedDataRows = [];
+
+      if (!raw.trim()) {
+        renderVariablePills();
+        document.getElementById('inputStats').textContent = '0 records detected';
+        return;
+      }
+
+      try {
+        if (currentDataType === 'csv') {
+          const parsed = parseCSV(raw);
+          parsedSchemaVariables = parsed.headers;
+          parsedDataRows = parsed.rows;
+        } else if (currentDataType === 'json') {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            parsedDataRows = parsed;
+            const keys = new Set();
+            parsed.forEach(item => {
+              if (typeof item === 'object' && item !== null) {
+                Object.keys(item).forEach(k => keys.add(k));
+              }
+            });
+            parsedSchemaVariables = Array.from(keys);
+          }
+        } else if (currentDataType === 'lines') {
+          const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+          parsedSchemaVariables = ['text_line', 'line_number'];
+          parsedDataRows = lines.map((l, i) => ({
+            text_line: l.trim(),
+            line_number: (i + 1).toString()
+          }));
+        }
+      } catch (err) {
+        console.error('Parsing error:', err);
+      }
+
+      renderVariablePills();
+      document.getElementById('inputStats').textContent = `${parsedDataRows.length} records parsed`;
+    }
+
+    function renderVariablePills() {
+      const container = document.getElementById('variablePills');
+      container.innerHTML = '';
+
+      if (parsedSchemaVariables.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-500 italic">Parse data above to extract dynamic variables...</span>';
+        return;
+      }
+
+      parsedSchemaVariables.forEach(varName => {
+        const btn = document.createElement('button');
+        btn.className = 'px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs rounded-md font-mono transition flex items-center gap-1';
+        btn.innerHTML = `<i class="fa-solid fa-plus text-[10px]"></i> {{${varName}}}`;
+        btn.onclick = () => insertVariableIntoTemplate(varName);
+        container.appendChild(btn);
+      });
+    }
+
+    function insertVariableIntoTemplate(varName) {
+      const tArea = document.getElementById('promptTemplate');
+      const tag = `{{${varName}}}`;
+      const start = tArea.selectionStart;
+      const end = tArea.selectionEnd;
+      const text = tArea.value;
+      tArea.value = text.substring(0, start) + tag + text.substring(end);
+      tArea.focus();
+      tArea.selectionStart = tArea.selectionEnd = start + tag.length;
+    }
+
+    function updateFormatSettings() {
+      const fmt = document.getElementById('outputFormatSelect').value;
+      const modelWrapper = document.getElementById('modelSelectWrapper');
+      if (fmt === 'jsonl_openai') {
+        modelWrapper.style.display = 'block';
+      } else {
+        modelWrapper.style.display = 'none';
+      }
+    }
+
+    function executeBatchTransformation() {
+      if (!checkAndDecrementRun()) return;
+
+      parseInputSchema();
+
+      if (parsedDataRows.length === 0) {
+        alert('Please enter or parse valid data before synthesizing outputs.');
+        return;
+      }
+
+      const template = document.getElementById('promptTemplate').value;
+      const systemPrompt = document.getElementById('systemPrompt').value.trim();
+      const format = document.getElementById('outputFormatSelect').value;
+      const aiModel = document.getElementById('aiModelSelect').value;
+
+      const optDeduplicate = document.getElementById('optDeduplicate').checked;
+      const optTrim = document.getElementById('optTrim').checked;
+      const optSkipEmpty = document.getElementById('optSkipEmpty').checked;
+
+      let workingRows = [...parsedDataRows];
+
+      // Transformation Step
+      let generatedOutputs = [];
+
+      workingRows.forEach((row, index) => {
+        let rendered = template;
+        
+        // Replace variables
+        parsedSchemaVariables.forEach(v => {
+          const val = row[v] !== undefined ? String(row[v]) : '';
+          rendered = rendered.replace(new RegExp(`{{\\s*${v}\\s*}}`, 'g'), val);
+        });
+
+        if (optTrim) rendered = rendered.trim();
+
+        if (optSkipEmpty && !rendered) return;
+
+        generatedOutputs.push({
+          id: index + 1,
+          row_data: row,
+          rendered_prompt: rendered
+        });
+      });
+
+      // Deduplication
+      if (optDeduplicate) {
+        const seen = new Set();
+        generatedOutputs = generatedOutputs.filter(item => {
+          if (seen.has(item.rendered_prompt)) return false;
+          seen.add(item.rendered_prompt);
+          return true;
+        });
+      }
+
+      // Format Conversion
+      let finalResultString = '';
+
+      if (format === 'jsonl_openai') {
+        finalResultString = generatedOutputs.map((item, i) => {
+          const payload = {
+            custom_id: `request-${i + 1}`,
+            method: "POST",
+            url: "/v1/chat/completions",
+            body: {
+              model: aiModel,
+              messages: []
+            }
+          };
+          if (systemPrompt) {
+            payload.body.messages.push({ role: "system", content: systemPrompt });
+          }
+          payload.body.messages.push({ role: "user", content: item.rendered_prompt });
+          return JSON.stringify(payload);
+        }).join('\n');
+      } else if (format === 'json_array') {
+        const jsonArr = generatedOutputs.map(item => ({
+          id: item.id,
+          system_prompt: systemPrompt || undefined,
+          prompt: item.rendered_prompt,
+          variables: item.row_data
+        }));
+        finalResultString = JSON.stringify(jsonArr, null, 2);
+      } else if (format === 'csv_output') {
+        const headers = ['id', 'rendered_prompt', ...parsedSchemaVariables];
+        const csvLines = [headers.map(h => `"${h}"`).join(',')];
+        generatedOutputs.forEach(item => {
+          const rowVals = [
+            item.id,
+            `"${item.rendered_prompt.replace(/"/g, '""')}"`,
+            ...parsedSchemaVariables.map(v => `"${(item.row_data[v] || '').replace(/"/g, '""')}"`)
+          ];
+          csvLines.push(rowVals.join(','));
+        });
+        finalResultString = csvLines.join('\n');
+      } else if (format === 'markdown_table') {
+        let md = `| ID | Rendered Prompt |
+|---|---|
+`;
+        generatedOutputs.forEach(item => {
+          const safeText = item.rendered_prompt.replace(/\n/g, ' ').replace(/\|/g, '\\|');
+          md += `| ${item.id} | ${safeText} |
+`;
+        });
+        finalResultString = md;
+      } else {
+        // Raw text
+        finalResultString = generatedOutputs.map(item => item.rendered_prompt).join('\n\n--- NEXT PROMPT ---\n\n');
+      }
+
+      document.getElementById('outputResult').value = finalResultString;
+      document.getElementById('resultCountBadge').textContent = `${generatedOutputs.length} items synthesized`;
+    }
+
+    function copyOutputToClipboard() {
+      const text = document.getElementById('outputResult').value;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Output copied to clipboard!');
+      });
+    }
+
+    function downloadOutputFile() {
+      const text = document.getElementById('outputResult').value;
+      if (!text) return;
+      const format = document.getElementById('outputFormatSelect').value;
+      
+      let ext = 'txt';
+      let mime = 'text/plain';
+      if (format === 'jsonl_openai') {
+        ext = 'jsonl';
+        mime = 'application/x-jsonlines';
+      } else if (format === 'json_array') {
+        ext = 'json';
+        mime = 'application/json';
+      } else if (format === 'csv_output') {
+        ext = 'csv';
+        mime = 'text/csv';
+      } else if (format === 'markdown_table') {
+        ext = 'md';
+        mime = 'text/markdown';
+      }
+
+      const blob = new Blob([text], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `prompt_batch_synthesized.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "app_slug": "prompt-batch-template-engine",
+  "title": "LLM Batch Prompt Injector & Dataset Synthesizer",
+  "target_pain": "Engineers and creators struggle with manually populating prompt templates across large CSV/JSON datasets, converting text into structured LLM API batch payloads (OpenAI JSONL format), and preparing fine-tuning data.",
+  "key_features": [
+    "Instant CSV, TSV & JSON parsing with automatic variable detection",
+    "Interactive variable insertion tags for dynamic prompt template drafting",
+    "One-click OpenAI Batch API (JSONL), Anthropic, JSON, CSV, and Markdown generator",
+    "Built-in data cleaning: deduplication, whitespace stripping, & regex conditional filters",
+    "Direct client-side file export (.jsonl, .json, .csv, .txt) with zero server latency"
+  ],
+  "category": "Developer Tools & AI Data Engineering",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
