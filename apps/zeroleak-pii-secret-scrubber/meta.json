@@ -1,0 +1,17 @@
+{
+  "app_slug": "zeroleak-pii-secret-scrubber",
+  "title": "ZeroLeak: Client-Side PII & Secret Redactor for Cloud & AI",
+  "target_pain": "Cloud storage updates (Dropbox, OneDrive) and AI LLMs (Anthropic, OpenAI) frequently train on or log user uploads. Users need an instant, guaranteed 100% browser-only scrubber to redact API keys, emails, IPs, cards, and sensitive identifiers before sharing or uploading.",
+  "key_features": [
+    "100% Client-Side In-Memory Execution (Zero network calls, absolute privacy)",
+    "Deep pattern detection: API Keys (AWS, OpenAI, GitHub, Bearer), Emails, IPv4/v6, Credit Cards, SSNs, Phone Numbers, and Custom Regex",
+    "Smart Tokenized Replacement: preserves token mappings ([EMAIL_1], [API_KEY_1]) with exportable reversible key matrix",
+    "Instant Copy, TXT/JSON Download, and Detailed Detection Analytics",
+    "Lifetime Pro promo unlock (PRO5 / PRO20) with built-in credit metering"
+  ],
+  "category": "Privacy & Security Developer Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

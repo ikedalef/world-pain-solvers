@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZeroLeak - Client-Side PII & Secret Redactor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation & Credit Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-9 w-9 bg-brand-600 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/20 font-black text-white text-lg">
+          Z
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base font-bold tracking-tight text-white">ZeroLeak</h1>
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">100% In-Browser</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Scrub secrets & PII before feeding Dropbox, Anthropic, or AI models</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <div id="creditBadge" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center space-x-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>Free Run: <strong id="runsCount" class="text-white font-bold">1</strong> left</span>
+        </div>
+        <button id="upgradeBtn" onclick="openPaywallModal()" class="text-xs font-semibold bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white px-3.5 py-1.5 rounded-lg shadow-md transition-all">
+          Upgrade Pro
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+    <!-- Zero Network Leak Proof Alert -->
+    <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+      <div class="flex items-center space-x-2.5 text-slate-300">
+        <svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        <span><strong>Absolute Zero-Telemetry Guarantee:</strong> Your text never touches our servers. Regex transforms execute purely inside your browser memory.</span>
+      </div>
+      <button onclick="loadSampleData()" class="text-brand-400 hover:text-brand-300 underline font-medium whitespace-nowrap">
+        Load Sample Sensitive Log
+      </button>
+    </div>
+
+    <!-- Filter & Configuration Toolbar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-sm space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Detection Entities</span>
+        <div class="flex items-center space-x-4 text-xs">
+          <button type="button" onclick="toggleAllCheckboxes(true)" class="text-slate-400 hover:text-white">Select All</button>
+          <span class="text-slate-700">|</span>
+          <button type="button" onclick="toggleAllCheckboxes(false)" class="text-slate-400 hover:text-white">Clear All</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
+        <label class="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 cursor-pointer hover:border-slate-700 transition">
+          <input type="checkbox" id="chkApiKeys" checked class="accent-brand-600 rounded" />
+          <span class="text-slate-200 font-medium">API Keys & Tokens</span>
+        </label>
+        <label class="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 cursor-pointer hover:border-slate-700 transition">
+          <input type="checkbox" id="chkEmails" checked class="accent-brand-600 rounded" />
+          <span class="text-slate-200 font-medium">Email Addresses</span>
+        </label>
+        <label class="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 cursor-pointer hover:border-slate-700 transition">
+          <input type="checkbox" id="chkIPs" checked class="accent-brand-600 rounded" />
+          <span class="text-slate-200 font-medium">IP Addresses</span>
+        </label>
+        <label class="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 cursor-pointer hover:border-slate-700 transition">
+          <input type="checkbox" id="chkCards" checked class="accent-brand-600 rounded" />
+          <span class="text-slate-200 font-medium">Credit Cards</span>
+        </label>
+        <label class="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 cursor-pointer hover:border-slate-700 transition">
+          <input type="checkbox" id="chkPhones" checked class="accent-brand-600 rounded" />
+          <span class="text-slate-200 font-medium">Phone Numbers</span>
+        </label>
+        <label class="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 cursor-pointer hover:border-slate-700 transition">
+          <input type="checkbox" id="chkSSN" checked class="accent-brand-600 rounded" />
+          <span class="text-slate-200 font-medium">US SSN / IDs</span>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 text-xs">
+        <div class="flex items-center space-x-3 bg-slate-950/40 p-2.5 rounded-lg border border-slate-800">
+          <span class="text-slate-400 font-medium whitespace-nowrap">Replacement Format:</span>
+          <select id="replaceMode" class="bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1 text-xs focus:ring-1 focus:ring-brand-500 w-full">
+            <option value="tokenized">Tokenized Reversible (e.g. [EMAIL_1], [API_KEY_1])</option>
+            <option value="redacted">Generic Redaction (e.g. [REDACTED])</option>
+            <option value="asterisk">Masked Characters (e.g. j***@e***.com, ••••••)</option>
+          </select>
+        </div>
+        <div class="flex items-center space-x-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800">
+          <span class="text-slate-400 font-medium whitespace-nowrap">Custom Keyword / Regex:</span>
+          <input type="text" id="customPattern" placeholder="e.g. AcmeCorp, secretPassword, /\btenant_\d+\b/g" class="bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1 text-xs focus:ring-1 focus:ring-brand-500 w-full" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Editor Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Input Panel -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="bg-slate-800/60 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-2 font-semibold text-slate-200">
+            <span>Raw Input Data</span>
+            <span id="inputCharCount" class="text-slate-500 font-normal">(0 chars)</span>
+          </div>
+          <button onclick="clearInput()" class="text-slate-400 hover:text-red-400 text-xs transition">Clear</button>
+        </div>
+        <textarea
+          id="rawInput"
+          class="w-full h-80 lg:h-[420px] bg-slate-950 text-slate-200 p-3 text-xs sm:text-sm font-mono focus:outline-none custom-scrollbar resize-none"
+          placeholder="Paste messy logs, JSON API payloads, customer transcripts, or text containing sensitive credentials here..."
+        ></textarea>
+        <div class="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
+          <span class="text-[11px] text-slate-400">Supports text, CSV, JSON, and server logs</span>
+          <button
+            id="runBtn"
+            onclick="handleExecuteSanitize()"
+            class="bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs px-5 py-2.5 rounded-lg shadow-lg shadow-brand-500/20 transition flex items-center space-x-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span>Sanitize & Redact Now</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="bg-slate-800/60 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-2 font-semibold text-slate-200">
+            <span>Sanitized Safe Output</span>
+            <span id="redactionStats" class="text-emerald-400 font-medium">(0 items redacted)</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="copyOutput()" id="copyBtn" class="text-slate-300 hover:text-white px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-xs transition flex items-center space-x-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span>Copy</span>
+            </button>
+            <button onclick="downloadOutput()" class="text-slate-300 hover:text-white px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-xs transition flex items-center space-x-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download</span>
+            </button>
+          </div>
+        </div>
+        <textarea
+          id="sanitizedOutput"
+          readonly
+          class="w-full h-80 lg:h-[420px] bg-slate-950 text-emerald-300/90 p-3 text-xs sm:text-sm font-mono focus:outline-none custom-scrollbar resize-none"
+          placeholder="Safe redacted output will appear here with zero sensitive leaks..."
+        ></textarea>
+        <div class="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs">
+          <span class="text-slate-400 text-[11px]">Safe to upload to Anthropic Claude, ChatGPT, or Dropbox</span>
+          <button onclick="exportMappingKey()" id="exportKeyBtn" class="text-brand-400 hover:text-brand-300 text-xs font-medium disabled:opacity-40 disabled:hover:text-brand-400" disabled>
+            Export Token Mapping (.json)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detected Entities Audit Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+          <span>Scrubbed Entities Matrix</span>
+          <span id="matchSummaryBadge" class="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-400 font-normal">No run yet</span>
+        </h3>
+      </div>
+      <div class="overflow-x-auto border border-slate-800 rounded-lg">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-2 px-3">Entity Type</th>
+              <th class="py-2 px-3">Original Sample (Scrubbed in memory)</th>
+              <th class="py-2 px-3">Assigned Token</th>
+              <th class="py-2 px-3 text-right">Occurrences</th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody" class="divide-y divide-slate-800/70 text-slate-300 font-mono text-[11px]">
+            <tr>
+              <td colspan="4" class="py-6 text-center text-slate-500 font-sans">
+                Execute a redaction run to populate detected tokens and security audit breakdown.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Paywall Modal -->
+  <div id="paywallModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-5 animate-in fade-in duration-200">
+      <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+
+      <div class="text-center space-y-1">
+        <div class="inline-flex p-3 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 mb-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-white">You've Used Your Free Run</h2>
+        <p class="text-xs text-slate-400">Unlock ZeroLeak Unlimited to redact confidential data, customer records, and LLM prompts forever.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+        <div class="border-2 border-brand-500/80 bg-brand-950/20 rounded-xl p-4 flex flex-col justify-between text-left relative overflow-hidden">
+          <span class="absolute top-2 right-2 text-[9px] uppercase tracking-wider bg-brand-600 text-white font-bold px-2 py-0.5 rounded-full">Best Value</span>
+          <div>
+            <span class="text-xs font-semibold text-brand-300">Lifetime Early Bird</span>
+            <div class="mt-1 text-2xl font-black text-white">$5 <span class="text-xs font-normal text-slate-400">one-time</span></div>
+            <p class="text-[11px] text-slate-400 mt-1">Pay once. Scrub unlimited files and prompt datasets forever.</p>
+          </div>
+          <a href="#" class="mt-4 block text-center bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold py-2 rounded-lg transition shadow-md">
+            Get Lifetime Access
+          </a>
+        </div>
+
+        <div class="border border-slate-800 bg-slate-950/40 rounded-xl p-4 flex flex-col justify-between text-left">
+          <div>
+            <span class="text-xs font-semibold text-slate-300">Pro Monthly</span>
+            <div class="mt-1 text-2xl font-black text-white">$9 <span class="text-xs font-normal text-slate-400">/ month</span></div>
+            <p class="text-[11px] text-slate-400 mt-1">Unlimited transformations, automated audit trails, team ready.</p>
+          </div>
+          <a href="#" class="mt-4 block text-center bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2 rounded-lg transition">
+            Subscribe $9/mo
+          </a>
+        </div>
+      </div>
+
+      <!-- Promo Code Unlock -->
+      <div class="pt-2 border-t border-slate-800 text-xs space-y-2">
+        <span class="text-slate-400 block font-medium">Have an access license or promo code?</span>
+        <div class="flex space-x-2">
+          <input type="text" id="promoCodeInput" placeholder="Enter code (e.g. PRO5 or PRO20)" class="bg-slate-950 border border-slate-800 text-slate-200 px-3 py-1.5 rounded-lg flex-1 text-xs focus:ring-1 focus:ring-brand-500 uppercase" />
+          <button onclick="redeemPromoCode()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3.5 py-1.5 rounded-lg font-medium text-xs transition">
+            Activate
+          </button>
+        </div>
+        <p id="promoStatusMsg" class="text-[11px] hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500">
+    <p>ZeroLeak &bull; In-browser client cryptographic isolation. No cookies, no cloud upload, no tracking.</p>
+  </footer>
+
+  <!-- Client Application Logic -->
+  <script>
+    // State Management
+    const STORAGE_REMAINING_KEY = 'app_runs_remaining';
+    const STORAGE_UNLIMITED_KEY = 'app_unlimited';
+
+    let activeMapping = {};
+    let activeSanitizedResult = '';
+
+    function getRunsRemaining() {
+      if (localStorage.getItem(STORAGE_UNLIMITED_KEY) === 'true') {
+        return Infinity;
+      }
+      const val = localStorage.getItem(STORAGE_REMAINING_KEY);
+      if (val === null) {
+        localStorage.setItem(STORAGE_REMAINING_KEY, '1');
+        return 1;
+      }
+      return parseInt(val, 10);
+    }
+
+    function updateCreditBadge() {
+      const remaining = getRunsRemaining();
+      const runsCountEl = document.getElementById('runsCount');
+      const creditBadgeEl = document.getElementById('creditBadge');
+      
+      if (remaining === Infinity) {
+        creditBadgeEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span class="text-emerald-300 font-bold">Pro Unlimited</span>';
+        document.getElementById('upgradeBtn').classList.add('hidden');
+      } else {
+        runsCountEl.textContent = remaining.toString();
+        if (remaining <= 0) {
+          runsCountEl.classList.remove('text-white');
+          runsCountEl.classList.add('text-red-400');
+        }
+      }
+    }
+
+    function decrementRun() {
+      const remaining = getRunsRemaining();
+      if (remaining === Infinity) return true;
+      if (remaining > 0) {
+        localStorage.setItem(STORAGE_REMAINING_KEY, (remaining - 1).toString());
+        updateCreditBadge();
+        return true;
+      }
+      return false;
+    }
+
+    // Paywall Modal handlers
+    function openPaywallModal() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+      document.getElementById('paywallModal').classList.add('flex');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywallModal').classList.add('hidden');
+      document.getElementById('paywallModal').classList.remove('flex');
+    }
+
+    function redeemPromoCode() {
+      const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+      const msgEl = document.getElementById('promoStatusMsg');
+      msgEl.classList.remove('hidden');
+
+      if (code === 'PRO5' || code === 'PRO20' || code === 'LIFETIME' || code === 'ZEROPRIVACY') {
+        localStorage.setItem(STORAGE_UNLIMITED_KEY, 'true');
+        msgEl.className = 'text-[11px] text-emerald-400';
+        msgEl.textContent = 'Success! Lifetime Unlimited Pro license activated.';
+        updateCreditBadge();
+        setTimeout(() => {
+          closePaywallModal();
+        }, 900);
+      } else {
+        msgEl.className = 'text-[11px] text-red-400';
+        msgEl.textContent = 'Invalid promo code. Please verify or upgrade directly.';
+      }
+    }
+
+    // Real Sanitization Logic
+    function handleExecuteSanitize() {
+      const raw = document.getElementById('rawInput').value;
+      if (!raw.trim()) {
+        alert('Please enter or paste text to sanitize.');
+        return;
+      }
+
+      const remaining = getRunsRemaining();
+      if (remaining <= 0) {
+        openPaywallModal();
+        return;
+      }
+
+      // Execute Redaction
+      const result = sanitizeContent(raw);
+      activeSanitizedResult = result.sanitizedText;
+      activeMapping = result.mappings;
+
+      document.getElementById('sanitizedOutput').value = result.sanitizedText;
+      document.getElementById('redactionStats').textContent = `(${result.totalRedacted} items redacted)`;
+      document.getElementById('exportKeyBtn').disabled = false;
+
+      renderAuditTable(result.auditList);
+
+      // Decrement run only on successful processing
+      decrementRun();
+    }
+
+    function sanitizeContent(text) {
+      const mode = document.getElementById('replaceMode').value;
+      const chkApi = document.getElementById('chkApiKeys').checked;
+      const chkEmails = document.getElementById('chkEmails').checked;
+      const chkIPs = document.getElementById('chkIPs').checked;
+      const chkCards = document.getElementById('chkCards').checked;
+      const chkPhones = document.getElementById('chkPhones').checked;
+      const chkSSN = document.getElementById('chkSSN').checked;
+      const customPat = document.getElementById('customPattern').value.trim();
+
+      let sanitized = text;
+      const mappings = {};
+      const counts = {};
+      const auditMap = new Map();
+
+      function getReplacement(val, category) {
+        if (!counts[category]) counts[category] = 0;
+
+        if (mappings[val]) {
+          return mappings[val];
+        }
+
+        counts[category]++;
+        let rep = '';
+        if (mode === 'tokenized') {
+          rep = `[${category.toUpperCase()}_${counts[category]}]`;
+        } else if (mode === 'redacted') {
+          rep = `[REDACTED_${category.toUpperCase()}]`;
+        } else {
+          // Asterisk masking
+          if (category === 'EMAIL') {
+            const parts = val.split('@');
+            const u = parts[0];
+            const d = parts[1] || '';
+            rep = (u.length > 2 ? u[0] + '*'.repeat(u.length - 2) + u[u.length - 1] : '***') + '@' + d;
+          } else if (category === 'CREDIT_CARD' || category === 'PHONE' || category === 'SSN') {
+            const visible = val.slice(-4);
+            rep = '••••-••••-••••-' + visible;
+          } else {
+            rep = '••••••••';
+          }
+        }
+
+        mappings[val] = rep;
+        return rep;
+      }
+
+      function registerAudit(original, token, category) {
+        if (auditMap.has(original)) {
+          const item = auditMap.get(original);
+          item.count++;
+        } else {
+          auditMap.set(original, { original, token, category, count: 1 });
+        }
+      }
+
+      // 1. API Keys & Bearer tokens
+      if (chkApi) {
+        // AWS Access Key
+        sanitized = sanitized.replace(/\b(AKIA[0-9A-Z]{16})\b/g, (m) => {
+          const token = getReplacement(m, 'API_KEY');
+          registerAudit(m, token, 'AWS Access Key');
+          return token;
+        });
+        // OpenAI Sk Key
+        sanitized = sanitized.replace(/\b(sk-[a-zA-Z0-9]{20,48})\b/g, (m) => {
+          const token = getReplacement(m, 'API_KEY');
+          registerAudit(m, token, 'OpenAI Key');
+          return token;
+        });
+        // GitHub Personal Tokens (ghp_, gho_)
+        sanitized = sanitized.replace(/\b(gh[pousr]_[A-Za-z0-9_]{36,255})\b/g, (m) => {
+          const token = getReplacement(m, 'API_KEY');
+          registerAudit(m, token, 'GitHub Token');
+          return token;
+        });
+        // Generic Bearer / Authorization headers
+        sanitized = sanitized.replace(/Bearer\s+([A-Za-z0-9\-_\.]{20,})/gi, (match, p1) => {
+          const token = getReplacement(p1, 'BEARER_TOKEN');
+          registerAudit(p1, token, 'Bearer Token');
+          return `Bearer ${token}`;
+        });
+      }
+
+      // 2. Email Addresses
+      if (chkEmails) {
+        const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
+        sanitized = sanitized.replace(emailRegex, (m) => {
+          const token = getReplacement(m, 'EMAIL');
+          registerAudit(m, token, 'Email Address');
+          return token;
+        });
+      }
+
+      // 3. IPv4 & IPv6 Addresses
+      if (chkIPs) {
+        const ipRegex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+        sanitized = sanitized.replace(ipRegex, (m) => {
+          const token = getReplacement(m, 'IP_ADDRESS');
+          registerAudit(m, token, 'IPv4 Address');
+          return token;
+        });
+      }
+
+      // 4. Credit Cards (Visa, MasterCard, Amex, Discover pattern)
+      if (chkCards) {
+        const cardRegex = /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})(?:[ -]?[0-9]{4})?\b/g;
+        sanitized = sanitized.replace(cardRegex, (m) => {
+          const token = getReplacement(m, 'CARD_NUM');
+          registerAudit(m, token, 'Credit Card');
+          return token;
+        });
+      }
+
+      // 5. Phone numbers
+      if (chkPhones) {
+        const phoneRegex = /(?:\+?\d{1,3}[- .]?)?\(?\d{3}\)?[- .]?\d{3}[- .]?\d{4}\b/g;
+        sanitized = sanitized.replace(phoneRegex, (m) => {
+          if (m.replace(/\D/g, '').length >= 10) {
+            const token = getReplacement(m, 'PHONE');
+            registerAudit(m, token, 'Phone Number');
+            return token;
+          }
+          return m;
+        });
+      }
+
+      // 6. US SSN
+      if (chkSSN) {
+        const ssnRegex = /\b\d{3}-\d{2}-\d{4}\b/g;
+        sanitized = sanitized.replace(ssnRegex, (m) => {
+          const token = getReplacement(m, 'SSN');
+          registerAudit(m, token, 'US Social Security');
+          return token;
+        });
+      }
+
+      // 7. Custom Pattern or keywords
+      if (customPat) {
+        try {
+          let regex;
+          if (customPat.startsWith('/') && customPat.lastIndexOf('/') > 0) {
+            const lastSlash = customPat.lastIndexOf('/');
+            const pattern = customPat.substring(1, lastSlash);
+            const flags = customPat.substring(lastSlash + 1);
+            regex = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g');
+          } else {
+            const terms = customPat.split(',').map(s => s.trim()).filter(Boolean);
+            const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+            regex = new RegExp(`\\b(${escaped})\\b`, 'gi');
+          }
+          sanitized = sanitized.replace(regex, (m) => {
+            const token = getReplacement(m, 'CUSTOM');
+            registerAudit(m, token, 'Custom Keyword');
+            return token;
+          });
+        } catch (e) {
+          console.warn('Invalid custom regex:', e);
+        }
+      }
+
+      const auditList = Array.from(auditMap.values());
+      const totalRedacted = auditList.reduce((acc, curr) => acc + curr.count, 0);
+
+      return {
+        sanitizedText: sanitized,
+        mappings,
+        auditList,
+        totalRedacted
+      };
+    }
+
+    function renderAuditTable(auditList) {
+      const tbody = document.getElementById('matrixBody');
+      const badge = document.getElementById('matchSummaryBadge');
+
+      if (!auditList || auditList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500 font-sans">No sensitive entities detected in input text.</td></tr>';
+        badge.textContent = '0 items found';
+        return;
+      }
+
+      badge.textContent = `${auditList.length} unique entity types isolated`;
+      let rows = '';
+      auditList.forEach(item => {
+        const safeMaskedOriginal = item.original.length > 8 
+          ? item.original.substring(0, 3) + '••••' + item.original.substring(item.original.length - 2)
+          : '••••••';
+        rows += `
+          <tr class="hover:bg-slate-900/50 transition">
+            <td class="py-2.5 px-3 text-slate-300 font-sans font-medium">${escapeHtml(item.category)}</td>
+            <td class="py-2.5 px-3 text-slate-400">${escapeHtml(safeMaskedOriginal)}</td>
+            <td class="py-2.5 px-3 text-brand-300 font-semibold">${escapeHtml(item.token)}</td>
+            <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">${item.count}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = rows;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function toggleAllCheckboxes(state) {
+      ['chkApiKeys', 'chkEmails', 'chkIPs', 'chkCards', 'chkPhones', 'chkSSN'].forEach(id => {
+        document.getElementById(id).checked = state;
+      });
+    }
+
+    function clearInput() {
+      document.getElementById('rawInput').value = '';
+      document.getElementById('inputCharCount').textContent = '(0 chars)';
+    }
+
+    function copyOutput() {
+      const text = document.getElementById('sanitizedOutput').value;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span>Copied!</span>';
+        setTimeout(() => btn.innerHTML = original, 1500);
+      });
+    }
+
+    function downloadOutput() {
+      const text = document.getElementById('sanitizedOutput').value;
+      if (!text) {
+        alert('No sanitized text to download.');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sanitized_output_${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportMappingKey() {
+      if (!activeMapping || Object.keys(activeMapping).length === 0) {
+        alert('No mapping key exists for this run.');
+        return;
+      }
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        reversibleTokens: activeMapping
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `zeroleak_key_matrix_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function loadSampleData() {
+      const sample = `2025-02-17T09:23:14Z [auth-service] INFO: User login initiated for account: sarah.connor@cyberdyne-defense.com (IP: 198.51.100.42).
+2025-02-17T09:23:15Z [billing-api] DEBUG: Processing subscription charge with billing ID card: 4532-8921-9920-1184, phone contact +1-415-555-0199, SSN recorded on file: 123-45-6789.
+2025-02-17T09:23:16Z [worker-pool] WARN: AWS sync failed using credentials AKIAIOSFODNN7EXAMPLE.
+2025-02-17T09:23:18Z [llm-dispatcher] POST /v1/chat/completions Authorization: Bearer sk-proj9981273918237198273918273912837912837918237192873198237912
+Payload: {"customer_email":"sarah.connor@cyberdyne-defense.com", "internal_host":"10.0.14.88", "notes":"Customer requested contract export before Dropbox migration."}`;
+      
+      document.getElementById('rawInput').value = sample;
+      document.getElementById('inputCharCount').textContent = `(${sample.length} chars)`;
+    }
+
+    // Event Listeners
+    document.getElementById('rawInput').addEventListener('input', (e) => {
+      document.getElementById('inputCharCount').textContent = `(${e.target.value.length} chars)`;
+    });
+
+    // Initialize badge on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateCreditBadge();
+    });
+  </script>
+</body>
+</html>
