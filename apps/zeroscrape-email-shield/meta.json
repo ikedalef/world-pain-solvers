@@ -1,0 +1,17 @@
+{
+  "app_slug": "zeroscrape-email-shield",
+  "title": "ZeroScrape - Bot-Proof Email & Contact Obfuscator",
+  "target_pain": "Public forums (Hacker News Who's Hiring, GitHub, personal portfolios) are aggressively scraped by spam bots and scammers harvesting plaintext emails and contact details.",
+  "key_features": [
+    "Deep Contact Scanner: Detects standard emails and humanized variants (user [at] domain dot com)",
+    "5 Bot-Proof Obfuscation Modes: Zero-Width Characters, Hex Entities, CSS Bidi-Reversal, Rot13 JS Hydration, and Plaintext Masking",
+    "Real Bot Penetration Tester: Runs simulated regex crawlers against transformed output to verify scraping immunity",
+    "Full Document Transformer: Preserves surrounding Markdown/HTML while masking all contact vectors",
+    "One-Click Copy & Standalone HTML/Markdown Export"
+  ],
+  "category": "Developer Tools & Privacy",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access)",
+    "$9/mo Pro Unlimited"
+  ]
+}

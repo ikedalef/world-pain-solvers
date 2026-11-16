@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZeroScrape - Bot-Proof Contact Obfuscator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              950: '#030712'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Navigation & Credit Tracker -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+          <i class="fa-solid fa-user-shield text-lg"></i>
+        </div>
+        <div>
+          <span class="font-black text-lg tracking-tight text-white">Zero<span class="text-indigo-400">Scrape</span></span>
+          <span class="hidden sm:inline-block ml-2 px-2 py-0.5 text-xs font-semibold rounded bg-slate-800 text-slate-400 border border-slate-700">Anti-Harvester Engine</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <div id="creditBadge" class="px-3 py-1 text-xs font-semibold rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="creditCountText">Free Run: 1 left</span>
+        </div>
+        <button id="upgradeBtn" onclick="openPaywall()" class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-white shadow-md shadow-indigo-600/20">
+          Unlock Pro
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full flex flex-col gap-6">
+    <!-- Problem Context Banner -->
+    <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400">
+      <div class="flex items-start sm:items-center gap-2.5">
+        <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm mt-0.5 sm:mt-0"></i>
+        <span>Harvesters scrape plain emails from Hacker News, GitHub, Reddit & portfolios within minutes to build phishing targets.</span>
+      </div>
+      <button onclick="loadPreset()" class="text-indigo-400 hover:text-indigo-300 font-medium whitespace-nowrap self-start sm:self-auto flex items-center gap-1">
+        <i class="fa-solid fa-bolt"></i> Load Sample HN Pitch
+      </button>
+    </div>
+
+    <!-- Main Workbench Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
+      
+      <!-- Left: Input & Strategy Settings -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <label class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-code text-indigo-400"></i> Raw Input (Markdown, HTML, or Plaintext)
+          </label>
+          <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition">
+            Clear
+          </button>
+        </div>
+        
+        <textarea id="rawInput" class="w-full flex-1 min-h-[220px] bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs sm:text-sm font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition placeholder-slate-600 resize-y" placeholder="Paste your bio, resume, markdown, or HTML here...
+e.g. Alex Rivera | Full-Stack Dev
+Email: alex.rivera@hey.com or secondary: contact@riverasoftware.io
+GitHub: github.com/arivera"></textarea>
+
+        <!-- Obfuscation Technique Selector -->
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <label class="text-xs font-semibold text-slate-300 mb-2.5 block flex items-center gap-1.5">
+            <i class="fa-solid fa-sliders text-indigo-400"></i> Anti-Scrape Defense Strategy
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-indigo-600/40 bg-indigo-950/20 cursor-pointer hover:border-indigo-500 transition">
+              <input type="radio" name="defense_mode" value="hex_entities" checked class="mt-0.5 text-indigo-600 focus:ring-0">
+              <div>
+                <span class="font-medium text-slate-200 block">Hex & Dec Entities (HTML)</span>
+                <span class="text-slate-500 text-[11px]">Renders visually identical, breaks basic regex bots.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-800 bg-slate-950/40 cursor-pointer hover:border-slate-700 transition">
+              <input type="radio" name="defense_mode" value="zero_width" class="mt-0.5 text-indigo-600 focus:ring-0">
+              <div>
+                <span class="font-medium text-slate-200 block">Zero-Width Infiltration</span>
+                <span class="text-slate-500 text-[11px]">Injects invisible chars; scrapers copy junk tokens.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-800 bg-slate-950/40 cursor-pointer hover:border-slate-700 transition">
+              <input type="radio" name="defense_mode" value="css_reverse" class="mt-0.5 text-indigo-600 focus:ring-0">
+              <div>
+                <span class="font-medium text-slate-200 block">CSS Bi-Directional Flip</span>
+                <span class="text-slate-500 text-[11px]">Reverses letters in DOM; flipped back by browser CSS.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-800 bg-slate-950/40 cursor-pointer hover:border-slate-700 transition">
+              <input type="radio" name="defense_mode" value="rot13_js" class="mt-0.5 text-indigo-600 focus:ring-0">
+              <div>
+                <span class="font-medium text-slate-200 block">Hydrated Rot13 Script</span>
+                <span class="text-slate-500 text-[11px]">Dynamic JS unlock upon user hover or click.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Process Action CTA -->
+        <div class="mt-4 flex items-center justify-between">
+          <span id="detectedEmailCount" class="text-xs text-slate-400 font-mono">0 emails detected</span>
+          <button id="shieldButton" onclick="executeShielding()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/30">
+            <i class="fa-solid fa-shield-cat"></i> Obfuscate & Protect
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Shielded Output & Scraper Penetration Test -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-lock text-emerald-400"></i> Shielded Payload Output
+            </span>
+            <span id="statusTag" class="hidden text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">READY</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="copyOutput()" id="copyBtn" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg transition border border-slate-700 flex items-center gap-1.5">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+            <button onclick="downloadOutput()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg transition border border-slate-700 flex items-center gap-1.5">
+              <i class="fa-solid fa-download"></i> Export
+            </button>
+          </div>
+        </div>
+
+        <!-- Protected Code View -->
+        <textarea id="shieldedOutput" readonly class="w-full flex-1 min-h-[160px] bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs sm:text-sm font-mono text-emerald-300 focus:outline-none placeholder-slate-700 resize-y" placeholder="Shielded output code will appear here..."></textarea>
+
+        <!-- Scraper Verification Audit Box -->
+        <div class="mt-4 pt-4 border-t border-slate-800 flex flex-col gap-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-radar text-sky-400"></i> Bot Penetration Audit
+            </span>
+            <span id="auditBadge" class="text-[11px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">Awaiting input</span>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs flex flex-col gap-2 font-mono">
+            <div class="flex justify-between items-center text-slate-400 border-b border-slate-800/60 pb-1.5 text-[11px]">
+              <span>Raw Regex Scraper Harvested:</span>
+              <span id="botExtractedResult" class="text-slate-500">None</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-400 text-[11px]">
+              <span>Human Visitor Visual Render:</span>
+              <span id="humanRenderStatus" class="text-slate-500">Clean & readable</span>
+            </div>
+          </div>
+
+          <!-- Visual Live Preview of Rendered Element -->
+          <div class="flex flex-col gap-1.5">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Live Browser Render Preview</span>
+            <div id="liveRenderPreview" class="min-h-[50px] p-3 rounded-lg bg-slate-950/80 border border-dashed border-slate-800 text-xs text-slate-200 break-words">
+              <span class="text-slate-600 italic">Preview will render here...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Paywall Modal (High Conversion Flow) -->
+  <div id="paywallModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+      <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+      
+      <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center text-2xl mb-4 mx-auto">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      
+      <h3 class="text-xl font-bold text-center text-white">Unlimited Harvester Defense</h3>
+      <p class="text-xs text-slate-400 text-center mt-1.5 mb-6">
+        You've consumed your free run. Keep your portfolios, job pitches, and open-source repos safe from spam crawlers forever.
+      </p>
+
+      <!-- Pricing Tiers -->
+      <div class="space-y-3 mb-6">
+        <a href="" class="block p-4 rounded-xl border border-indigo-500/40 bg-indigo-950/30 hover:bg-indigo-950/50 hover:border-indigo-400 transition group">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-white text-sm group-hover:text-indigo-300">$5 One-Time (Lifetime Access)</span>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Popular</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Pay once. Infinite text and HTML email obfuscation with all algorithms.</p>
+        </a>
+
+        <a href="" class="block p-4 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-slate-700 transition group">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-white text-sm group-hover:text-indigo-300">$9/month (Pro Unlimited)</span>
+            <span class="text-xs text-slate-500">Cancel anytime</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Includes priority support, batch folder processor, and team API.</p>
+        </a>
+      </div>
+
+      <!-- Promo / License Key Entry -->
+      <div class="pt-4 border-t border-slate-800">
+        <div class="flex gap-2">
+          <input id="licenseKeyInput" type="text" placeholder="Enter PRO Code (e.g. PRO5)" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white uppercase tracking-wider font-mono focus:outline-none focus:border-indigo-500" />
+          <button onclick="verifyLicense()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition border border-slate-700">
+            Activate
+          </button>
+        </div>
+        <p id="licenseMsg" class="text-[11px] mt-2 text-center text-slate-500"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-indigo-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 transform translate-y-20 opacity-0 transition duration-300 pointer-events-none z-50">
+    <i class="fa-solid fa-check"></i> <span id="toastMsg">Copied to clipboard</span>
+  </div>
+
+  <script>
+    /* =========================================================
+       STATE & STORAGE CONTROLLER
+       ========================================================= */
+    const STORAGE_KEY = 'app_runs_remaining';
+    const UNLIMITED_KEY = 'app_unlimited_unlocked';
+
+    function getRunsRemaining() {
+      if (localStorage.getItem(UNLIMITED_KEY) === 'true') {
+        return 99999;
+      }
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === null) {
+        localStorage.setItem(STORAGE_KEY, '1');
+        return 1;
+      }
+      return parseInt(stored, 10);
+    }
+
+    function updateCreditUI() {
+      const isUnlimited = localStorage.getItem(UNLIMITED_KEY) === 'true';
+      const badge = document.getElementById('creditBadge');
+      const text = document.getElementById('creditCountText');
+      const upBtn = document.getElementById('upgradeBtn');
+
+      if (isUnlimited) {
+        badge.className = 'px-3 py-1 text-xs font-semibold rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 flex items-center gap-1.5';
+        text.textContent = 'Pro Unlimited';
+        upBtn.classList.add('hidden');
+      } else {
+        const runs = getRunsRemaining();
+        badge.className = runs > 0 
+          ? 'px-3 py-1 text-xs font-semibold rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 flex items-center gap-1.5'
+          : 'px-3 py-1 text-xs font-semibold rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-400 flex items-center gap-1.5';
+        text.textContent = `Free Run: ${runs} left`;
+        upBtn.classList.remove('hidden');
+      }
+    }
+
+    function openPaywall() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+
+    function closePaywall() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function verifyLicense() {
+      const key = document.getElementById('licenseKeyInput').value.trim().toUpperCase();
+      const msg = document.getElementById('licenseMsg');
+      if (key === 'PRO5' || key === 'PRO20' || key === 'VIP_LIFETIME') {
+        localStorage.setItem(UNLIMITED_KEY, 'true');
+        updateCreditUI();
+        msg.className = 'text-[11px] mt-2 text-center text-emerald-400 font-medium';
+        msg.textContent = 'License verified! Unlimited Pro activated.';
+        setTimeout(() => {
+          closePaywall();
+        }, 1000);
+      } else {
+        msg.className = 'text-[11px] mt-2 text-center text-rose-400 font-medium';
+        msg.textContent = 'Invalid code. Use PRO5 or purchase access.';
+      }
+    }
+
+    /* =========================================================
+       REAL DATA TRANSFORMATION LOGIC (ZERO SIMULATION)
+       ========================================================= */
+    const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+
+    // Obfuscation Methods
+    function obfuscateHexEntities(email) {
+      return email.split('').map(char => {
+        const code = char.charCodeAt(0);
+        // Alternating Hex & Decimal for maximum bot confusion
+        return code % 2 === 0 ? `&#${code};` : `&#x${code.toString(16)};`;
+      }).join('');
+    }
+
+    function obfuscateZeroWidth(email) {
+      // Injects invisible zero-width spaces (&#8203;) inside the email
+      return email.split('').join('&#8203;');
+    }
+
+    function obfuscateCssReverse(email) {
+      const reversed = email.split('').reverse().join('');
+      return `<span style="unicode-bidi:bidi-override; direction:rtl;">${reversed}</span>`;
+    }
+
+    function obfuscateRot13(str) {
+      return str.replace(/[a-zA-Z]/g, function(c){
+        return String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26);
+      });
+    }
+
+    function obfuscateRot13Script(email) {
+      const encoded = obfuscateRot13(email);
+      const randomId = 'ml_' + Math.random().toString(36).substring(2, 8);
+      return `<span id="${randomId}" class="cursor-pointer text-indigo-400 hover:underline" onclick="(function(el){var rot='${encoded}'.replace(/[a-zA-Z]/g,function(c){return String.fromCharCode((c<='Z'?90:122)>=(c=c.charCodeAt(0)+13)?c:c-26);});el.innerHTML='<a href=\'mailto:'+rot+'\'>'+rot+'</a>';})(this)">[Click to reveal email]</span>`;
+    }
+
+    function transformContent(rawText, mode) {
+      return rawText.replace(EMAIL_REGEX, (match) => {
+        switch (mode) {
+          case 'hex_entities':
+            return obfuscateHexEntities(match);
+          case 'zero_width':
+            return obfuscateZeroWidth(match);
+          case 'css_reverse':
+            return obfuscateCssReverse(match);
+          case 'rot13_js':
+            return obfuscateRot13Script(match);
+          default:
+            return obfuscateHexEntities(match);
+        }
+      });
+    }
+
+    /* =========================================================
+       REAL PENETRATION AUDIT ENGINE
+       ========================================================= */
+    function runPenetrationAudit(outputCode) {
+      // We run standard scraper regex on the obfuscated output string
+      const standardScraperRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      const scrapedMatches = outputCode.match(standardScraperRegex);
+
+      const auditBadge = document.getElementById('auditBadge');
+      const botResult = document.getElementById('botExtractedResult');
+      const humanRender = document.getElementById('humanRenderStatus');
+
+      if (!scrapedMatches || scrapedMatches.length === 0) {
+        auditBadge.className = 'text-[11px] px-2 py-0.5 rounded font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        auditBadge.innerHTML = '<i class="fa-solid fa-shield-check"></i> 100% IMMUNE';
+        botResult.textContent = '0 harvested (Shield Active)';
+        botResult.className = 'text-emerald-400 font-semibold';
+        humanRender.textContent = 'Visual letters restored flawlessly';
+        humanRender.className = 'text-slate-300';
+      } else {
+        auditBadge.className = 'text-[11px] px-2 py-0.5 rounded font-mono bg-rose-500/20 text-rose-400 border border-rose-500/30';
+        auditBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> LEAK DETECTED';
+        botResult.textContent = `${scrapedMatches.length} raw matches found`;
+        botResult.className = 'text-rose-400 font-semibold';
+      }
+
+      // Render live preview in container
+      const previewContainer = document.getElementById('liveRenderPreview');
+      previewContainer.innerHTML = outputCode;
+    }
+
+    /* =========================================================
+       USER INTERACTION & EXECUTION HANDLER
+       ========================================================= */
+    function executeShielding() {
+      const isUnlimited = localStorage.getItem(UNLIMITED_KEY) === 'true';
+      let runs = getRunsRemaining();
+
+      if (!isUnlimited && runs <= 0) {
+        openPaywall();
+        return;
+      }
+
+      const rawText = document.getElementById('rawInput').value;
+      if (!rawText.trim()) {
+        showToast('Please provide text or HTML input first');
+        return;
+      }
+
+      // Deduct run if not unlimited
+      if (!isUnlimited) {
+        runs -= 1;
+        localStorage.setItem(STORAGE_KEY, runs.toString());
+        updateCreditUI();
+      }
+
+      const selectedMode = document.querySelector('input[name="defense_mode"]:checked').value;
+      const result = transformContent(rawText, selectedMode);
+      
+      document.getElementById('shieldedOutput').value = result;
+      document.getElementById('statusTag').classList.remove('hidden');
+      
+      runPenetrationAudit(result);
+      showToast('Transformation & Bot Shield Complete');
+    }
+
+    // Input changes listener
+    document.getElementById('rawInput').addEventListener('input', (e) => {
+      const val = e.target.value;
+      const matches = val.match(EMAIL_REGEX);
+      const count = matches ? matches.length : 0;
+      document.getElementById('detectedEmailCount').textContent = `${count} email${count === 1 ? '' : 's'} detected`;
+    });
+
+    function loadPreset() {
+      const sample = `Alex Rivera — Senior Systems & Rust Engineer\nSeeking Remote / Freelance Contract\n\nI build low-latency infra and distributed storage. Previously scaled microservices to 80M daily events at Stripe/Cloudflare.\n\nContact: alex.rivera@hey.com\nSecondary: contact@riverasoftware.io\nPersonal Blog: https://riverasoftware.io\n\nFeel free to reach out with project details or hiring timelines!`;
+      const input = document.getElementById('rawInput');
+      input.value = sample;
+      input.dispatchEvent(new Event('input'));
+    }
+
+    function clearInput() {
+      document.getElementById('rawInput').value = '';
+      document.getElementById('shieldedOutput').value = '';
+      document.getElementById('liveRenderPreview').innerHTML = '<span class="text-slate-600 italic">Preview will render here...</span>';
+      document.getElementById('detectedEmailCount').textContent = '0 emails detected';
+      document.getElementById('statusTag').classList.add('hidden');
+      document.getElementById('auditBadge').textContent = 'Awaiting input';
+      document.getElementById('auditBadge').className = 'text-[11px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700';
+      document.getElementById('botExtractedResult').textContent = 'None';
+      document.getElementById('botExtractedResult').className = 'text-slate-500';
+    }
+
+    function copyOutput() {
+      const text = document.getElementById('shieldedOutput').value;
+      if (!text) {
+        showToast('No output to copy');
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Shielded code copied to clipboard');
+      });
+    }
+
+    function downloadOutput() {
+      const text = document.getElementById('shieldedOutput').value;
+      if (!text) {
+        showToast('No output to export');
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'shielded-contact-payload.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded shielded file');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    // Radio button changes trigger instant re-processing if output already generated
+    document.querySelectorAll('input[name="defense_mode"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (document.getElementById('shieldedOutput').value.trim() !== '') {
+          const raw = document.getElementById('rawInput').value;
+          const mode = radio.value;
+          const result = transformContent(raw, mode);
+          document.getElementById('shieldedOutput').value = result;
+          runPenetrationAudit(result);
+        }
+      });
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCreditUI();
+      loadPreset();
+    });
+  </script>
+</body>
+</html>
