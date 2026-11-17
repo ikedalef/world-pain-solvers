@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextUnmangle - Data Cleaner &amp; Entity Sanitizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    textarea::-webkit-scrollbar { width: 8px; height: 8px; }
+    textarea::-webkit-scrollbar-track { background: #0f172a; }
+    textarea::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation & Credit Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+          &lt;/&gt;
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            TextUnmangle <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Real-Time Engine</span>
+          </h1>
+          <p class="text-xs text-slate-400">Scraped Forum &amp; Entity Sanitizer</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="creditBadge" class="px-3 py-1 rounded-full text-xs font-medium border border-amber-500/30 bg-amber-500/10 text-amber-300 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="creditCountText">Free Run: 1 left</span>
+        </div>
+        <button onclick="openPaywallModal()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          Upgrade / Unlock
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full flex flex-col gap-6">
+    <!-- Intro & Presets -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl">
+      <div>
+        <h2 class="text-sm font-semibold text-white">Clean Escaped HTML, Fix Mojibake &amp; Structure Raw Text</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Clean &#x27;, &amp;quot;, broken UTF-8 encoding (â€™, â€œ), remove HTML markup, strip carriage returns, and output clean JSON/CSV.</p>
+      </div>
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <button onclick="loadHNSample()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 transition whitespace-nowrap">
+          Load HackerNews Sample
+        </button>
+        <button onclick="clearInput()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 transition">
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Options Panel -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="optHtmlEntities" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+        Decode HTML Entities
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="optMojibake" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+        Fix Mojibake (â€™, â€œ)
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="optStripTags" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+        Strip HTML Tags
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="optSmartQuotes" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+        Normalize Quotes to ASCII
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="optTrimLines" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+        Trim Excess Whitespace
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="optRemoveBlank" checked class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+        Drop Empty Lines
+      </label>
+    </div>
+
+    <!-- Working Columns -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[500px]">
+      <!-- Left: Raw Input -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="px-4 py-3 bg-slate-800/50 border-b border-slate-800 flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Raw Messy Input (Paste Here)</span>
+          <span id="inputStats" class="text-xs text-slate-500 font-mono">0 chars | 0 lines</span>
+        </div>
+        <textarea id="rawInput" placeholder="Paste scraped text, JSON string, or forum responses with &#x27; &quot; tags..." class="w-full flex-1 p-4 bg-transparent text-slate-200 font-mono text-xs md:text-sm focus:outline-none resize-none leading-relaxed"></textarea>
+        <div class="p-3 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between">
+          <div class="text-xs text-slate-500">Real parser: processes inputs 100% in-browser</div>
+          <button id="btnSanitize" onclick="processSanitization()" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Transform &amp; Clean
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Sanitized & Formatted Output -->
+      <div class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="px-4 py-3 bg-slate-800/50 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-1">
+            <button onclick="setOutputView('plain')" id="tabPlain" class="px-2.5 py-1 text-xs rounded font-medium bg-slate-700 text-white">Clean Text</button>
+            <button onclick="setOutputView('json')" id="tabJson" class="px-2.5 py-1 text-xs rounded font-medium text-slate-400 hover:text-white">Structured JSON</button>
+            <button onclick="setOutputView('csv')" id="tabCsv" class="px-2.5 py-1 text-xs rounded font-medium text-slate-400 hover:text-white">CSV Matrix</button>
+          </div>
+          <span id="outputStats" class="text-xs text-slate-500 font-mono">0 chars</span>
+        </div>
+        <textarea id="cleanOutput" readonly placeholder="Sanitized output will appear here automatically..." class="w-full flex-1 p-4 bg-slate-950/60 text-emerald-400 font-mono text-xs md:text-sm focus:outline-none resize-none leading-relaxed"></textarea>
+        <div class="p-3 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
+          <span id="statusToast" class="text-xs text-indigo-400 opacity-0 transition duration-300 font-mono">Copied!</span>
+          <div class="flex items-center gap-2 ml-auto">
+            <button onclick="copyOutput()" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+              Copy Result
+            </button>
+            <button onclick="downloadOutput()" class="px-3.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Paywall Modal -->
+  <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <div class="text-center">
+        <div class="w-12 h-12 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded-xl flex items-center justify-center mx-auto mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-white">Free Trial Limit Reached</h3>
+        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+          You've used your 1 free run. Unlock unlimited browser-level sanitization for scraped forum posts, markdown artifacts, and dirty dataset conversions.
+        </p>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-6">
+        <div class="p-4 rounded-xl border border-indigo-500/40 bg-indigo-500/5 flex flex-col justify-between">
+          <div>
+            <div class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">High Value</div>
+            <div class="text-lg font-bold text-white mt-1">$5 <span class="text-xs font-normal text-slate-400">one-time</span></div>
+            <div class="text-xs text-slate-300 mt-1 leading-snug">Lifetime Access (Early Bird)</div>
+          </div>
+          <a href="" class="mt-4 block w-full py-2 px-3 text-center bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow transition">
+            Claim Lifetime - $5
+          </a>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-700 bg-slate-800/40 flex flex-col justify-between">
+          <div>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Continuous Pro</div>
+            <div class="text-lg font-bold text-white mt-1">$9 <span class="text-xs font-normal text-slate-400">/month</span></div>
+            <div class="text-xs text-slate-300 mt-1 leading-snug">Pro Unlimited &amp; Future Batch APIs</div>
+          </div>
+          <a href="" class="mt-4 block w-full py-2 px-3 text-center bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-semibold transition">
+            Subscribe - $9/mo
+          </a>
+        </div>
+      </div>
+
+      <!-- Coupon Code Input -->
+      <div class="border-t border-slate-800 pt-4">
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Have an early-adopter access key?</label>
+        <div class="flex gap-2">
+          <input type="text" id="promoCodeInput" placeholder="e.g. PRO5 or PRO20" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white uppercase focus:outline-none focus:border-indigo-500">
+          <button onclick="applyPromoCode()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition">
+            Activate
+          </button>
+        </div>
+        <p id="promoStatus" class="text-xs mt-1.5 hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-xs text-slate-600">
+    TextUnmangle &bull; Zero Server Uploads &bull; Client-Side Instant Sanitization
+  </footer>
+
+  <!-- Client Business Logic Engine -->
+  <script>
+    // Local storage & quota state
+    const STORAGE_KEY = 'app_runs_remaining';
+    const UNLIMITED_KEY = 'app_is_pro_unlimited';
+
+    function getRunsRemaining() {
+      if (localStorage.getItem(UNLIMITED_KEY) === 'true') return Infinity;
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === null) {
+        localStorage.setItem(STORAGE_KEY, '1');
+        return 1;
+      }
+      return parseInt(raw, 10);
+    }
+
+    function updateCreditUI() {
+      const runs = getRunsRemaining();
+      const badgeText = document.getElementById('creditCountText');
+      const badge = document.getElementById('creditBadge');
+      if (runs === Infinity) {
+        badgeText.textContent = 'Pro Unlimited: Active';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 flex items-center gap-1.5';
+      } else {
+        badgeText.textContent = `Free Run: ${runs} left`;
+        if (runs <= 0) {
+          badge.className = 'px-3 py-1 rounded-full text-xs font-medium border border-rose-500/30 bg-rose-500/10 text-rose-300 flex items-center gap-1.5';
+        } else {
+          badge.className = 'px-3 py-1 rounded-full text-xs font-medium border border-amber-500/30 bg-amber-500/10 text-amber-300 flex items-center gap-1.5';
+        }
+      }
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+    function closePaywallModal() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function applyPromoCode() {
+      const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+      const status = document.getElementById('promoStatus');
+      status.classList.remove('hidden');
+      if (code === 'PRO5' || code === 'PRO20') {
+        localStorage.setItem(UNLIMITED_KEY, 'true');
+        status.textContent = 'Key verified! Unlimited Pro access unlocked.';
+        status.className = 'text-xs mt-1.5 text-emerald-400';
+        updateCreditUI();
+        setTimeout(() => {
+          closePaywallModal();
+        }, 900);
+      } else {
+        status.textContent = 'Invalid promo code. Please verify.';
+        status.className = 'text-xs mt-1.5 text-rose-400';
+      }
+    }
+
+    // Transformation Algorithms
+    const mojibakeMap = {
+      'â€™': "'",
+      'â€˜': "'",
+      'â€œ': '"',
+      'â€': '"',
+      'â€”': '—',
+      'â€“': '–',
+      'â€¦': '...',
+      'Â': '',
+      'Ã©': 'é',
+      'Ã ': 'à',
+      'Ã¨': 'è',
+      'â€¢': '•'
+    };
+
+    function decodeHtmlEntities(str) {
+      const txt = document.createElement('textarea');
+      txt.innerHTML = str;
+      let val = txt.value;
+      // Extra pass for numeric hex or nested entities
+      val = val.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+      val = val.replace(/&#([0-9]+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)));
+      val = val.replace(/&quot;/g, '"')
+               .replace(/&#x27;/g, "'")
+               .replace(/&#39;/g, "'")
+               .replace(/&amp;/g, '&')
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>');
+      return val;
+    }
+
+    function fixMojibake(str) {
+      let res = str;
+      for (const [bad, good] of Object.entries(mojibakeMap)) {
+        res = res.split(bad).join(good);
+      }
+      return res;
+    }
+
+    function normalizeQuotes(str) {
+      return str
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/\u2026/g, '...');
+    }
+
+    function stripTags(str) {
+      return str.replace(/<\/?[^>]+(>|$)/g, "");
+    }
+
+    // State for converted views
+    let cachedCleanText = "";
+    let currentFormat = "plain";
+
+    function cleanString(raw) {
+      let res = raw;
+      if (document.getElementById('optMojibake').checked) {
+        res = fixMojibake(res);
+      }
+      if (document.getElementById('optHtmlEntities').checked) {
+        res = decodeHtmlEntities(res);
+      }
+      if (document.getElementById('optStripTags').checked) {
+        res = stripTags(res);
+      }
+      if (document.getElementById('optSmartQuotes').checked) {
+        res = normalizeQuotes(res);
+      }
+      
+      const lines = res.split(/\r?\n/);
+      const doTrim = document.getElementById('optTrimLines').checked;
+      const doDropEmpty = document.getElementById('optRemoveBlank').checked;
+      
+      const processedLines = lines
+        .map(l => doTrim ? l.trim() : l)
+        .filter(l => doDropEmpty ? l.length > 0 : true);
+
+      return processedLines.join('\n');
+    }
+
+    function processSanitization() {
+      const runs = getRunsRemaining();
+      if (runs <= 0 && runs !== Infinity) {
+        openPaywallModal();
+        return;
+      }
+
+      const inputVal = document.getElementById('rawInput').value;
+      if (!inputVal.trim()) {
+        alert('Please enter or paste raw text first.');
+        return;
+      }
+
+      // Deduct credit if not Pro
+      if (runs !== Infinity) {
+        const nextRuns = Math.max(0, runs - 1);
+        localStorage.setItem(STORAGE_KEY, nextRuns.toString());
+        updateCreditUI();
+      }
+
+      cachedCleanText = cleanString(inputVal);
+      renderOutput();
+    }
+
+    function renderOutput() {
+      const outEl = document.getElementById('cleanOutput');
+      if (!cachedCleanText) {
+        outEl.value = '';
+        document.getElementById('outputStats').textContent = '0 chars';
+        return;
+      }
+
+      if (currentFormat === 'plain') {
+        outEl.value = cachedCleanText;
+      } else if (currentFormat === 'json') {
+        const lines = cachedCleanText.split('\n');
+        const records = lines.map((text, idx) => ({
+          id: idx + 1,
+          content: text,
+          word_count: text.split(/\s+/).filter(Boolean).length,
+          char_length: text.length
+        }));
+        outEl.value = JSON.stringify(records, null, 2);
+      } else if (currentFormat === 'csv') {
+        const lines = cachedCleanText.split('\n');
+        const rows = ['"id","char_count","word_count","sanitized_content"'];
+        lines.forEach((line, idx) => {
+          const escaped = line.replace(/"/g, '""');
+          const wc = line.split(/\s+/).filter(Boolean).length;
+          rows.push(`"${idx + 1}","${line.length}","${wc}","${escaped}"`);
+        });
+        outEl.value = rows.join('\n');
+      }
+
+      document.getElementById('outputStats').textContent = `${outEl.value.length} chars | ${outEl.value.split('\n').length} lines`;
+    }
+
+    function setOutputView(format) {
+      currentFormat = format;
+      ['plain', 'json', 'csv'].forEach(f => {
+        const btn = document.getElementById('tab' + f.charAt(0).toUpperCase() + f.slice(1));
+        if (f === format) {
+          btn.className = 'px-2.5 py-1 text-xs rounded font-medium bg-slate-700 text-white';
+        } else {
+          btn.className = 'px-2.5 py-1 text-xs rounded font-medium text-slate-400 hover:text-white';
+        }
+      });
+      if (cachedCleanText) {
+        renderOutput();
+      }
+    }
+
+    function copyOutput() {
+      const out = document.getElementById('cleanOutput').value;
+      if (!out) return;
+      navigator.clipboard.writeText(out).then(() => {
+        const toast = document.getElementById('statusToast');
+        toast.style.opacity = '1';
+        setTimeout(() => toast.style.opacity = '0', 1800);
+      });
+    }
+
+    function downloadOutput() {
+      const out = document.getElementById('cleanOutput').value;
+      if (!out) return;
+      let filename = 'sanitized-data.txt';
+      let mime = 'text/plain';
+      if (currentFormat === 'json') {
+        filename = 'sanitized-data.json';
+        mime = 'application/json';
+      } else if (currentFormat === 'csv') {
+        filename = 'sanitized-data.csv';
+        mime = 'text/csv';
+      }
+
+      const blob = new Blob([out], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function clearInput() {
+      document.getElementById('rawInput').value = '';
+      document.getElementById('cleanOutput').value = '';
+      cachedCleanText = '';
+      updateInputStats();
+      document.getElementById('outputStats').textContent = '0 chars';
+    }
+
+    function loadHNSample() {
+      const sample = `Ask HN: Syncthing on Android. Since the original developers pulled out of Android I&#x27;ve been using a fork named Syncthing-fork maintained by who knows, on F-Droid.\n\nAsk HN: What was your weirdest or funniest job rejection?\nI will start with mine. After the &quot;Product Interview&quot;, where we spent 80% of the time discussing a feature from the userâ€™s perspective, I got rejected with: &quot;Candidate doesn&#x27;t understand developer constraints&quot;.<br>The recruiter said: â€œWe loved your background, butâ€¦â€ \n\nJSON Snippet with mangled unicode: {&quot;status&quot;: &quot;error&quot;, &quot;message&quot;: &quot;User&#39;s token isn&#x27;t valid &amp; session has expired&quot;}`;
+      document.getElementById('rawInput').value = sample;
+      updateInputStats();
+    }
+
+    function updateInputStats() {
+      const val = document.getElementById('rawInput').value;
+      const lines = val ? val.split('\n').length : 0;
+      document.getElementById('inputStats').textContent = `${val.length} chars | ${lines} lines`;
+    }
+
+    document.getElementById('rawInput').addEventListener('input', updateInputStats);
+
+    // Init
+    updateCreditUI();
+  </script>
+</body>
+</html>

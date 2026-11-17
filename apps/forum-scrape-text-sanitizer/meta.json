@@ -1,0 +1,17 @@
+{
+  "app_slug": "forum-scrape-text-sanitizer",
+  "title": "TextUnmangle: Scraped Text & HTML Entity Sanitizer to Clean Data",
+  "target_pain": "Messy scraped forum posts, interview feedback, and web text containing broken HTML entities (&#x27;, &quot;), mangled UTF-8 mojibake (â€™, â€œ), uneven whitespace, and unstructured threads needing instant conversion to clean JSON, CSV, or Markdown.",
+  "key_features": [
+    "Full HTML entity decoder (hex, decimal, named &amp;, &#x27;, &quot;, &lt;, etc.)",
+    "Mojibake / UTF-8 character encoding corruption auto-repair",
+    "Structured text parser: converts forum dumps & survey notes into strict JSON or CSV",
+    "Custom regex filter & multi-delimiter splitter",
+    "Real-time instant export to .json, .csv, and .txt files with clipboard copy"
+  ],
+  "category": "Developer & Data Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
