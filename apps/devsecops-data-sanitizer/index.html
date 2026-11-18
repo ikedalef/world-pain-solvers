@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevSecOps Log & Prompt Data Sanitizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              950: '#020617'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+  <!-- Top Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400">
+          <i class="fa-solid fa-shield-halved text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-100 leading-tight">Data Sanitizer Pro</h1>
+          <p class="text-xs text-slate-400">Scrub Secrets, Mask IPs & Format Payload</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div id="creditBadge" class="px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-bolt"></i> Loading...
+        </div>
+        <button onclick="showPaywallModal()" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all shadow-sm shadow-emerald-900/40">
+          <i class="fa-solid fa-crown text-amber-300"></i> Get Lifetime Pro ($5)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
+    
+    <!-- Banner Alert for Security -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-lock text-emerald-400 text-lg hidden sm:block"></i>
+        <div>
+          <p class="text-sm font-medium text-slate-200">100% Client-Side In-Browser Execution</p>
+          <p class="text-xs text-slate-400">Your logs and JSON objects never leave your computer. No data is stored, tracked, or sent to external servers.</p>
+        </div>
+      </div>
+      <button onclick="loadSample()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap self-stretch sm:self-auto text-center">
+        <i class="fa-solid fa-vial mr-1.5 text-slate-400"></i> Load Sample Data
+      </button>
+    </div>
+
+    <!-- Control Bar Checkboxes -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-medium">
+      <label class="flex items-center space-x-2 cursor-pointer bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 hover:border-slate-700 transition">
+        <input type="checkbox" id="checkKeys" checked class="accent-emerald-500 rounded text-slate-900 focus:ring-0">
+        <span class="text-slate-300">API Keys & Tokens</span>
+      </label>
+      <label class="flex items-center space-x-2 cursor-pointer bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 hover:border-slate-700 transition">
+        <input type="checkbox" id="checkIPs" checked class="accent-emerald-500 rounded text-slate-900 focus:ring-0">
+        <span class="text-slate-300">IPv4 Addresses</span>
+      </label>
+      <label class="flex items-center space-x-2 cursor-pointer bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 hover:border-slate-700 transition">
+        <input type="checkbox" id="checkPaths" checked class="accent-emerald-500 rounded text-slate-900 focus:ring-0">
+        <span class="text-slate-300">File Paths & Emails</span>
+      </label>
+      <label class="flex items-center space-x-2 cursor-pointer bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 hover:border-slate-700 transition">
+        <input type="checkbox" id="checkDedup" class="accent-emerald-500 rounded text-slate-900 focus:ring-0">
+        <span class="text-slate-300">Deduplicate Lines</span>
+      </label>
+      <label class="flex items-center space-x-2 cursor-pointer bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 hover:border-slate-700 transition">
+        <input type="checkbox" id="checkJSON" checked class="accent-emerald-500 rounded text-slate-900 focus:ring-0">
+        <span class="text-slate-300">Auto-Format JSON</span>
+      </label>
+      <label class="flex items-center space-x-2 cursor-pointer bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 hover:border-slate-700 transition">
+        <input type="checkbox" id="checkTrim" checked class="accent-emerald-500 rounded text-slate-900 focus:ring-0">
+        <span class="text-slate-300">Trim Blank Lines</span>
+      </label>
+    </div>
+
+    <!-- Dual Editor Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Input Panel -->
+      <div class="flex flex-col space-y-2">
+        <div class="flex items-center justify-between text-xs px-1">
+          <span class="font-semibold text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-code text-slate-500"></i> Raw Input Data / Log File
+          </span>
+          <button onclick="clearInput()" class="text-slate-500 hover:text-slate-300 transition-colors">
+            Clear All
+          </button>
+        </div>
+        <textarea id="inputText" rows="16" placeholder="Paste messy log files, raw stack traces, API payloads, or config files here..." class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 resize-y shadow-inner"></textarea>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="flex flex-col space-y-2">
+        <div class="flex items-center justify-between text-xs px-1">
+          <span class="font-semibold text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-shield-cat text-emerald-400"></i> Sanitized Output
+          </span>
+          <div class="flex items-center space-x-3">
+            <button onclick="copyOutput()" class="text-slate-400 hover:text-slate-100 transition-colors flex items-center gap-1">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+            <button onclick="downloadOutput()" class="text-slate-400 hover:text-slate-100 transition-colors flex items-center gap-1">
+              <i class="fa-solid fa-download"></i> Download
+            </button>
+          </div>
+        </div>
+        <textarea id="outputText" readonly rows="16" placeholder="Cleaned, scrubbed, and formatted result will appear here..." class="w-full bg-slate-900/80 border border-slate-800 rounded-xl p-4 text-xs font-mono text-emerald-300/90 placeholder-slate-700 focus:outline-none resize-y shadow-inner"></textarea>
+      </div>
+
+    </div>
+
+    <!-- Action Button Bar -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl">
+      
+      <!-- Analytics Badges -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full sm:w-auto text-center sm:text-left">
+        <div>
+          <div class="text-xs text-slate-400">Secrets Redacted</div>
+          <div id="statSecrets" class="text-lg font-bold text-emerald-400">0</div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-400">IPs Masked</div>
+          <div id="statIPs" class="text-lg font-bold text-emerald-400">0</div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-400">Lines Removed</div>
+          <div id="statLines" class="text-lg font-bold text-slate-200">0</div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-400">Execution Time</div>
+          <div id="statTime" class="text-lg font-bold text-slate-200">0ms</div>
+        </div>
+      </div>
+
+      <!-- Execute Action Button -->
+      <button onclick="sanitizeData()" class="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-sm transition-all shadow-lg shadow-emerald-950 flex items-center justify-center gap-2.5">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Sanitize & Clean Payload
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+    <p>DevSecOps Data Sanitizer &bull; Zero Server Logging &bull; Privacy First</p>
+  </footer>
+
+  <!-- Paywall / Upgrade Modal -->
+  <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-slate-100">
+      
+      <button onclick="closePaywallModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center space-y-3">
+        <div class="inline-flex p-3 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-400 mb-1">
+          <i class="fa-solid fa-crown text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-100">Upgrade to Unlimited Access</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          You have used your 1 free run. Unlock unlimited sanitizations, deep secret scrubbing, and high-speed payload processing.
+        </p>
+      </div>
+
+      <!-- Options Grid -->
+      <div class="mt-6 space-y-3">
+        <a href="https://stripe.com" target="_blank" class="block p-4 bg-emerald-600/10 border border-emerald-500/30 rounded-xl hover:border-emerald-500 transition group">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-bold text-sm text-emerald-400">$5 One-Time Pass</div>
+              <div class="text-xs text-slate-400">Lifetime Unlimited Usage</div>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-600 text-white rounded-md group-hover:bg-emerald-500 transition">Buy Now</span>
+          </div>
+        </a>
+
+        <a href="https://stripe.com" target="_blank" class="block p-4 bg-slate-800/60 border border-slate-700/60 rounded-xl hover:border-slate-600 transition group">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-bold text-sm text-slate-200">$9 / month</div>
+              <div class="text-xs text-slate-400">Pro Subscription (Cancel Anytime)</div>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 bg-slate-700 text-slate-200 rounded-md group-hover:bg-slate-600 transition">Subscribe</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Promo Code Unlocker -->
+      <div class="mt-6 pt-4 border-t border-slate-800 space-y-2">
+        <label class="text-xs text-slate-400 block font-medium">Have a Pro Code? Unlock Instant Access:</label>
+        <div class="flex gap-2">
+          <input type="text" id="promoCodeInput" placeholder="Enter code (e.g. PRO5)" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 px-3 py-2 rounded-lg flex-grow font-mono uppercase focus:outline-none focus:border-emerald-500">
+          <button onclick="unlockPro()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition border border-slate-700">
+            Unlock
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Real Functional Logic -->
+  <script>
+    let runsRemaining = parseInt(localStorage.getItem('app_runs_remaining') || '1', 10);
+    let isPro = localStorage.getItem('app_is_pro') === 'true';
+
+    function updateCreditUI() {
+      const badge = document.getElementById('creditBadge');
+      if (isPro) {
+        badge.className = 'px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold flex items-center gap-1.5';
+        badge.innerHTML = '<i class="fa-solid fa-crown text-amber-400"></i> PRO UNLIMITED';
+      } else {
+        badge.className = 'px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold flex items-center gap-1.5';
+        badge.innerHTML = `<i class="fa-solid fa-bolt"></i> Free Runs Left: ${runsRemaining}`;
+      }
+    }
+
+    function checkRunAllowed() {
+      if (isPro) return true;
+      if (runsRemaining > 0) return true;
+      showPaywallModal();
+      return false;
+    }
+
+    function showPaywallModal() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function unlockPro() {
+      const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+      if (code === 'PRO5' || code === 'PRO20') {
+        localStorage.setItem('app_is_pro', 'true');
+        isPro = true;
+        updateCreditUI();
+        closePaywallModal();
+        alert('🎉 Lifetime Access Unlocked!');
+      } else {
+        alert('Invalid promo code. Enter PRO5 or PRO20.');
+      }
+    }
+
+    function clearInput() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('outputText').value = '';
+      document.getElementById('statSecrets').innerText = '0';
+      document.getElementById('statIPs').innerText = '0';
+      document.getElementById('statLines').innerText = '0';
+      document.getElementById('statTime').innerText = '0ms';
+    }
+
+    function sanitizeData() {
+      if (!checkRunAllowed()) return;
+
+      const startTime = performance.now();
+      let text = document.getElementById('inputText').value;
+      if (!text.trim()) {
+        alert('Please paste some text, log data, or JSON first.');
+        return;
+      }
+
+      let secretsCount = 0;
+      let ipsCount = 0;
+      let originalLines = text.split('\n').length;
+
+      // Scrub Secrets / API Keys / Bearer Tokens
+      if (document.getElementById('checkKeys').checked) {
+        // OpenAI Keys
+        text = text.replace(/sk-[a-zA-Z0-9_-]{20,}/g, () => { secretsCount++; return '[REDACTED_API_KEY]'; });
+        // AWS Access Keys
+        text = text.replace(/(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/g, () => { secretsCount++; return '[REDACTED_AWS_KEY]'; });
+        // Bearer Token
+        text = text.replace(/Bearer\s+[a-zA-Z0-9_.~+-]+/gi, () => { secretsCount++; return 'Bearer [REDACTED_BEARER_TOKEN]'; });
+        // JSON Key-Values (api_key, secret, password, access_token)
+        text = text.replace(/("(?:api[_-]?key|secret|access[_-]?token|password|auth[_-]?token)"\s*:\s*")[^"]+(")/gi, (m, p1, p2) => {
+          secretsCount++;
+          return p1 + '[REDACTED_SECRET]' + p2;
+        });
+      }
+
+      // Mask IP Addresses
+      if (document.getElementById('checkIPs').checked) {
+        text = text.replace(/(?:[0-9]{1,3}\.){3}[0-9]{1,3}/g, () => {
+          ipsCount++;
+          return '[REDACTED_IP]';
+        });
+      }
+
+      // Mask File Paths & Email Addresses
+      if (document.getElementById('checkPaths').checked) {
+        text = text.replace(/(\/Users\/[a-zA-Z0-9_-]+|C:\\Users\\[a-zA-Z0-9_-]+)/gi, () => {
+          secretsCount++;
+          return '[REDACTED_USER_PATH]';
+        });
+        text = text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, () => {
+          secretsCount++;
+          return '[REDACTED_EMAIL]';
+        });
+      }
+
+      // Deduplicate Lines
+      if (document.getElementById('checkDedup').checked) {
+        const lines = text.split('\n');
+        text = [...new Set(lines)].join('\n');
+      }
+
+      // Auto-Format JSON if valid
+      if (document.getElementById('checkJSON').checked) {
+        try {
+          const parsed = JSON.parse(text);
+          text = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+          // Not standard JSON, proceed with raw text
+        }
+      }
+
+      // Trim Empty Lines
+      if (document.getElementById('checkTrim').checked) {
+        text = text.split('\n').map(l => l.trim()).filter(l => l.length > 0).join('\n');
+      }
+
+      const endTime = performance.now();
+      const timeTaken = (endTime - startTime).toFixed(1);
+
+      document.getElementById('outputText').value = text;
+      document.getElementById('statSecrets').innerText = secretsCount;
+      document.getElementById('statIPs').innerText = ipsCount;
+      document.getElementById('statLines').innerText = Math.max(0, originalLines - text.split('\n').length);
+      document.getElementById('statTime').innerText = `${timeTaken}ms`;
+
+      if (!isPro) {
+        runsRemaining = Math.max(0, runsRemaining - 1);
+        localStorage.setItem('app_runs_remaining', runsRemaining.toString());
+        updateCreditUI();
+      }
+    }
+
+    function loadSample() {
+      const sample = `{
+  "service": "production-api-gateway",
+  "status": "error",
+  "host_ip": "192.168.1.105",
+  "aws_access_key": "AKIAIOSFODNN7EXAMPLE",
+  "openai_api_key": "sk-proj-99887766554433221100aabbccddeeff",
+  "user_directory": "/Users/john_doe/projects/app",
+  "contact": "admin@company-internal.com",
+  "auth_header": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+  "logs": [
+    "Connecting to 10.0.0.45:8080...",
+    "Connecting to 10.0.0.45:8080...",
+    "Error reading file C:\\Users\\john_doe\\secret_config.json",
+    "Error reading file C:\\Users\\john_doe\\secret_config.json"
+  ]
+}`;
+      document.getElementById('inputText').value = sample;
+    }
+
+    function copyOutput() {
+      const output = document.getElementById('outputText').value;
+      if (!output) return;
+      navigator.clipboard.writeText(output);
+      alert('Copied sanitized output to clipboard!');
+    }
+
+    function downloadOutput() {
+      const output = document.getElementById('outputText').value;
+      if (!output) return;
+      const blob = new Blob([output], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sanitized_data.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize UI on startup
+    updateCreditUI();
+  </script>
+</body>
+</html>

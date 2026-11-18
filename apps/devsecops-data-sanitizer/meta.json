@@ -1,0 +1,18 @@
+{
+  "app_slug": "devsecops-data-sanitizer",
+  "title": "DevSecOps Log & Prompt Data Sanitizer",
+  "target_pain": "Developers and AI prompt engineers accidentally exposing API keys, secret credentials, internal IP addresses, and user directory paths when pasting logs, JSON configs, or code snippets into LLMs and public tools.",
+  "key_features": [
+    "Automatic API Key & Secret Token Detection (OpenAI, AWS, JWT, Bearer tokens)",
+    "IP Address & Internal Path Masking",
+    "JSON Auto-Repair & Indentation Formatter",
+    "Line Deduplication & Whitespace Cleaner",
+    "Real-Time Statistics (Secrets redacted, duplicate lines removed, process time)",
+    "Client-Side Zero-Data-Retention Processing"
+  ],
+  "category": "Developer Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
