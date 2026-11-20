@@ -1,0 +1,18 @@
+{
+  "app_slug": "everyday-notes-cleaner-pro",
+  "title": "Everyday Notes & Daily Journal Data Cleaner",
+  "target_pain": "Raw daily logs, voice dumps, notepad brain-dumps, and messy everyday notes are unstructured. Manually converting them into clean tasks, tag indexes, expense logs, structured Markdown, or JSON takes high friction manual effort.",
+  "key_features": [
+    "Instant 100% local parsing of messy daily text, voice dumps, and bullet journals",
+    "Automatic extraction and categorization of Tasks, Expenses, Ideas, Metrics, Quotes, and Timestamps",
+    "Auto-indexing of all hashtags (#work, #ideas, #finance) and interactive tag filtering",
+    "Interactive status toggling for extracted todo list items",
+    "Export instantly to Clean Markdown format, Structured JSON schema, or CSV task sheets",
+    "Built-in local statistics including task completion rate and financial total breakdown"
+  ],
+  "category": "Productivity & Data Formatting",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}

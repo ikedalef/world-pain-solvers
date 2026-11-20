@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Everyday Notes & Journal Data Cleaner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              950: '#020617',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+            Everyday Notes Cleaner Pro
+          </h1>
+          <p class="text-xs text-slate-400">Unstructured Daily Dump &rarr; Clean Markdown, JSON & CSV</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div id="credit-badge" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-xs font-semibold text-indigo-400 flex items-center gap-2">
+          <i class="fa-solid fa-[#6366f1] fa-bolt"></i>
+          <span id="credit-text">Free Run: 1 left</span>
+        </div>
+        <button id="btn-open-upgrade" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-xs sm:text-sm rounded-lg shadow-md hover:shadow-indigo-500/20 transition-all flex items-center gap-2">
+          <i class="fa-solid fa-crown text-amber-300"></i>
+          <span>Upgrade Pro</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+    
+    <!-- CONTROLS & PARSING BANNER -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- INPUT PANEL (5 Cols on LG) -->
+      <div class="lg:col-span-5 flex flex-col gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square text-indigo-400"></i>
+            <h2 class="font-semibold text-slate-200 text-sm">Raw Unstructured Input</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-preset" class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/60 px-2 py-1 rounded border border-indigo-800/50 transition-all">
+              Load Sample Dump
+            </button>
+            <button id="btn-clear" class="text-xs text-slate-400 hover:text-slate-200 bg-slate-800 px-2 py-1 rounded transition-all">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div class="relative">
+          <textarea id="raw-input" rows="16" class="w-full bg-slate-950 text-slate-200 text-xs sm:text-sm font-mono p-3.5 rounded-xl border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none placeholder-slate-600 transition-all leading-relaxed" placeholder="Paste your messy daily notepad dump, voice-to-text transcript, bullet log, or task list here...&#10;&#10;Example:&#10;Today - 2023-10-24 @9:30am&#10;Had coffee with Alex #networking spent $14.50&#10;- [ ] Send Q3 proposal to client #work #urgent&#10;- [x] Finish wireframes review&#10;IDEA: Build automated note converter tool #saas&#10;Paid $129.00 for AWS cloud bill #expense&#10;Meeting at 14:00 with dev team&#10;Quote: &quot;Simplicity is prerequisite for reliability.&quot;"></textarea>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 pt-1">
+          <div class="text-xs text-slate-500 flex items-center gap-2">
+            <span id="input-stats">0 chars | 0 lines</span>
+          </div>
+          <button id="btn-process" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/40 transition-all flex items-center gap-2 active:scale-95">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Clean & Synthesize</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- OUTPUT & SYNTHESIS PANEL (7 Cols on LG) -->
+      <div class="lg:col-span-7 flex flex-col gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl min-h-[520px]">
+        
+        <!-- SUMMARY STATS OVERVIEW CARDS -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex flex-col">
+            <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Items</span>
+            <span id="stat-items-count" class="text-xl font-bold text-slate-100 mt-0.5">0</span>
+          </div>
+          <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex flex-col">
+            <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Tasks Progress</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="stat-tasks-done" class="text-xl font-bold text-emerald-400">0</span>
+              <span class="text-xs text-slate-500">/</span>
+              <span id="stat-tasks-total" class="text-sm font-semibold text-slate-400">0</span>
+            </div>
+          </div>
+          <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex flex-col">
+            <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Expenses Logged</span>
+            <span id="stat-expense-sum" class="text-xl font-bold text-amber-400 mt-0.5">$0.00</span>
+          </div>
+          <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex flex-col">
+            <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Tags Found</span>
+            <span id="stat-tags-count" class="text-xl font-bold text-indigo-400 mt-0.5">0</span>
+          </div>
+        </div>
+
+        <!-- NAVIGATION TABS & EXPORT BUTTONS -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+            <button data-tab="interactive" class="tab-btn active px-3 py-1.5 rounded-lg text-slate-200 bg-slate-800 transition-all flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check text-indigo-400"></i>
+              <span>Interactive List</span>
+            </button>
+            <button data-tab="markdown" class="tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5">
+              <i class="fa-brands fa-markdown text-blue-400"></i>
+              <span>Markdown</span>
+            </button>
+            <button data-tab="json" class="tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5">
+              <i class="fa-solid fa-code text-amber-400"></i>
+              <span>JSON</span>
+            </button>
+            <button data-tab="csv" class="tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5">
+              <i class="fa-solid fa-file-csv text-emerald-400"></i>
+              <span>CSV</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btn-copy" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition-all flex items-center gap-1.5 active:scale-95">
+              <i class="fa-regular fa-copy"></i>
+              <span>Copy Output</span>
+            </button>
+            <button id="btn-download" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition-all flex items-center gap-1.5 active:scale-95">
+              <i class="fa-solid fa-download text-slate-400"></i>
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- FILTER TOOLBAR (VISIBLE FOR INTERACTIVE LIST) -->
+        <div id="filter-bar" class="flex flex-wrap items-center justify-between gap-2 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 text-xs">
+          <div class="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-thin">
+            <span class="text-slate-500 mr-1 text-[11px]">Category:</span>
+            <button data-cat="all" class="cat-btn px-2.5 py-1 rounded-md bg-indigo-600 text-white font-medium transition-all">All</button>
+            <button data-cat="task" class="cat-btn px-2.5 py-1 rounded-md text-slate-400 hover:bg-slate-800 transition-all">Tasks</button>
+            <button data-cat="idea" class="cat-btn px-2.5 py-1 rounded-md text-slate-400 hover:bg-slate-800 transition-all">Ideas</button>
+            <button data-cat="expense" class="cat-btn px-2.5 py-1 rounded-md text-slate-400 hover:bg-slate-800 transition-all">Expenses</button>
+            <button data-cat="quote" class="cat-btn px-2.5 py-1 rounded-md text-slate-400 hover:bg-slate-800 transition-all">Quotes</button>
+            <button data-cat="note" class="cat-btn px-2.5 py-1 rounded-md text-slate-400 hover:bg-slate-800 transition-all">Notes</button>
+          </div>
+          <div class="relative flex-1 max-w-[180px]">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
+            <input id="search-input" type="text" placeholder="Filter keywords..." class="w-full bg-slate-900 text-slate-200 pl-7 pr-2 py-1 rounded-md border border-slate-800 text-xs outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <!-- TAG PILLS CONTAINER -->
+        <div id="tag-cloud" class="flex flex-wrap gap-1.5 empty:hidden max-h-16 overflow-y-auto pr-1 text-xs"></div>
+
+        <!-- TAB CONTENTS -->
+        <div class="flex-1 flex flex-col min-h-0 relative">
+          
+          <!-- TAB 1: INTERACTIVE VIEW -->
+          <div id="tab-interactive" class="tab-content active flex-1 overflow-y-auto space-y-2 pr-1 max-h-[380px]">
+            <div class="flex flex-col items-center justify-center py-16 text-slate-500 space-y-2">
+              <i class="fa-solid fa-list-ul text-3xl text-slate-700"></i>
+              <p class="text-sm">No data processed yet. Click <strong>"Clean & Synthesize"</strong> to structure your notes.</p>
+            </div>
+          </div>
+
+          <!-- TAB 2: MARKDOWN VIEW -->
+          <div id="tab-markdown" class="tab-content hidden flex-1 flex flex-col">
+            <textarea id="markdown-output" readonly class="w-full h-full min-h-[360px] bg-slate-950 text-slate-300 font-mono text-xs p-3.5 rounded-xl border border-slate-800 outline-none resize-none leading-relaxed" placeholder="Clean Markdown output will appear here..."></textarea>
+          </div>
+
+          <!-- TAB 3: JSON VIEW -->
+          <div id="tab-json" class="tab-content hidden flex-1 flex flex-col">
+            <textarea id="json-output" readonly class="w-full h-full min-h-[360px] bg-slate-950 text-emerald-400 font-mono text-xs p-3.5 rounded-xl border border-slate-800 outline-none resize-none leading-relaxed" placeholder="Structured JSON output will appear here..."></textarea>
+          </div>
+
+          <!-- TAB 4: CSV VIEW -->
+          <div id="tab-csv" class="tab-content hidden flex-1 flex flex-col">
+            <textarea id="csv-output" readonly class="w-full h-full min-h-[360px] bg-slate-950 text-amber-300 font-mono text-xs p-3.5 rounded-xl border border-slate-800 outline-none resize-none leading-relaxed" placeholder="CSV output will appear here..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- UPGRADE / PAYWALL MODAL -->
+  <div id="upgrade-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+      <button id="btn-close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-all">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center space-y-3">
+        <div class="inline-flex p-3 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-2xl mb-1">
+          <i class="fa-solid fa-crown text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-100">Unlock Unlimited Cleaners</h3>
+        <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+          You have used your free run limit. Upgrade to Pro for unlimited instant daily note synthesis, structured markdown formatting, and automated JSON/CSV exports.
+        </p>
+      </div>
+
+      <!-- PRICING CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-6">
+        <div class="border border-indigo-500/50 bg-indigo-950/20 p-4 rounded-xl flex flex-col justify-between relative overflow-hidden">
+          <span class="absolute top-2 right-2 text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Most Popular</span>
+          <div>
+            <div class="text-xs text-indigo-400 font-semibold">Early Bird Access</div>
+            <div class="text-2xl font-extrabold text-white mt-1">$5 <span class="text-xs font-normal text-slate-400">one-time</span></div>
+            <p class="text-[11px] text-slate-400 mt-1">Lifetime unlimited runs. Zero monthly fees.</p>
+          </div>
+          <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" class="mt-4 block text-center py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs transition-all shadow-md shadow-indigo-600/30">
+            Buy Lifetime Access
+          </a>
+        </div>
+
+        <div class="border border-slate-800 bg-slate-950/50 p-4 rounded-xl flex flex-col justify-between">
+          <div>
+            <div class="text-xs text-slate-400 font-semibold">Pro Monthly</div>
+            <div class="text-2xl font-extrabold text-white mt-1">$9 <span class="text-xs font-normal text-slate-400">/month</span></div>
+            <p class="text-[11px] text-slate-400 mt-1">Cancel anytime. Full team & export features.</p>
+          </div>
+          <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" class="mt-4 block text-center py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs transition-all border border-slate-700">
+            Subscribe Monthly
+          </a>
+        </div>
+      </div>
+
+      <!-- PROMO KEY CODE ENTRY -->
+      <div class="border-t border-slate-800 pt-4 flex flex-col gap-2">
+        <label class="text-xs font-medium text-slate-400">Have a Pro Activation Key?</label>
+        <div class="flex gap-2">
+          <input id="license-key-input" type="text" placeholder="Enter code (e.g. PRO5 or PRO20)" class="flex-1 bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-lg text-slate-200 outline-none focus:border-indigo-500">
+          <button id="btn-activate-key" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium rounded-lg transition-all border border-slate-700">
+            Activate
+          </button>
+        </div>
+        <p id="license-error" class="text-[11px] text-rose-400 hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-medium flex items-center gap-2 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-message">Action completed!</span>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // STATE MANAGEMENT
+    let parsedItems = [];
+    let activeCategoryFilter = 'all';
+    let activeTagFilter = null;
+    let currentTab = 'interactive';
+
+    const SAMPLE_TEXT = `Daily Notes & Voice Log - Oct 24, 2023 @09:15am\n\nMeeting with Marketing team to finalize Q4 strategy #work #strategy\n- [ ] Review Google Ads budget breakdown for November #finance\n- [x] Send updated contract to Sarah\nPaid $49.00 for Notion team workspace subscription #expense\nSpent $12.50 on morning team coffee #expense\nIDEA: Build an automatic daily note synthesizer for non-technical creators! #saas #ideas\n- [ ] Schedule dentist checkup appointment for next Tuesday @14:30 #personal\nQuote: "The secret of getting ahead is getting started." - Mark Twain\nMetric: Organic website traffic grew by 34% this month! #growth #analytics\n- Call supplier regarding delay in component shipment #urgent #work\nRemember to inspect backup log files before end of day.`;
+
+    // INITIALIZATION
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCreditBadge();
+      setupEventListeners();
+      updateInputStats();
+    });
+
+    function getRunsRemaining() {
+      if (localStorage.getItem('app_pro_unlocked') === 'true') {
+        return Infinity;
+      }
+      const stored = localStorage.getItem('app_runs_remaining');
+      if (stored === null) {
+        localStorage.setItem('app_runs_remaining', '1');
+        return 1;
+      }
+      return parseInt(stored, 10);
+    }
+
+    function updateCreditBadge() {
+      const badgeText = document.getElementById('credit-text');
+      const runs = getRunsRemaining();
+      if (runs === Infinity) {
+        badgeText.textContent = 'Pro Unlimited Access';
+        badgeText.parentElement.classList.remove('text-indigo-400');
+        badgeText.parentElement.classList.add('text-amber-400');
+      } else {
+        badgeText.textContent = `Free Run: ${runs} left`;
+      }
+    }
+
+    function setupEventListeners() {
+      const rawInput = document.getElementById('raw-input');
+      rawInput.addEventListener('input', updateInputStats);
+
+      document.getElementById('btn-preset').addEventListener('click', () => {
+        rawInput.value = SAMPLE_TEXT;
+        updateInputStats();
+        showToast('Sample dump loaded!');
+      });
+
+      document.getElementById('btn-clear').addEventListener('click', () => {
+        rawInput.value = '';
+        parsedItems = [];
+        updateInputStats();
+        renderAll();
+      });
+
+      document.getElementById('btn-process').addEventListener('click', processNotes);
+
+      // Modal handlers
+      document.getElementById('btn-open-upgrade').addEventListener('click', openUpgradeModal);
+      document.getElementById('btn-close-modal').addEventListener('click', closeUpgradeModal);
+      document.getElementById('btn-activate-key').addEventListener('click', handleKeyActivation);
+
+      // Tab Switching
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const tabName = e.currentTarget.getAttribute('data-tab');
+          switchTab(tabName);
+        });
+      });
+
+      // Category Filtering
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.cat-btn').forEach(b => {
+            b.classList.remove('bg-indigo-600', 'text-white');
+            b.classList.add('text-slate-400');
+          });
+          e.currentTarget.classList.add('bg-indigo-600', 'text-white');
+          e.currentTarget.classList.remove('text-slate-400');
+          activeCategoryFilter = e.currentTarget.getAttribute('data-cat');
+          renderInteractiveList();
+        });
+      });
+
+      // Search input
+      document.getElementById('search-input').addEventListener('input', () => {
+        renderInteractiveList();
+      });
+
+      // Export actions
+      document.getElementById('btn-copy').addEventListener('click', copyActiveOutput);
+      document.getElementById('btn-download').addEventListener('click', downloadActiveOutput);
+    }
+
+    function updateInputStats() {
+      const val = document.getElementById('raw-input').value;
+      const chars = val.length;
+      const lines = val.trim() ? val.split('\n').length : 0;
+      document.getElementById('input-stats').textContent = `${chars} chars | ${lines} lines`;
+    }
+
+    function openUpgradeModal() {
+      document.getElementById('upgrade-modal').classList.remove('hidden');
+    }
+
+    function closeUpgradeModal() {
+      document.getElementById('upgrade-modal').classList.add('hidden');
+      document.getElementById('license-error').classList.add('hidden');
+    }
+
+    function handleKeyActivation() {
+      const key = document.getElementById('license-key-input').value.trim().toUpperCase();
+      const errEl = document.getElementById('license-error');
+      if (key === 'PRO5' || key === 'PRO20' || key === 'LIFETIME' || key === 'CLEANERPRO') {
+        localStorage.setItem('app_pro_unlocked', 'true');
+        updateCreditBadge();
+        closeUpgradeModal();
+        showToast('Pro Lifetime Unlimited Unlocked!');
+      } else {
+        errEl.textContent = 'Invalid activation code. Try code "PRO5" or "PRO20".';
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    // MAIN PARSING ENGINE (100% REAL JS LOGIC)
+    function processNotes() {
+      const text = document.getElementById('raw-input').value;
+      if (!text.trim()) {
+        showToast('Please paste or type notes first');
+        return;
+      }
+
+      // Check remaining runs limit
+      const runs = getRunsRemaining();
+      if (runs <= 0 && localStorage.getItem('app_pro_unlocked') !== 'true') {
+        openUpgradeModal();
+        return;
+      }
+
+      // Decrement run if not pro
+      if (localStorage.getItem('app_pro_unlocked') !== 'true') {
+        const nextRuns = Math.max(0, runs - 1);
+        localStorage.setItem('app_runs_remaining', nextRuns.toString());
+        updateCreditBadge();
+      }
+
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      parsedItems = [];
+
+      lines.forEach((line, index) => {
+        let type = 'note';
+        let status = 'none'; // 'pending', 'completed', 'none'
+        let cleanText = line;
+
+        // 1. Detect Hashes / Tags
+        const tags = (line.match(/#[a-zA-Z0-9_-]+/g) || []).map(t => t.toLowerCase());
+
+        // 2. Detect Dollar / Expense Amounts ($45.50, $100)
+        const moneyMatches = line.match(/\$([0-[#9]+(?:\.[0-9]{2})?)/g) || [];
+        let expenseAmount = 0;
+        if (moneyMatches.length > 0) {
+          const nums = moneyMatches.map(m => parseFloat(m.replace('$', '').replace(/,/g, '')));
+          expenseAmount = nums.reduce((acc, curr) => acc + curr, 0);
+        }
+
+        // 3. Detect Timestamps (@14:00, @09:15am, 10:30am, etc.)
+        const timeMatch = line.match(/(?:@|\b)(\d{1,2}:\d{2}\s*(?:am|pm)?)\b/i);
+        const timestamp = timeMatch ? timeMatch[1] : '';
+
+        // 4. Categorize line
+        const lower = line.toLowerCase();
+
+        // Check task formats
+        if (/^(-\s*\[\s*\]|\*\s*\[\s*\]|todo:)/i.test(line)) {
+          type = 'task';
+          status = 'pending';
+          cleanText = line.replace(/^(-\s*\[\s*\]|\*\s*\[\s*\]|todo:)/i, '').trim();
+        } else if (/^(-\s*\[[xX]\]|\*\s*\[[xX]\])/i.test(line)) {
+          type = 'task';
+          status = 'completed';
+          cleanText = line.replace(/^(-\s*\[[xX]\]|\*\s*\[[xX]\])/i, '').trim();
+        } else if (/^(-\s|\*\s|\d+\.\s)/.test(line)) {
+          // Generic bullet -> task
+          type = 'task';
+          status = 'pending';
+          cleanText = line.replace(/^(-\s|\*\s|\d+\.\s)/, '').trim();
+        } else if (lower.startsWith('idea:') || tags.includes('#idea') || tags.includes('#ideas')) {
+          type = 'idea';
+          cleanText = line.replace(/^idea:/i, '').trim();
+        } else if (expenseAmount > 0 || lower.includes('paid') || lower.includes('spent') || tags.includes('#expense')) {
+          type = 'expense';
+        } else if (lower.startsWith('quote:') || (line.startsWith('"') && line.endsWith('"'))) {
+          type = 'quote';
+          cleanText = line.replace(/^quote:/i, '').trim();
+        } else if (lower.startsWith('metric:') || tags.includes('#growth') || tags.includes('#metrics')) {
+          type = 'metric';
+          cleanText = line.replace(/^metric:/i, '').trim();
+        }
+
+        parsedItems.push({
+          id: 'item_' + Date.now() + '_' + index,
+          raw: line,
+          cleanText: cleanText,
+          type: type,
+          status: status,
+          tags: tags,
+          expenseAmount: expenseAmount,
+          timestamp: timestamp
+        });
+      });
+
+      renderAll();
+      showToast('Parsed & structured successfully!');
+    }
+
+    // RENDER FUNCTIONS
+    function renderAll() {
+      renderStats();
+      renderTagCloud();
+      renderInteractiveList();
+      renderMarkdown();
+      renderJSON();
+      renderCSV();
+    }
+
+    function renderStats() {
+      const totalItems = parsedItems.length;
+      const tasks = parsedItems.filter(i => i.type === 'task');
+      const tasksDone = tasks.filter(i => i.status === 'completed').length;
+      const totalExpenses = parsedItems.reduce((sum, item) => sum + item.expenseAmount, 0);
+      
+      const allTags = new Set();
+      parsedItems.forEach(i => i.tags.forEach(t => allTags.add(t)));
+
+      document.getElementById('stat-items-count').textContent = totalItems;
+      document.getElementById('stat-tasks-done').textContent = tasksDone;
+      document.getElementById('stat-tasks-total').textContent = tasks.length;
+      document.getElementById('stat-expense-sum').textContent = `$${totalExpenses.toFixed(2)}`;
+      document.getElementById('stat-tags-count').textContent = allTags.size;
+    }
+
+    function renderTagCloud() {
+      const container = document.getElementById('tag-cloud');
+      container.innerHTML = '';
+      const tagCounts = {};
+      
+      parsedItems.forEach(item => {
+        item.tags.forEach(t => {
+          tagCounts[t] = (tagCounts[t] || 0) + 1;
+        });
+      });
+
+      const tags = Object.keys(tagCounts);
+      if (tags.length === 0) return;
+
+      tags.forEach(tag => {
+        const chip = document.createElement('button');
+        const isActive = activeTagFilter === tag;
+        chip.className = `px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-indigo-300 hover:bg-slate-700'}`;
+        chip.textContent = `${tag} (${tagCounts[tag]})`;
+        chip.onclick = () => {
+          activeTagFilter = activeTagFilter === tag ? null : tag;
+          renderTagCloud();
+          renderInteractiveList();
+        };
+        container.appendChild(chip);
+      });
+    }
+
+    function renderInteractiveList() {
+      const container = document.getElementById('tab-interactive');
+      const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+
+      let filtered = parsedItems.filter(item => {
+        if (activeCategoryFilter !== 'all' && item.type !== activeCategoryFilter) return false;
+        if (activeTagFilter && !item.tags.includes(activeTagFilter)) return false;
+        if (searchQuery && !item.cleanText.toLowerCase().includes(searchQuery)) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-12 text-slate-500 space-y-2">
+            <i class="fa-solid fa-filter text-2xl text-slate-700"></i>
+            <p class="text-xs">No items match your filter selection.</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl border transition-all flex items-start justify-between gap-3 ${getItemBgClass(item.type)}`;
+        
+        let checkControl = '';
+        if (item.type === 'task') {
+          const isDone = item.status === 'completed';
+          checkControl = `
+            <button onclick="toggleTaskStatus('${item.id}')" class="mt-0.5 text-slate-400 hover:text-emerald-400 transition-colors">
+              <i class="fa-${isDone ? 'solid fa-circle-check text-emerald-400' : 'regular fa-circle text-slate-500'} text-base"></i>
+            </button>`;
+        } else {
+          checkControl = `<div class="mt-1 text-slate-500">${getTypeIcon(item.type)}</div>`;
+        }
+
+        const tagsHtml = item.tags.map(t => `<span class="text-[10px] text-indigo-400 bg-indigo-950/60 border border-indigo-800/40 px-1.5 py-0.5 rounded">${t}</span>`).join(' ');
+        const expenseBadge = item.expenseAmount > 0 ? `<span class="text-[10px] font-bold text-amber-400 bg-amber-950/40 border border-amber-800/40 px-1.5 py-0.5 rounded">$${item.expenseAmount.toFixed(2)}</span>` : '';
+        const timeBadge = item.timestamp ? `<span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded"><i class="fa-regular fa-clock mr-1"></i>${item.timestamp}</span>` : '';
+
+        card.innerHTML = `
+          <div class="flex items-start gap-2.5 flex-1">
+            ${checkControl}
+            <div class="flex-1">
+              <p class="text-xs text-slate-200 ${item.status === 'completed' ? 'line-through text-slate-500' : ''}">
+                ${escapeHtml(item.cleanText)}
+              </p>
+              <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">${item.type}</span>
+                ${timeBadge}
+                ${expenseBadge}
+                ${tagsHtml}
+              </div>
+            </div>
+          </div>
+          <button onclick="deleteItem('${item.id}')" class="text-slate-600 hover:text-rose-400 p-1 transition-all">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function getItemBgClass(type) {
+      switch(type) {
+        case 'task': return 'bg-slate-950 border-slate-800 hover:border-slate-700';
+        case 'idea': return 'bg-purple-950/10 border-purple-900/30 hover:border-purple-800/50';
+        case 'expense': return 'bg-amber-950/10 border-amber-900/30 hover:border-amber-800/50';
+        case 'quote': return 'bg-blue-950/10 border-blue-900/30 hover:border-blue-800/50';
+        case 'metric': return 'bg-emerald-950/10 border-emerald-900/30 hover:border-emerald-800/50';
+        default: return 'bg-slate-950 border-slate-800';
+      }
+    }
+
+    function getTypeIcon(type) {
+      switch(type) {
+        case 'idea': return '<i class="fa-solid fa-lightbulb text-purple-400 text-xs"></i>';
+        case 'expense': return '<i class="fa-solid fa-receipt text-amber-400 text-xs"></i>';
+        case 'quote': return '<i class="fa-solid fa-quote-left text-blue-400 text-xs"></i>';
+        case 'metric': return '<i class="fa-solid fa-chart-line text-emerald-400 text-xs"></i>';
+        default: return '<i class="fa-regular fa-note-sticky text-slate-500 text-xs"></i>';
+      }
+    }
+
+    function toggleTaskStatus(id) {
+      const item = parsedItems.find(i => i.id === id);
+      if (item) {
+        item.status = item.status === 'completed' ? 'pending' : 'completed';
+        renderAll();
+      }
+    }
+
+    function deleteItem(id) {
+      parsedItems = parsedItems.filter(i => i.id !== id);
+      renderAll();
+      showToast('Item deleted');
+    }
+
+    // FORMATTED EXPORT GENERATORS
+    function renderMarkdown() {
+      if (parsedItems.length === 0) {
+        document.getElementById('markdown-output').value = '';
+        return;
+      }
+
+      let md = `# Daily Log & Synthesis\n*Generated on ${new Date().toLocaleDateString()}*\n\n`;
+
+      const tasks = parsedItems.filter(i => i.type === 'task');
+      if (tasks.length > 0) {
+        md += `## Tasks (${tasks.filter(t => t.status==='completed').length}/${tasks.length})\n`;
+        tasks.forEach(t => {
+          const mark = t.status === 'completed' ? '[x]' : '[ ]';
+          const tagsStr = t.tags.length > 0 ? ' ' + t.tags.join(' ') : '';
+          md += `- ${mark} ${t.cleanText}${tagsStr}\n`;
+        });
+        md += '\n';
+      }
+
+      const ideas = parsedItems.filter(i => i.type === 'idea');
+      if (ideas.length > 0) {
+        md += `## Ideas & Key Insights 💡\n`;
+        ideas.forEach(i => {
+          md += `- ${i.cleanText} ${i.tags.join(' ')}\n`;
+        });
+        md += '\n';
+      }
+
+      const expenses = parsedItems.filter(i => i.type === 'expense');
+      if (expenses.length > 0) {
+        const total = expenses.reduce((s, e) => s + e.expenseAmount, 0);
+        md += `## Financials & Expenses (Total: $${total.toFixed(2)})\n`;
+        expenses.forEach(e => {
+          md += `- ${e.cleanText}\n`;
+        });
+        md += '\n';
+      }
+
+      const notes = parsedItems.filter(i => i.type === 'note' || i.type === 'quote' || i.type === 'metric');
+      if (notes.length > 0) {
+        md += `## Notes & General Log\n`;
+        notes.forEach(n => {
+          md += `- ${n.cleanText}\n`;
+        });
+      }
+
+      document.getElementById('markdown-output').value = md;
+    }
+
+    function renderJSON() {
+      if (parsedItems.length === 0) {
+        document.getElementById('json-output').value = '';
+        return;
+      }
+      const data = {
+        timestamp: new Date().toISOString(),
+        summary: {
+          totalItems: parsedItems.length,
+          completedTasks: parsedItems.filter(i => i.type === 'task' && i.status === 'completed').length,
+          totalExpensesUSD: parsedItems.reduce((s, e) => s + e.expenseAmount, 0)
+        },
+        items: parsedItems.map(i => ({
+          id: i.id,
+          type: i.type,
+          status: i.status,
+          content: i.cleanText,
+          tags: i.tags,
+          expenseAmount: i.expenseAmount,
+          timestamp: i.timestamp
+        }))
+      };
+      document.getElementById('json-output').value = JSON.stringify(data, null, 2);
+    }
+
+    function renderCSV() {
+      if (parsedItems.length === 0) {
+        document.getElementById('csv-output').value = '';
+        return;
+      }
+      let csv = 'ID,Type,Status,Content,Tags,ExpenseAmount,Timestamp\n';
+      parsedItems.forEach(i => {
+        const cleanContent = `"${i.cleanText.replace(/"/g, '""')}"`;
+        const tagsStr = `"${i.tags.join(';')}"`;
+        csv += `${i.id},${i.type},${i.status},${cleanContent},${tagsStr},${i.expenseAmount},"${i.timestamp}"\n`;
+      });
+      document.getElementById('csv-output').value = csv;
+    }
+
+    // TAB SWITCHING LOGIC
+    function switchTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-tab') === tabName) {
+          btn.classList.add('bg-slate-800', 'text-slate-200');
+          btn.classList.remove('text-slate-400');
+        } else {
+          btn.classList.remove('bg-slate-800', 'text-slate-200');
+          btn.classList.add('text-slate-400');
+        }
+      });
+
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      const filterBar = document.getElementById('filter-bar');
+      if (tabName === 'interactive') {
+        filterBar.classList.remove('hidden');
+      } else {
+        filterBar.classList.add('hidden');
+      }
+    }
+
+    // EXPORT & COPY HELPERS
+    function copyActiveOutput() {
+      let textToCopy = '';
+      if (currentTab === 'interactive' || currentTab === 'markdown') {
+        textToCopy = document.getElementById('markdown-output').value;
+      } else if (currentTab === 'json') {
+        textToCopy = document.getElementById('json-output').value;
+      } else if (currentTab === 'csv') {
+        textToCopy = document.getElementById('csv-output').value;
+      }
+
+      if (!textToCopy) {
+        showToast('Nothing to copy');
+        return;
+      }
+
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showToast(`Copied ${currentTab.toUpperCase()} to clipboard!`);
+      }).catch(() => {
+        showToast('Failed to copy');
+      });
+    }
+
+    function downloadActiveOutput() {
+      let text = '';
+      let filename = 'daily-notes-clean';
+      let ext = 'md';
+
+      if (currentTab === 'interactive' || currentTab === 'markdown') {
+        text = document.getElementById('markdown-output').value;
+        ext = 'md';
+      } else if (currentTab === 'json') {
+        text = document.getElementById('json-output').value;
+        ext = 'json';
+      } else if (currentTab === 'csv') {
+        text = document.getElementById('csv-output').value;
+        ext = 'csv';
+      }
+
+      if (!text) {
+        showToast('No content to download');
+        return;
+      }
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${filename}.${ext}`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast(`Exported ${filename}.${ext}`);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
