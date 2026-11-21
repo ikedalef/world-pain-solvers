@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevData Matrix - Technical Data & Syntax Transformer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950: '#020617' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-cyan-500/20">
+        &lt;&gt;
+      </div>
+      <div>
+        <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-cyan-400 bg-clip-text text-transparent">
+          DevData Matrix
+        </h1>
+        <p class="text-xs text-slate-400 hidden sm:block">Real-Time Code, Log & Text Transformation Workstation</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <!-- Credit Badge -->
+      <div id="creditBadge" class="px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/40 text-cyan-400 text-xs font-semibold flex items-center space-x-1.5 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span id="creditText">Free Run: 1 left</span>
+      </div>
+
+      <button onclick="openPaywallModal()" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 text-slate-950 font-bold text-xs hover:brightness-110 transition flex items-center shadow-md shadow-cyan-500/10">
+        ⚡ Unlock Unlimited PRO
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- Left Column: Controls & Input (5 cols) -->
+    <section class="lg:col-span-5 flex flex-col space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col space-y-4 flex-1">
+        
+        <!-- Mode Selector Tabs -->
+        <div>
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Transformation Engine</label>
+          <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800/80 text-xs font-medium">
+            <button onclick="setEngine('cleaner')" id="btn-cleaner" class="py-2 px-3 rounded-md transition text-center bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">Cleaner & Dedupe</button>
+            <button onclick="setEngine('regex')" id="btn-regex" class="py-2 px-3 rounded-md transition text-center text-slate-400 hover:text-slate-200">Regex Transformer</button>
+            <button onclick="setEngine('analyzer')" id="btn-analyzer" class="py-2 px-3 rounded-md transition text-center text-slate-400 hover:text-slate-200">Tech Stack Scanner</button>
+            <button onclick="setEngine('converter')" id="btn-converter" class="py-2 px-3 rounded-md transition text-center text-slate-400 hover:text-slate-200">CSV / JSON Structurer</button>
+          </div>
+        </div>
+
+        <!-- Presets Bar -->
+        <div class="flex items-center justify-between bg-slate-950/50 px-3 py-2 rounded-lg border border-slate-800 text-xs">
+          <span class="text-slate-400 font-medium">Load Sample Data:</span>
+          <div class="flex space-x-2">
+            <button onclick="loadSample('hn_discussion')" class="text-cyan-400 hover:underline">HN Tech Discussion</button>
+            <span class="text-slate-700">|</span>
+            <button onclick="loadSample('systems_code')" class="text-cyan-400 hover:underline">C/Rust/Zig Snippet</button>
+            <span class="text-slate-700">|</span>
+            <button onclick="loadSample('messy_csv')" class="text-cyan-400 hover:underline">Messy CSV Data</button>
+          </div>
+        </div>
+
+        <!-- Input Textarea -->
+        <div class="flex-1 flex flex-col space-y-2 min-h-[220px]">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+              <span>Source Input Payload</span>
+            </label>
+            <span id="inputStats" class="text-[11px] text-slate-400 font-mono">0 chars | 0 lines</span>
+          </div>
+          <textarea id="rawInput" oninput="updateInputStats()" placeholder="Paste messy text, HN comments, CSV rows, logs, or C/Rust/Zig source code here..." class="w-full flex-1 bg-slate-950 text-slate-200 font-mono text-xs p-3 rounded-lg border border-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 resize-none custom-scrollbar"></textarea>
+        </div>
+
+        <!-- Dynamic Engine Controls Panel -->
+        <div id="controlsPanel" class="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800/80 text-xs space-y-3">
+          <!-- Controls populated dynamically by JS -->
+        </div>
+
+        <!-- Action Trigger -->
+        <div class="pt-1 flex space-x-3">
+          <button onclick="runTransformation()" class="flex-1 py-3 px-4 rounded-lg bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-600 text-slate-950 font-extrabold text-sm tracking-wide hover:brightness-110 transition shadow-lg shadow-cyan-500/20 active:scale-[0.99] flex items-center justify-center space-x-2">
+            <span>⚡ TRANSFORM DATA</span>
+          </button>
+          <button onclick="clearInput()" class="px-3.5 py-3 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold text-xs transition border border-slate-700">
+            Clear
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Right Column: Output & Analytics (7 cols) -->
+    <section class="lg:col-span-7 flex flex-col space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col space-y-4 flex-1">
+        
+        <!-- Output Header & Utility Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
+            <h2 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Transformed Result</h2>
+          </div>
+          
+          <div class="flex items-center space-x-2">
+            <button onclick="copyOutput()" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 border border-slate-700 transition">
+              <span>📋 Copy</span>
+            </button>
+            <button onclick="downloadOutput('txt')" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 border border-slate-700 transition">
+              <span>💾 .TXT</span>
+            </button>
+            <button onclick="downloadOutput('csv')" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 border border-slate-700 transition">
+              <span>📊 .CSV</span>
+            </button>
+            <button onclick="downloadOutput('json')" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 border border-slate-700 transition">
+              <span>📦 .JSON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metrics Summary Cards -->
+        <div class="grid grid-cols-4 gap-2 text-center">
+          <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
+            <div id="metricLines" class="text-sm font-bold font-mono text-cyan-400">0</div>
+            <div class="text-[10px] text-slate-400 font-medium uppercase">Lines</div>
+          </div>
+          <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
+            <div id="metricUniques" class="text-sm font-bold font-mono text-indigo-400">0</div>
+            <div class="text-[10px] text-slate-400 font-medium uppercase">Unique Items</div>
+          </div>
+          <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
+            <div id="metricSaved" class="text-sm font-bold font-mono text-emerald-400">0%</div>
+            <div class="text-[10px] text-slate-400 font-medium uppercase">Reduction</div>
+          </div>
+          <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
+            <div id="metricTech" class="text-sm font-bold font-mono text-amber-400">0</div>
+            <div class="text-[10px] text-slate-400 font-medium uppercase">Tech Detected</div>
+          </div>
+        </div>
+
+        <!-- Main Output Display Window -->
+        <div class="flex-1 relative min-h-[300px] flex flex-col bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
+          <div id="tabOutputContainer" class="w-full flex-1 overflow-auto p-3 font-mono text-xs text-slate-200 custom-scrollbar whitespace-pre">Input data and click "Transform Data" to see real-time output.</div>
+        </div>
+
+        <!-- Analytics / Tech Detection Breakout Grid -->
+        <div id="techStackAnalysisView" class="hidden bg-slate-950/80 p-3 rounded-lg border border-slate-800 text-xs space-y-2">
+          <div class="font-semibold text-slate-300 flex justify-between items-center">
+            <span>Detected Systems Programming Stack & Keywords</span>
+            <span id="langConfidence" class="text-[10px] text-slate-500 font-mono">Scan Complete</span>
+          </div>
+          <div id="techBadges" class="flex flex-wrap gap-1.5 pt-1">
+            <span class="text-slate-500 text-xs italic">Run Tech Stack Scanner mode to detect Rust, Zig, C/C++, memory constructs...</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-emerald-500 text-slate-950 font-bold px-4 py-2.5 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 z-50 text-xs flex items-center space-x-2">
+    <span>✓</span>
+    <span id="toastMsg">Notification</span>
+  </div>
+
+  <!-- Paywall / Upgrade Modal -->
+  <div id="paywallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
+      <div class="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 text-slate-950 flex items-center justify-center font-black text-2xl mx-auto shadow-lg shadow-cyan-500/20">
+          ⚡
+        </div>
+        <h3 class="text-xl font-extrabold text-slate-100">Free Limit Reached</h3>
+        <p class="text-xs text-slate-400 max-w-xs mx-auto">
+          You've used your 1 free data transformation run. Upgrade now for unlimited access to DevData Matrix.
+        </p>
+      </div>
+
+      <!-- Pricing Options Card Grid -->
+      <div class="space-y-3">
+        <a href="#" target="_blank" onclick="simulatedCheckout('$5 One-Time')" class="block p-4 rounded-xl border border-cyan-500/40 bg-cyan-950/20 hover:bg-cyan-950/40 transition group cursor-pointer relative">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="bg-cyan-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Most Popular</span>
+              <h4 class="font-bold text-slate-100 text-sm mt-1">Lifetime Early-Bird Access</h4>
+              <p class="text-xs text-slate-400">One-time payment, unlimited transforms forever.</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xl font-black text-cyan-400">$5</span>
+              <span class="block text-[10px] text-slate-500">once</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="#" target="_blank" onclick="simulatedCheckout('$9/mo Pro')" class="block p-4 rounded-xl border border-slate-800 bg-slate-950/50 hover:bg-slate-800/40 transition group cursor-pointer">
+          <div class="flex justify-between items-center">
+            <div>
+              <h4 class="font-bold text-slate-200 text-sm">Pro Monthly Unlimited</h4>
+              <p class="text-xs text-slate-400">Full API access & cloud team features.</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xl font-black text-slate-200">$9</span>
+              <span class="block text-[10px] text-slate-500">/month</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Promo Code Bypass Field -->
+      <div class="pt-2 border-t border-slate-800 space-y-2">
+        <label class="text-[11px] font-medium text-slate-400 block">Have an Early Access Key / Promo Code?</label>
+        <div class="flex space-x-2">
+          <input type="text" id="promoInput" placeholder="Try code: PRO5 or PRO20" class="flex-1 bg-slate-950 text-slate-200 font-mono text-xs px-3 py-2 rounded-lg border border-slate-800 focus:outline-none focus:border-cyan-500 uppercase">
+          <button onclick="applyPromo()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg transition border border-slate-700">
+            Apply
+          </button>
+        </div>
+        <p id="promoError" class="text-[11px] text-rose-400 hidden">Invalid access code. Use PRO5 or PRO20.</p>
+      </div>
+
+      <div class="text-center">
+        <button onclick="closePaywallModal()" class="text-xs text-slate-500 hover:text-slate-400 underline">Close preview</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    // State Management
+    let currentEngine = 'cleaner';
+    let currentOutputText = '';
+    let currentOutputStructured = null;
+
+    // Credit & Pro Status initialized via LocalStorage
+    let runsRemaining = localStorage.getItem('app_runs_remaining') === null ? 1 : parseInt(localStorage.getItem('app_runs_remaining'));
+    let isPro = localStorage.getItem('app_is_pro') === 'true';
+
+    // Preset sample payloads
+    const SAMPLES = {
+      hn_discussion: `[HackerNews Ask HN Dump]
+User: microdev | Comment: Really not a loaded question. Personally I prefer to write in C or Zig over Rust for embedded microcontrollers.
+User: oxide_fan | Comment: Ask HN: Has the quality of HN content/discussions gone down?
+User: oxide_fan | Comment: Ask HN: Has the quality of HN content/discussions gone down?
+User: rustacean99 | Comment: Rust borrow checker enforces safety at compile time without GC penalty. pub fn main() { println!("Hello Rust"); }
+User: zig_lover | Comment: Zig's defer keyword and explicit allocators beat hidden control flow. const std = @import("std");
+User: c_veteran | Comment: C is simple: void* ptr = malloc(1024); free(ptr); unsafe memory access is developer responsibility.
+User: microdev | Comment: Personally I prefer to write in C or Zig over Rust for embedded microcontrollers.
+[Empty Line Above] HTML: <div class="comment">Duplicate entry test</div>`,
+      
+      systems_code: `// Sample Multi-Language Code Snippet (C vs Rust vs Zig)
+
+// C Memory Allocation
+#include <stdio.h>
+#include <stdlib.h>
+void c_example() {
+    char *buf = (char*)malloc(256);
+    printf("Allocated C buffer\n");
+    free(buf);
+}
+
+// Rust Safe Memory & Struct
+pub struct BufferGuard {
+    pub data: Vec<u8>,
+}
+impl BufferGuard {
+    pub fn new() -> Self {
+        unsafe { /* FFI Rust block */ }
+        BufferGuard { data: vec![0; 256] }
+    }
+}
+
+// Zig Allocator & Defer Pattern
+const std = @import("std");
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    const slice = try allocator.alloc(u8, 256);
+    defer allocator.free(slice);
+}`,
+      
+      messy_csv: `ID, Language, Benchmark_ms, Memory_MB, Safety_Model, Note
+1, Rust, 14.2, 4.1, Compile-time Borrow Checker, High safety
+2, Zig, 12.8, 2.3, Explicit Allocator + Defer, Manual control
+3, C (GCC -O3), 11.5, 1.8, Unsafe Manual (malloc/free), High risk
+3, C (GCC -O3), 11.5, 1.8, Unsafe Manual (malloc/free), High risk
+4, Go 1.22, 18.9, 12.5, Garbage Collected, Moderate overhead
+5, Python 3.12, 145.0, 32.0, Reference Counted GC, High latency`
+    };
+
+    // Render Controls Based on Selected Engine Mode
+    function setEngine(engine) {
+      currentEngine = engine;
+      ['cleaner', 'regex', 'analyzer', 'converter'].forEach(e => {
+        const btn = document.getElementById('btn-' + e);
+        if (e === engine) {
+          btn.className = "py-2 px-3 rounded-md transition text-center bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30";
+        } else {
+          btn.className = "py-2 px-3 rounded-md transition text-center text-slate-400 hover:text-slate-200";
+        }
+      });
+
+      const panel = document.getElementById('controlsPanel');
+      if (engine === 'cleaner') {
+        panel.innerHTML = `
+          <div class="grid grid-cols-2 gap-2 text-slate-300">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="optDedupe" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500">
+              <span>Deduplicate Lines</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="optTrim" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500">
+              <span>Trim Whitespace</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="optRemoveEmpty" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500">
+              <span>Remove Blank Lines</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="optStripHtml" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500">
+              <span>Strip HTML Tags</span>
+            </label>
+          </div>
+          <div class="flex items-center space-x-3 pt-1 border-t border-slate-800/80">
+            <span class="text-slate-400">Case Transform:</span>
+            <select id="optCase" class="bg-slate-900 border border-slate-800 text-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-cyan-500">
+              <option value="none">Keep Original Case</option>
+              <option value="lowercase">lowercase</option>
+              <option value="uppercase">UPPERCASE</option>
+              <option value="titlecase">Title Case</option>
+            </select>
+          </div>
+        `;
+      } else if (engine === 'regex') {
+        panel.innerHTML = `
+          <div class="space-y-2">
+            <div>
+              <label class="text-slate-400 block mb-1 font-mono">Regex Pattern (JavaScript format)</label>
+              <input type="text" id="regPattern" value="\\b(Rust|Zig|C|Go|Python)\\b" class="w-full bg-slate-900 border border-slate-800 text-cyan-400 font-mono text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1 font-mono">Replacement Value (supports $1, $2)</label>
+              <input type="text" id="regReplace" value="[LANG: $1]" class="w-full bg-slate-900 border border-slate-800 text-emerald-400 font-mono text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-cyan-500">
+            </div>
+            <div class="flex space-x-4 pt-1">
+              <label class="flex items-center space-x-1.5 text-slate-300">
+                <input type="checkbox" id="regFlagG" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500"> <span>Global (g)</span>
+              </label>
+              <label class="flex items-center space-x-1.5 text-slate-300">
+                <input type="checkbox" id="regFlagI" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500"> <span>Case Insensitive (i)</span>
+              </label>
+            </div>
+          </div>
+        `;
+      } else if (engine === 'analyzer') {
+        panel.innerHTML = `
+          <p class="text-slate-400 text-xs">
+            Scans text for memory safety signatures, systems programming keywords (C/Rust/Zig), allocation calls, and technology mentions.
+          </p>
+          <div class="flex items-center space-x-2 text-cyan-400 font-mono text-[11px]">
+            <span>⚡ Auto-Detects: Rust (fn, pub, unsafe), Zig (defer, @import), C (malloc, free, #include)</span>
+          </div>
+        `;
+      } else if (engine === 'converter') {
+        panel.innerHTML = `
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-slate-400 block mb-1">Input Delimiter</label>
+              <select id="convDelimiter" class="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-500">
+                <option value="auto">Auto-detect (Comma/Tab/Pipe)</option>
+                <option value=",">Comma (,)</option>
+                <option value="\t">Tab (TSV)</option>
+                <option value="|">Pipe (|)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Output Target</label>
+              <select id="convTarget" class="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-500">
+                <option value="json">JSON Array of Objects</option>
+                <option value="csv">Standard CSV</option>
+                <option value="table">Interactive HTML Data Table</option>
+              </select>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Execute Data Transformation
+    function runTransformation() {
+      const inputVal = document.getElementById('rawInput').value;
+      if (!inputVal.trim()) {
+        showToast('Please provide or load input data first!');
+        return;
+      }
+
+      // Check Credit Rules
+      if (!isPro && runsRemaining <= 0) {
+        openPaywallModal();
+        return;
+      }
+
+      // Execute Transformation Logic
+      let output = '';
+      const originalLines = inputVal.split('\n');
+      let uniqueItemsCount = 0;
+      let techDetectedCount = 0;
+
+      if (currentEngine === 'cleaner') {
+        const dedupe = document.getElementById('optDedupe')?.checked;
+        const trim = document.getElementById('optTrim')?.checked;
+        const removeEmpty = document.getElementById('optRemoveEmpty')?.checked;
+        const stripHtml = document.getElementById('optStripHtml')?.checked;
+        const caseOpt = document.getElementById('optCase')?.value;
+
+        let lines = originalLines;
+
+        if (trim) lines = lines.map(l => l.trim());
+        if (stripHtml) lines = lines.map(l => l.replace(/<[^>]*>/g, ''));
+        
+        if (caseOpt === 'lowercase') lines = lines.map(l => l.toLowerCase());
+        else if (caseOpt === 'uppercase') lines = lines.map(l => l.toUpperCase());
+        else if (caseOpt === 'titlecase') {
+          lines = lines.map(l => l.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()));
+        }
+
+        if (removeEmpty) lines = lines.filter(l => l.length > 0);
+        
+        if (dedupe) {
+          const set = new Set(lines);
+          lines = Array.from(set);
+          uniqueItemsCount = lines.length;
+        } else {
+          uniqueItemsCount = new Set(lines).size;
+        }
+
+        output = lines.join('\n');
+        currentOutputText = output;
+        document.getElementById('tabOutputContainer').textContent = output;
+        document.getElementById('techStackAnalysisView').classList.add('hidden');
+
+      } else if (currentEngine === 'regex') {
+        const patternStr = document.getElementById('regPattern').value;
+        const replaceStr = document.getElementById('regReplace').value;
+        const flagG = document.getElementById('regFlagG').checked ? 'g' : '';
+        const flagI = document.getElementById('regFlagI').checked ? 'i' : '';
+
+        try {
+          const regex = new RegExp(patternStr, flagG + flagI);
+          output = inputVal.replace(regex, replaceStr);
+          currentOutputText = output;
+          document.getElementById('tabOutputContainer').textContent = output;
+          uniqueItemsCount = new Set(output.split('\n')).size;
+          document.getElementById('techStackAnalysisView').classList.add('hidden');
+        } catch(e) {
+          alert('Invalid Regular Expression: ' + e.message);
+          return;
+        }
+
+      } else if (currentEngine === 'analyzer') {
+        // Real-time Tech Stack & Systems Programming Keyword Scanning
+        const techMarkers = [
+          { name: 'Rust', regex: /\b(rust|cargo|fn|pub\s+struct|impl|match|unsafe|vec!|borrow|crate)\b/gi, color: 'border-orange-500/50 bg-orange-950/30 text-orange-300' },
+          { name: 'Zig', regex: /\b(zig|defer|@import|allocator|pub\s+fn|try|errdefer|const\s+std)\b/gi, color: 'border-amber-500/50 bg-amber-950/30 text-amber-300' },
+          { name: 'C / C++', regex: /\b(malloc|free|printf|#include|void\*|uint32_t|std::|nullptr|sizeof)\b/gi, color: 'border-cyan-500/50 bg-cyan-950/30 text-cyan-300' },
+          { name: 'Go', regex: /\b(golang|goroutine|func|chan|package\s+main|import\s+"fmt")\b/gi, color: 'border-teal-500/50 bg-teal-950/30 text-teal-300' },
+          { name: 'Memory Safety', regex: /\b(unsafe|memory\s+safe|borrow\s+checker|null\s+pointer|data\s+race|buffer\s+overflow)\b/gi, color: 'border-emerald-500/50 bg-emerald-950/30 text-emerald-300' },
+          { name: 'HN Meta', regex: /\b(Ask\s+HN|HackerNews|quality|discussion|down|comments?)\b/gi, color: 'border-indigo-500/50 bg-indigo-950/30 text-indigo-300' }
+        ];
+
+        let report = `=== DEV DATA MATRIX ANALYSIS REPORT ===\n\n`;
+        let totalMatches = 0;
+        let badgeHtml = '';
+
+        techMarkers.forEach(marker => {
+          const matches = inputVal.match(marker.regex) || [];
+          if (matches.length > 0) {
+            techDetectedCount++;
+            totalMatches += matches.length;
+            report += `[+] ${marker.name}: Detected ${matches.length} occurrences\n`;
+            report += `    Sample Matches: ${Array.from(new Set(matches)).slice(0, 5).join(', ')}\n\n`;
+            
+            badgeHtml += `<span class="px-2.5 py-1 rounded border text-[11px] font-semibold ${marker.color}">${marker.name} (${matches.length})</span>`;
+          }
+        });
+
+        if (techDetectedCount === 0) {
+          report += `No specific systems language signatures (Rust, Zig, C, Go) or memory markers detected in source payload.`;
+          badgeHtml = `<span class="text-slate-500 text-xs italic">No language patterns detected.</span>`;
+        }
+
+        output = report;
+        currentOutputText = output;
+        document.getElementById('tabOutputContainer').textContent = output;
+        
+        const techView = document.getElementById('techStackAnalysisView');
+        techView.classList.remove('hidden');
+        document.getElementById('techBadges').innerHTML = badgeHtml;
+        uniqueItemsCount = new Set(inputVal.split('\n')).size;
+
+      } else if (currentEngine === 'converter') {
+        const delimiter = document.getElementById('convDelimiter').value;
+        const target = document.getElementById('convTarget').value;
+
+        let delim = delimiter;
+        if (delimiter === 'auto') {
+          if (inputVal.includes('\t')) delim = '\t';
+          else if (inputVal.includes('|')) delim = '|';
+          else delim = ',';
+        }
+
+        // Try parsing JSON if input is JSON or parse CSV/TSV
+        let parsedData = [];
+        const trimmedInput = inputVal.trim();
+        
+        if (trimmedInput.startsWith('[') || trimmedInput.startsWith('{')) {
+          try {
+            const json = JSON.parse(trimmedInput);
+            parsedData = Array.isArray(json) ? json : [json];
+          } catch(e) {
+            // Fallback to CSV line parsing
+            parsedData = parseCSVLines(inputVal, delim);
+          }
+        } else {
+          parsedData = parseCSVLines(inputVal, delim);
+        }
+
+        currentOutputStructured = parsedData;
+        uniqueItemsCount = parsedData.length;
+
+        if (target === 'json') {
+          output = JSON.stringify(parsedData, null, 2);
+          document.getElementById('tabOutputContainer').textContent = output;
+        } else if (target === 'csv') {
+          output = convertToCSV(parsedData);
+          document.getElementById('tabOutputContainer').textContent = output;
+        } else if (target === 'table') {
+          document.getElementById('tabOutputContainer').innerHTML = renderHTMLTable(parsedData);
+          output = JSON.stringify(parsedData, null, 2);
+        }
+        
+        currentOutputText = output;
+        document.getElementById('techStackAnalysisView').classList.add('hidden');
+      }
+
+      // Decrement credit if not PRO
+      if (!isPro) {
+        runsRemaining--;
+        localStorage.setItem('app_runs_remaining', runsRemaining);
+        updateCreditUI();
+      }
+
+      // Calculate Metrics
+      const outLines = output.split('\n').filter(l => l.length > 0).length;
+      const inLines = originalLines.length || 1;
+      const reductionPct = Math.max(0, Math.round((1 - (outLines / inLines)) * 100));
+
+      document.getElementById('metricLines').textContent = outLines;
+      document.getElementById('metricUniques').textContent = uniqueItemsCount || outLines;
+      document.getElementById('metricSaved').textContent = reductionPct + '%';
+      document.getElementById('metricTech').textContent = techDetectedCount;
+
+      showToast('Transformation completed successfully!');
+    }
+
+    // CSV Parsing Helper Function
+    function parseCSVLines(text, delim) {
+      const lines = text.split('\n').filter(l => l.trim().length > 0);
+      if (lines.length === 0) return [];
+      
+      const headers = lines[0].split(delim).map(h => h.trim().replace(/^["']|["']$/g, ''));
+      const rows = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const currentline = lines[i].split(delim);
+        if (currentline.length === headers.length) {
+          const obj = {};
+          for (let j = 0; j < headers.length; j++) {
+            obj[headers[j]] = currentline[j].trim().replace(/^["']|["']$/g, '');
+          }
+          rows.push(obj);
+        }
+      }
+      return rows.length > 0 ? rows : lines.map((l, idx) => ({ line: idx + 1, content: l }));
+    }
+
+    function convertToCSV(objArray) {
+      if (!objArray || objArray.length === 0) return '';
+      const keys = Object.keys(objArray[0]);
+      const csvRows = [keys.join(',')];
+      for (const row of objArray) {
+        const values = keys.map(k => `"${(row[k] || '').toString().replace(/"/g, '""')}"`);
+        csvRows.push(values.join(','));
+      }
+      return csvRows.join('\n');
+    }
+
+    function renderHTMLTable(data) {
+      if (!data || data.length === 0) return '<div class="p-4 text-slate-500">No tabular data found.</div>';
+      const keys = Object.keys(data[0]);
+      let html = '<div class="overflow-x-auto"><table class="w-full text-left border-collapse border border-slate-800 text-xs">';
+      html += '<thead><tr class="bg-slate-900 text-cyan-400">';
+      keys.forEach(k => { html += `<th class="p-2 border border-slate-800 font-bold uppercase">${k}</th>`; });
+      html += '</tr></thead><tbody>';
+      data.forEach(row => {
+        html += '<tr class="hover:bg-slate-900/50">';
+        keys.forEach(k => {
+          html += `<td class="p-2 border border-slate-800 font-mono text-slate-300">${row[k]}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      return html;
+    }
+
+    // Preset Loader
+    function loadSample(key) {
+      if (SAMPLES[key]) {
+        document.getElementById('rawInput').value = SAMPLES[key];
+        updateInputStats();
+        showToast('Loaded ' + key.replace('_', ' ') + ' sample dataset');
+      }
+    }
+
+    function updateInputStats() {
+      const val = document.getElementById('rawInput').value;
+      const chars = val.length;
+      const lines = val ? val.split('\n').length : 0;
+      document.getElementById('inputStats').textContent = `${chars} chars | ${lines} lines`;
+    }
+
+    function clearInput() {
+      document.getElementById('rawInput').value = '';
+      document.getElementById('tabOutputContainer').textContent = 'Input data and click "Transform Data" to see real-time output.';
+      updateInputStats();
+    }
+
+    // Clipboard & Downloads
+    function copyOutput() {
+      if (!currentOutputText) {
+        showToast('Nothing to copy yet!');
+        return;
+      }
+      navigator.clipboard.writeText(currentOutputText).then(() => {
+        showToast('Copied output to clipboard!');
+      });
+    }
+
+    function downloadOutput(format) {
+      if (!currentOutputText) {
+        showToast('No data available for download!');
+        return;
+      }
+      let content = currentOutputText;
+      let filename = `devdata_export_${Date.now()}.${format}`;
+      let mime = 'text/plain';
+
+      if (format === 'json' && currentOutputStructured) {
+        content = JSON.stringify(currentOutputStructured, null, 2);
+        mime = 'application/json';
+      } else if (format === 'csv') {
+        mime = 'text/csv';
+      }
+
+      const blob = new Blob([content], { type: mime });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      showToast(`Downloaded ${filename}`);
+    }
+
+    // Paywall Modal & Credit Badge Handlers
+    function updateCreditUI() {
+      const creditText = document.getElementById('creditText');
+      const creditBadge = document.getElementById('creditBadge');
+      
+      if (isPro) {
+        creditText.textContent = 'PRO Lifetime Unlimited';
+        creditBadge.className = "px-3 py-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-400 text-xs font-bold flex items-center space-x-1.5 shadow-sm";
+      } else {
+        creditText.textContent = `Free Run: ${runsRemaining} left`;
+        if (runsRemaining <= 0) {
+          creditBadge.className = "px-3 py-1.5 rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-400 text-xs font-bold flex items-center space-x-1.5 shadow-sm";
+        }
+      }
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywallModal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywallModal').classList.add('hidden');
+    }
+
+    function simulatedCheckout(planName) {
+      showToast(`Redirecting to payment for ${planName}...`);
+    }
+
+    function applyPromo() {
+      const code = document.getElementById('promoInput').value.trim().toUpperCase();
+      const err = document.getElementById('promoError');
+      if (code === 'PRO5' || code === 'PRO20') {
+        isPro = true;
+        localStorage.setItem('app_is_pro', 'true');
+        updateCreditUI();
+        closePaywallModal();
+        err.classList.add('hidden');
+        showToast('🎉 Lifetime PRO Access Unlocked!');
+      } else {
+        err.classList.remove('hidden');
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    // Initialization
+    window.onload = function() {
+      setEngine('cleaner');
+      updateCreditUI();
+      loadSample('hn_discussion');
+    };
+  </script>
+</body>
+</html>

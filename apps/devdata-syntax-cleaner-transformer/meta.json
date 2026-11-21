@@ -1,0 +1,17 @@
+{
+  "app_slug": "devdata-syntax-cleaner-transformer",
+  "title": "DevData Matrix - Technical Text, Log & Code Data Transformer",
+  "target_pain": "Developers and technical researchers spending hours manually cleaning messy HN/GitHub discussion dumps, deduplicating code logs, parsing CSV/JSON payloads, and searching for syntax markers (C, Rust, Zig).",
+  "key_features": [
+    "Instant Multi-Mode Cleaning: Line trimming, deduplication, HTML stripping, non-ASCII filter, and case normalizing",
+    "Real-time Regex Match & Group Replacer with live regex test highlighting",
+    "Systems Programming & Tech Stack Detector: Auto-detects Rust, Zig, C/C++, Go, and memory-safety constructs",
+    "Bidirectional CSV / TSV / JSON Converter with interactive data grid",
+    "1-Click Export to JSON, CSV, or Cleaned Plain Text with Clipboard Copying"
+  ],
+  "category": "Developer Tools",
+  "pricing_options": [
+    "$5 One-Time (Lifetime Access - Early Bird)",
+    "$9/month (Pro Unlimited)"
+  ]
+}
